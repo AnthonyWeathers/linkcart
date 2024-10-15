@@ -28,32 +28,71 @@ CORS(app, supports_credentials=True, origins=["http://localhost:3000"])  # Enabl
 products = [
     {
         "productId": 1,
-        "url": "https://www.amazon.com/dp/B08N5WRWNW",  # Example URL for a product
-        "price": "$499.99",
-        "productName": "4K UHD Monitor",  # Optional, given value
-        "category": "Electronics",  # Optional, given value
+        "user_id": 1,  # Belongs to user "john_doe"
+        "url": "http://example.com/product1",
+        "price": 49.99,
+        "productName": "Wireless Mouse",
+        "category": "Electronics",
         "favorited": False
     },
     {
         "productId": 2,
-        "url": "https://www.amazon.com/dp/B07XQXZXJC",  # Example URL for a product
-        "price": "$29.99",
-        "productName": "",  # Optional, no value (empty string)
-        "category": "Accessories",  # Optional, given value
+        "user_id": 1,  # Belongs to user "john_doe"
+        "url": "http://example.com/product2",
+        "price": 299.99,
+        "productName": "Mechanical Keyboard",
+        "category": "Electronics",
         "favorited": False
     },
     {
         "productId": 3,
-        "url": "https://www.amazon.com/dp/B09B8Y8QLX",  # Example URL for a product
-        "price": "$109.99",
-        "productName": "Wireless Keyboard",  # Optional, given value
-        "category": "",  # Optional, no value (empty string)
+        "user_id": 1,  # Belongs to user "john_doe"
+        "url": "http://example.com/product3",
+        "price": 79.99,
+        "productName": "Gaming Headset",
+        "category": "Electronics",
+        "favorited": False
+    },
+    {
+        "productId": 4,
+        "user_id": 2,  # Belongs to user "jane_smith"
+        "url": "http://example.com/product4",
+        "price": 19.99,
+        "productName": "Phone Stand",
+        "category": "Accessories",
+        "favorited": False
+    },
+    {
+        "productId": 5,
+        "user_id": 2,  # Belongs to user "jane_smith"
+        "url": "http://example.com/product5",
+        "price": 499.99,
+        "productName": "Smartwatch",
+        "category": "Wearables",
         "favorited": False
     }
 ]
 
-users = []
-user_products = []
+users = [
+    {
+        "id": 1,
+        # "username": "john_doe",
+        "username": "mei",
+        # "password": "password123",  # Ideally, this would be hashed
+        "password": "123",  # Ideally, this would be hashed
+        "description": "Tech enthusiast",
+        "favoriteProducts": []  # Will populate later through interactions
+    },
+    {
+        "id": 2,
+        # "username": "jane_smith",
+        "username": "kiana",
+        # "password": "securepass456",
+        "password": "test",
+        "description": "Loves gadgets",
+        "favoriteProducts": []  # Will populate later
+    }
+]
 
 def get_user_products(user_id):
     # Assuming `products` is a list of dicts or objects where each product has a `user_id` field
@@ -69,10 +108,6 @@ def save():
     category = request.json.get("category")
     user_id = session.get("user_id")
 
-    # print("url: " + url)
-    # print("price: " + price)
-    # print("productName: " + productName)
-    # print("category: " + category)
     # Create a product dictionary to store product details
     product = {
         "productId": len(products) + 1,  # Assigns a productId to match how the database would assign ids to products
@@ -188,8 +223,8 @@ def get_user_profile(username):
         favorite_products = [product for product in products if product['favorited']]
         return jsonify({
             "user": {
-                "username": user.username,
-                "description": user.description,
+                "username": user['username'],
+                "description": user['description'],
             },
             "favoriteProducts": favorite_products
         })
@@ -200,8 +235,8 @@ def get_user_profile(username):
     
 @app.route("/register", methods=["POST"])
 def register():
-    username = request.json.get("username"),
-    password = request.json.get("password"),
+    username = request.json.get("username")
+    password = request.json.get("password")
     # Check to see if a registered user exists with this username
     if any(user['username'] == username for user in users):
         return jsonify({"success": False, "message": "This username is already in use, please use another."}), 400
@@ -213,7 +248,9 @@ def register():
     new_user = {
         "id": len(users) + 1,# Assigns a user id to match how the database would assign ids to users
         "username": username,
-        "password": password
+        "password": password,
+        "description": '', # not used at creation
+        "favoriteProducts": [] # not used at creation
     }
     # db.session.add(user)
     # db.session.commit()
@@ -223,7 +260,7 @@ def register():
     return jsonify({
         "success": True, 
         "message": "Your account was successfully created",
-        "user": new_user.username
+        "user": new_user['username']
         #"user": new_user.to_dict()  # Include user info in the response if needed, likely to bring user to the main part
         # of the app upon registering
         }), 201
@@ -234,7 +271,7 @@ def login():
     password = request.json.get("password")
     
     # Simulate user lookup in the users array (a list of User objects for now)
-    user = next((u for u in users if u.username == username and u.password == password), None)
+    user = next((u for u in users if u['username'] == username and u['password'] == password), None)
 
     # Uncomment this line once you implement a database query
     # user = crud.get_user_by_username_and_password(username, password)
@@ -251,8 +288,8 @@ def login():
 
     # for session usage
     if user:
-        session['user_id'] = user.id  # Save user ID in session
-        return jsonify({"success": True, "message": "Logged in successfully", "user": user.username})
+        session['user_id'] = user['id'] # Save user ID in session
+        return jsonify({"success": True, "message": "Logged in successfully", "user": user['username']})
     else:
         return jsonify({"success": False, "message": "Invalid credentials"}), 401
 
@@ -261,20 +298,41 @@ def logout():
     session.clear()  # Clear the session data
     return jsonify({"success": True, "message": "Logged out successfully"})
 
-@app.route('/user/${username}')
+@app.route('/user/<username>')
 def profile(username):
-    username = request.args.get("username")
-    user = next((u for u in users if u.username == username), None)
+    # username = request.args.get("username")
+    user = next((u for u in users if u['username'] == username), None)
     if user:
-        user_products = get_user_products(user.id)
+        user_products = get_user_products(user['id'])
         # would loop through user_products to grab all products whose favorited attribute is true
+        # Filter only the products where favorited is True
+        favorite_products = [p for p in user_products if p['favorited']]
 
-@app.route("/current-user")
+        return jsonify({
+            "favoriteProducts": favorite_products,
+            "user": {
+                "username": user["username"],
+                "description": user["description"]
+            }
+        })
+
+@app.route('/user/<username>/edit-description', methods=['POST'])
+def editDescription(username):
+    user = next((u for u in users if u['username'] == username), None)
+    new_description = request.json.get("description")
+    if user and new_description:
+        user['description'] = new_description
+        # user.description = new_description
+        # db.session.commit()
+        return jsonify({'success': True, 'message': 'Description updated successfully!'})
+    return jsonify({'success': False, 'message': 'User not found'}), 404
+
+@app.route("/current-user", methods=['GET'])
 def check_user():
     user_id = session.get("user_id")
-    user = next((u for u in users if u.id == user_id), None)
+    user = next((u for u in users if u['id'] == user_id), None)
     if user:
-        return jsonify({"user": user.username})
+        return jsonify({"user": user['username']})
     else:
         return jsonify({"message": "Couldn't retrieve user"}), 404
 

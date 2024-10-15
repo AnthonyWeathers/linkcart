@@ -7,10 +7,10 @@ const ProductList = ({ user }) => {
     const [price, setPrice] = useState('');
     const [productName, setProductName] = useState('');
     const [category, setCategory] = useState('');
-    const [favorited, setFavorited] = useState(''); // might not need since I'm using the favorited attribute of the product
+    //const [favorited, setFavorited] = useState(''); // might not need since I'm using the favorited attribute of the product
 
     // State to store the submitted data
-    const [submittedData, setSubmittedData] = useState(null);
+    //const [submittedData, setSubmittedData] = useState(null);
     // State to check if user is editting data on form
     const [edittingData, setEdittingData] = useState(false);
 
@@ -39,19 +39,19 @@ const ProductList = ({ user }) => {
     };
 
     // Function to handle form submission
-    const updateFormData = () => {
-        const formData = {
-            url,
-            price,
-            productName,
-            category
-        };
-        if(edittingData) {
-        setEdittingData(false)
-        }
+    // const updateFormData = () => {
+    //     const formData = {
+    //         url,
+    //         price,
+    //         productName,
+    //         category
+    //     };
+    //     if(edittingData) {
+    //     setEdittingData(false)
+    //     }
 
-        setSubmittedData(formData);
-    }
+    //     setSubmittedData(formData);
+    // }
     const handleSubmit = (event) => {
         event.preventDefault(); // Prevent page reload on form submit
 
@@ -71,7 +71,7 @@ const ProductList = ({ user }) => {
                 price, 
                 productName, 
                 category,
-                favorited
+                favorited: selectedProduct.favorited
             })
         })
         .then(response => response.json())
@@ -144,7 +144,9 @@ const ProductList = ({ user }) => {
                     .map(product => ( // add a line here to show the favorited status of each product, start as just a line, later maybe a star
                         <div key={product.productId}>
                             <span><h2>{product.productName}</h2>{/*<div>Favorited?{product.favorited}</div>*/}</span>
-                            <div>Favorited?{product.favorited}</div>
+                            {/* Perhaps have a ternary: product.favorited ? Yes : No to pick the test based off the favorited value*/}
+                            {/* Then time to start working on the profile component/page */}
+                            <div>Favorited?{product.favorited ? "Yes" : "No"}</div>
                             <p>URL: {product.url}</p>
                             <p>Price: {product.price}</p>
                             <p>Category: {product.category}</p>

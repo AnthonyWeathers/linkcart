@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Login = ({ onLogin }) => {
     const [username, setUsername] = useState('');
@@ -63,6 +63,9 @@ const Login = ({ onLogin }) => {
                 {isLoading && <p>Loading...</p>} {/* Show loading message */}
                 {error && <p style={{ color: 'red' }}>{error}</p>}
             </form>
+
+            {/* Navigation link to the Register page */}
+            <p>New here? <Link to="/register">Register here</Link></p>
         </div>
     );
 };
