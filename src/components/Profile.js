@@ -5,6 +5,8 @@ const Profile = ({ currentUser }) => {
     const { username } = useParams(); // Get the username from the URL
     const [favoriteProducts, setFavoriteProducts] = useState([]);
     const [user, setUser] = useState(null);
+    const [isFriend, setIsFriend] = useState(false); // New state for friend status
+
     const [isEditing, setIsEditing] = useState(false); // State for editing mode
     const [newDescription, setNewDescription] = useState(''); // State for new description
 
@@ -13,10 +15,17 @@ const Profile = ({ currentUser }) => {
         // Simulate a fetch call to get the user's profile
         const fetchUserProfile = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/user/${username}`);
+                const response = await fetch(`http://localhost:8000/user/${username}`, {
+                    method: 'GET',
+                    headers: {
+                    'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                });
                 const userData = await response.json();
                 setUser(userData.user);
                 setFavoriteProducts(userData.favoriteProducts);
+                setIsFriend(userData.isFriend); // Set friend status from backend
             } catch (error) {
                 console.error("Error fetching user profile:", error);
             }
@@ -44,6 +53,7 @@ const Profile = ({ currentUser }) => {
             'Content-Type': 'application/json',
             },
             body: JSON.stringify({ description: newDescription }),
+            credentials: 'include'
         });
         const data = await response.json();
         if (response.ok) {
@@ -61,6 +71,49 @@ const Profile = ({ currentUser }) => {
     const handleCancel = () => {
         setNewDescription(user.description); // Reset to original description
         setIsEditing(false);
+    };
+
+    const handleAddFriend = async (friendUsername) => {
+        try {
+          const response = await fetch('http://localhost:8000/add-friend', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ friend_username: friendUsername }),
+            credentials: 'include'
+          });
+          const result = await response.json();
+      
+          if (result.success) {
+            alert('Friend added successfully!');
+            setIsFriend(true);
+          } else {
+            alert(result.message);
+          }
+        } catch (error) {
+          console.error('Error adding friend:', error);
+        }
+    };
+
+    const handleRemoveFriend = async (friendUsername) => {
+        try {
+            const response = await fetch('http://localhost:8000/remove-friend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ friend_username: friendUsername }),
+                credentials: 'include'
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert('Friend removed successfully!');
+                setIsFriend(false); // Update to reflect unfriend status
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            console.error('Error removing friend:', error);
+        }
     };
 
     const Products = ({ products }) => {
@@ -84,6 +137,13 @@ const Profile = ({ currentUser }) => {
         <div className='profile'>
             <div>
                 <p className='username'>{user.username}</p>
+                {user.username !== currentUser && (
+                    isFriend ? (
+                        <button onClick={() => handleRemoveFriend(user.username)}>Remove as Friend</button>
+                    ) : (
+                        <button onClick={() => handleAddFriend(user.username)}>Add Friend</button>
+                    )
+                )}
             </div>
 
             <div>

@@ -11,3 +11,31 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Community Styling */
+.messages-container {
+  height: 300px;
+  overflow-y: scroll;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+
+.message-item {
+  margin-bottom: 15px;
+}
+
+.message-input {
+  display: flex;
+  justify-content: space-between;
+}
+
+.message-input input {
+  flex: 1;
+  margin-right: 10px;
+  padding: 5px;
+}
+
+.message-input button {
+  padding: 5px 10px;
+}

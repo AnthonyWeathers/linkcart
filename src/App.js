@@ -5,6 +5,8 @@ import ProductList from './components/ProductList';
 import Login from './components/Login';
 import Register from './components/Register';
 import Profile from './components/Profile';
+import Community from './components/Community';
+import Friends from './components/Friends';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -56,35 +58,38 @@ function App() {
     }
   };
 
+  // Check if user is on their own profile
+  const isOnOwnProfile = location.pathname === `/profile/${currentUser}`;
+
   return (
-    <Router>
-      <div className='block-container'>
-        {/* Navbar */}
-        <nav className="navbar">
+    <div className='block-container'>
+      {/* Navbar */}
+      <nav className="navbar">
         <ul>
-            {/* Hide "Add Product" link if on Add Product page */}
-            {currentUser && location.pathname !== '/' && (
-              <li><Link to="/">Add Product</Link></li>
-            )}
-
-            {/* Hide "Saved Products" link if on Saved Products page */}
-            {currentUser && location.pathname !== '/saved-products' && (
-              <li><Link to="/saved-products">Saved Products</Link></li>
-            )}
-
-            {/* Show "My Profile" if user is not on their own profile */}
-            {currentUser && !isOnOwnProfile && (
-              <li><Link to={`/profile/${currentUser.username}`}>My Profile</Link></li>
-            )}
-
-            {/* Logout button */}
-            {currentUser && <li><button onClick={logout}>Logout</button></li>}
-          </ul>
-        </nav>
-
-        {loading ? ( // Show loading state while fetching user
-          <div>Loading...</div>
-        ) : (
+          {/* Hide "Add Product" link if on Add Product page */}
+          {currentUser && location.pathname !== '/' && (
+            <li><Link to="/">Add Product</Link></li>
+          )}
+  
+          {/* Hide "Saved Products" link if on Saved Products page */}
+          {currentUser && location.pathname !== '/saved-products' && (
+            <li><Link to="/saved-products">Saved Products</Link></li>
+          )}
+  
+          {/* Show "My Profile" if user is not on their own profile */}
+          {currentUser && !isOnOwnProfile && (
+            <li><Link to={`/profile/${currentUser}`}>My Profile</Link></li>
+          )}
+  
+          {/* Logout button */}
+          {currentUser && <li><button onClick={logout}>Logout</button></li>}
+        </ul>
+      </nav>
+  
+      {loading ? ( // Show loading state while fetching user
+        <div>Loading...</div>
+      ) : (
+        <>
           <Routes>
             <Route path="/" element={currentUser ? <AddProduct user={currentUser} /> : <Navigate to="/login" />} />
             <Route path="/saved-products" element={currentUser ? <ProductList user={currentUser} /> : <Navigate to="/login" />} />
@@ -92,10 +97,30 @@ function App() {
             <Route path="/login" element={<Login onLogin={setCurrentUser} />} />
             <Route path="/register" element={<Register onRegister={setCurrentUser} />} />
             <Route path="/profile/:username" element={currentUser ? <Profile currentUser={currentUser} /> : <Navigate to="/login" />} />
+            <Route path="/community" element={currentUser ? <Community currentUser={currentUser} /> : <Navigate to='/login' />} />
+            <Route path="/friends" element={currentUser ? <Friends currentUser={currentUser} /> : <Navigate to='/login'/>} />
+            {/* Dynamic route for private messaging between the current user and a friend */}
+            {/* <Route path="/messages/:friendUsername" element={<PrivateMessages currentUser={currentUser} />} /> */}
           </Routes>
-        )}
-      </div>
-    </Router>
+
+          {/* Secondary Navbar */}
+          <nav className="footer-navbar">
+            <ul>
+              {/* Secondary links, such as additional sections, footer links, etc. */}
+              {/* <li><Link to="/about">About Us</Link></li>
+              <li><Link to="/contact">Contact</Link></li>
+              <li><Link to="/help">Help</Link></li> */}
+
+              {/* Friends page link */}
+              <li><Link to="/friends">Friends</Link></li>
+
+              {/* Community page link */}
+              {currentUser && (<li><Link to="/community">Community</Link></li>)}
+            </ul>
+          </nav>
+        </>
+      )}
+    </div>
   );
 }
 

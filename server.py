@@ -94,6 +94,12 @@ users = [
     }
 ]
 
+# Temporary storage for friendships
+friendships = []
+    
+# Simulated array of public messages
+public_messages = []
+
 def get_user_products(user_id):
     # Assuming `products` is a list of dicts or objects where each product has a `user_id` field
     user_products = [product for product in products if product['user_id'] == user_id]
@@ -276,16 +282,6 @@ def login():
     # Uncomment this line once you implement a database query
     # user = crud.get_user_by_username_and_password(username, password)
 
-    # if user is None:
-    #     return jsonify({"success": False, "message": "Invalid username or password"}), 401
-    
-    # # Convert user object to dictionary for JSON response
-    # return jsonify({
-    #     "success": True,
-    #     "message": "Login successful",
-    #     "user": user.to_dict()  # Send user info back as dictionary
-    # }), 200
-
     # for session usage
     if user:
         session['user_id'] = user['id'] # Save user ID in session
@@ -300,25 +296,29 @@ def logout():
 
 @app.route('/user/<username>')
 def profile(username):
-    # username = request.args.get("username")
     user = next((u for u in users if u['username'] == username), None)
-    if user:
-        user_products = get_user_products(user['id'])
-        # would loop through user_products to grab all products whose favorited attribute is true
-        # Filter only the products where favorited is True
-        favorite_products = [p for p in user_products if p['favorited']]
+    current_user_id = session.get('user_id')
 
-        return jsonify({
-            "favoriteProducts": favorite_products,
-            "user": {
-                "username": user["username"],
-                "description": user["description"]
-            }
-        })
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Check if the current user is friends with the profile user
+    is_friend = any(f['user_id'] == current_user_id and f['friend_id'] == user['id'] for f in friendships)
+    
+    # Return profile data, favorites, and friend status
+    return jsonify({
+        'favoriteProducts': user.get('favoriteProducts', []),
+        'user': {
+            "username": user["username"],
+            "description": user["description"]
+        },
+        'isFriend': is_friend
+    })
 
 @app.route('/user/<username>/edit-description', methods=['POST'])
 def editDescription(username):
-    user = next((u for u in users if u['username'] == username), None)
+    user_id = session.get('user_id')
+    user = next((u for u in users if (u['id'] == user_id and u['username'] == username)), None)
     new_description = request.json.get("description")
     if user and new_description:
         user['description'] = new_description
@@ -336,6 +336,100 @@ def check_user():
     else:
         return jsonify({"message": "Couldn't retrieve user"}), 404
 
+@app.route('/messages/community', methods=['GET'])
+def get_public_messages():
+    return jsonify(public_messages)
+
+@app.route('/messages/community', methods=['POST'])
+def post_public_message():
+    print('Entered post public message endpoint')
+    print(request.headers)  # Print request headers to check for cookies
+    data = request.get_json()
+    user_id = session.get('user_id')  # Get user ID from session
+    print(user_id)
+    # Check if user is authenticated
+    if not user_id:
+        print('User not authenticated')
+        return jsonify({'success': False, 'message': 'User not authenticated'}), 401
+    
+    # Fetch username based on user_id (pseudo-code, adjust based on your user model)
+    user = next((u for u in users if u['id'] == user_id), None)
+    if not user:
+        print('User not found')
+        return jsonify({'success': False, 'message': 'User not found'}), 404
+    
+    new_message = {
+        'user_id': user_id,
+        'username': user['username'],  # Store username for frontend display
+        'message': data['message']
+    }
+    public_messages.append(new_message)
+
+    print('Message posted successfully:', new_message)
+    return jsonify({'success': True, 'message': 'Message posted successfully!'}), 200
+
+@app.route('/add-friend', methods=['POST'])
+def add_friend():
+    user_id = session.get("user_id")
+    friend_username = request.json.get('friend_username')
+    
+    # Find the friend's user object by their username
+    friend_user = next((u for u in users if u['username'] == friend_username), None)
+
+    if friend_user:
+        friend_id = friend_user['id']
+
+        # Check if the friendship already exists
+        existing_friendship = next((f for f in friendships if f['user_id'] == user_id and f['friend_id'] == friend_id), None)
+
+        if existing_friendship:
+            return jsonify({'success': False, 'message': 'You are already friends with this user.'})
+
+        # Add the friendship (both directions for bidirectional friendship)
+        friendships.append({'user_id': user_id, 'friend_id': friend_id})
+        friendships.append({'user_id': friend_id, 'friend_id': user_id})
+
+        return jsonify({'success': True, 'message': 'Friend added successfully!'})
+    
+    return jsonify({'success': False, 'message': 'User not found.'}), 404
+
+@app.route('/remove-friend', methods=['POST'])
+def remove_friend():
+    user_id = session.get("user_id")
+    friend_username = request.json.get('friend_username')
+    
+    # Find the friend's user object by their username
+    friend_user = next((u for u in users if u['username'] == friend_username), None)
+
+    if friend_user:
+        friend_id = friend_user['id']
+
+        # Check if the friendship already exists
+        existing_friendship = next((f for f in friendships if f['user_id'] == user_id and f['friend_id'] == friend_id), None)
+
+        if not existing_friendship:
+            return jsonify({'success': False, 'message': 'You are already not friends with this user.'})
+
+        # need to make the spot empty or remove if possible
+        # Add the friendship (both directions for bidirectional friendship)
+        friendships.append({'user_id': user_id, 'friend_id': friend_id})
+        friendships.append({'user_id': friend_id, 'friend_id': user_id})
+
+        return jsonify({'success': True, 'message': 'Friend removed successfully!'})
+    
+    return jsonify({'success': False, 'message': 'User not found.'}), 404
+
+@app.route('/friends', methods=['GET'])
+def get_friends():
+    user_id = session.get('user_id')  # Get current user's ID from session
+
+    # Find all friend relationships where the current user is the "user_id"
+    friend_ids = [f['friend_id'] for f in friendships if f['user_id'] == user_id]
+
+    # Retrieve the user data for all the friends
+    friend_list = [u for u in users if u['id'] in friend_ids]
+
+    return jsonify({'success': True, 'friends': friend_list})
 
 if __name__ == "__main__":
 #    app.env = "development"
