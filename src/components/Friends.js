@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const Friends = ({ currentUser }) => {
   const [friends, setFriends] = useState([]);
@@ -30,9 +31,15 @@ const Friends = ({ currentUser }) => {
     <div>
       <h2>My Friends</h2>
       <ul>
-        {friends.map((friend) => (
-          <li key={friend.id}>{friend.username}</li>
-        ))}
+        {friends && friends.length > 0 ? (
+          friends.map((friend) => (
+            <Link to={`/profile/${friend.username}`} key={friend.id}>
+              <li>{friend.username}</li>
+            </Link>
+          ))
+        ) : (
+          <li>You have no friends currently</li>
+        )}
       </ul>
     </div>
   );

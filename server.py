@@ -384,7 +384,7 @@ def add_friend():
 
         if existing_friendship:
             return jsonify({'success': False, 'message': 'You are already friends with this user.'})
-
+        
         # Add the friendship (both directions for bidirectional friendship)
         friendships.append({'user_id': user_id, 'friend_id': friend_id})
         friendships.append({'user_id': friend_id, 'friend_id': user_id})
@@ -404,16 +404,11 @@ def remove_friend():
     if friend_user:
         friend_id = friend_user['id']
 
-        # Check if the friendship already exists
-        existing_friendship = next((f for f in friendships if f['user_id'] == user_id and f['friend_id'] == friend_id), None)
-
-        if not existing_friendship:
-            return jsonify({'success': False, 'message': 'You are already not friends with this user.'})
-
-        # need to make the spot empty or remove if possible
-        # Add the friendship (both directions for bidirectional friendship)
-        friendships.append({'user_id': user_id, 'friend_id': friend_id})
-        friendships.append({'user_id': friend_id, 'friend_id': user_id})
+        # Remove the friendship in both directions
+        global friendships
+        friendships = [f for f in friendships if not 
+                       ((f['user_id'] == user_id and f['friend_id'] == friend_id) or
+                        (f['user_id'] == friend_id and f['friend_id'] == user_id))]
 
         return jsonify({'success': True, 'message': 'Friend removed successfully!'})
     

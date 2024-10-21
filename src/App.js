@@ -106,13 +106,8 @@ function App() {
           {/* Secondary Navbar */}
           <nav className="footer-navbar">
             <ul>
-              {/* Secondary links, such as additional sections, footer links, etc. */}
-              {/* <li><Link to="/about">About Us</Link></li>
-              <li><Link to="/contact">Contact</Link></li>
-              <li><Link to="/help">Help</Link></li> */}
-
               {/* Friends page link */}
-              <li><Link to="/friends">Friends</Link></li>
+              {currentUser && (<li><Link to="/friends">Friends</Link></li>)}
 
               {/* Community page link */}
               {currentUser && (<li><Link to="/community">Community</Link></li>)}
