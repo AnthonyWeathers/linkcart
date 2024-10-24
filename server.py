@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify, session
+from flask_socketio import SocketIO
+import eventlet
 import jinja2
 
 # probably used if I'm making batches of
@@ -18,6 +20,15 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = 'dev'
+socketio = SocketIO(app, cors_allowed_origins='*')  # Enable CORS if needed
+
+# Ensure session cookies are secure and http-only
+app.config['SESSION_COOKIE_SECURE'] = True  # Only send cookies over HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Disable access to cookies via JavaScript
+
+# Optionally set SameSite to Lax or Strict for better CSRF protection
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
 app.jinja_env.undefined = jinja2.StrictUndefined # for debugging purposes
 
 CORS(app, supports_credentials=True, origins=["http://localhost:3000"])  # Enable CORS for all routes
@@ -103,6 +114,7 @@ public_messages = []
 def get_user_products(user_id):
     # Assuming `products` is a list of dicts or objects where each product has a `user_id` field
     user_products = [product for product in products if product['user_id'] == user_id]
+    # user_products = crud.getProductsByUserId(user_id)
     return user_products
 
 @app.route("/submit-product", methods=["POST"])
@@ -126,6 +138,10 @@ def save():
     }
     products.append(product)
 
+    # product = crud.createProduct(user_id, url, price, productName, category) # maybe add false, or set default false in crud
+    # if product:
+    #       db.session.add(product)
+    #       db.session.commit()
     return jsonify({
             "save": True,
             "message": 'Product added'
@@ -136,16 +152,23 @@ def delete():
     user_id = session.get("user_id")  # Assuming you have session user_id
     productId = int(request.json.get("id"))
 
+    # product = crud.getProductById(productId)
+    # if product:
+    #   db.session.delete(product)
+    #   db.session.commit()
+
     # Find product by ID and ensure it belongs to the user
     for i, product in enumerate(products):
         if product['id'] == productId and product['user_id'] == user_id:
             products[i] = ''  # This symbolizes deletion from your "database"
+            # products.pop(i) more memory efficient way to simulate deleting the product
+            # products = [product for product in products if product['id'] != productId] would remove the need for for and if statement
             break
-    else:
-        return jsonify({
-            "success": False,
-            "message": "Product not found or doesn't belong to the user"
-        }), 404
+        else:
+            return jsonify({
+                "success": False,
+                "message": "Product not found or doesn't belong to the user"
+            }), 404
 
     # Fetch remaining user products using the helper function
     user_products = get_user_products(user_id)
@@ -164,6 +187,7 @@ def delete():
 def getProducts():
     user_id = session.get("user_id")  # Assuming you have session user_id tracking the current user
     user_products = get_user_products(user_id)
+    # user_products = crud.getProductsByUserId(user_id)
 
     return jsonify({
         "success": True,
@@ -175,6 +199,13 @@ def getProducts():
 def editProduct():
     user_id = session.get("user_id")
     product_id = int(request.json.get("id"))
+    # product = crud.getProductById(product_id)
+    # product.url = request.json.get("url")
+    # product.price = request.json.get("price")
+    # product.productName = request.json.get("productName")
+    # product.category = request.json.get("category")
+    # product.favorited = product.get("favorited", False)
+    # db.session.commit()
     
     # Retrieve the list of products for the current user
     user_products = get_user_products(user_id)
@@ -211,9 +242,14 @@ def favoriteProduct():
     user_id = session.get("user_id")
     productId = int(request.json.get("id"))
     products[productId - 1]["favorited"] = not products[productId - 1]["favorited"]
+    # product = crud.getProductById(productId)
+    # product.favorited = not product.favorited
+    # db.session.commit()
 
     # Retrieve the list of products for the current user
     user_products = get_user_products(user_id)
+    user = next((u for u in users if (u['id'] == user_id)), None)
+    user['favoriteProducts'].append(products[productId - 1])
     return jsonify({
             "success": True,
             "products": user_products
@@ -225,6 +261,8 @@ def get_user_profile(username):
     # user = find_user_by_username(username)
     user = username # likely need to make a users array with
     # preset info, and use users[username] or users[userId]
+    # user = crud.getUserByUsername(username)
+    # access user via user.username and such
     if user:
         favorite_products = [product for product in products if product['favorited']]
         return jsonify({
@@ -297,6 +335,7 @@ def logout():
 @app.route('/user/<username>')
 def profile(username):
     user = next((u for u in users if u['username'] == username), None)
+    # user = crud.getUserByUsername(username)
     current_user_id = session.get('user_id')
 
     if not user:
@@ -304,10 +343,15 @@ def profile(username):
 
     # Check if the current user is friends with the profile user
     is_friend = any(f['user_id'] == current_user_id and f['friend_id'] == user['id'] for f in friendships)
+    # error while running code: TypeError: tuple indices must be integers or slices, not str
+    # is_friend = crud.getFriendshipById(current_user_id, user.id)
     
     # Return profile data, favorites, and friend status
+    # simply user.favoriteProducts and such
+    print(user)
     return jsonify({
         'favoriteProducts': user.get('favoriteProducts', []),
+        # 'favoriteProducts': user['favoriteProducts'],
         'user': {
             "username": user["username"],
             "description": user["description"]
@@ -319,6 +363,7 @@ def profile(username):
 def editDescription(username):
     user_id = session.get('user_id')
     user = next((u for u in users if (u['id'] == user_id and u['username'] == username)), None)
+    # user = crud.getUserById(user_id)
     new_description = request.json.get("description")
     if user and new_description:
         user['description'] = new_description
@@ -331,6 +376,7 @@ def editDescription(username):
 def check_user():
     user_id = session.get("user_id")
     user = next((u for u in users if u['id'] == user_id), None)
+    # user = crud.getUserById(user_id)
     if user:
         return jsonify({"user": user['username']})
     else:
@@ -338,8 +384,45 @@ def check_user():
 
 @app.route('/messages/community', methods=['GET'])
 def get_public_messages():
+    # return crud.getPublicMessages()
     return jsonify(public_messages)
 
+# would replace the post public message function
+@socketio.on('message')
+def handle_message(data):
+    print('Received message: ' + data['message'])
+    # Get user ID from session
+    user_id = session.get('user_id')
+    
+    if user_id is None:
+        # If no user ID is in the session, you might want to handle this case
+        socketio.emit('message_response', {'success': False, 'error': 'User not authenticated'})
+        return
+    
+    # user = crud.getUserById(user_id)  # Retrieve current user from session
+    # username = user.username  # Fetch the username
+    # message = data['message']
+
+    # Here you might want to save the message to your database
+    # For example:
+    # new_message = Message(username=username, message=message)
+    # db.session.add(new_message)
+    # db.session.commit()
+
+    user = next((u for u in users if u['id'] == user_id), None)
+    message = data['message']
+
+    new_message = {
+        'user_id': user_id,
+        'username': user['username'],  # Store username for frontend display
+        'message': message
+    }
+    public_messages.append(new_message)
+
+    # Emit the message to all connected clients
+    # socketio.emit('message', {'username': username, 'message': message})
+    socketio.emit('message_response', {'success': True, 'username': user['username'], 'message': message})
+    
 @app.route('/messages/community', methods=['POST'])
 def post_public_message():
     print('Entered post public message endpoint')
@@ -354,10 +437,14 @@ def post_public_message():
     
     # Fetch username based on user_id (pseudo-code, adjust based on your user model)
     user = next((u for u in users if u['id'] == user_id), None)
+    # user = crud.getUserById(user_id)
     if not user:
         print('User not found')
         return jsonify({'success': False, 'message': 'User not found'}), 404
     
+    # new_message = crud.createPublicMessage(user_id, user.username, data['message'])
+    # db.session.add(new_message)
+    # db.session.commit()
     new_message = {
         'user_id': user_id,
         'username': user['username'],  # Store username for frontend display
@@ -375,19 +462,36 @@ def add_friend():
     
     # Find the friend's user object by their username
     friend_user = next((u for u in users if u['username'] == friend_username), None)
+    # friend_user = crud.getUserByUsername(friend_username)
 
     if friend_user:
         friend_id = friend_user['id']
 
         # Check if the friendship already exists
         existing_friendship = next((f for f in friendships if f['user_id'] == user_id and f['friend_id'] == friend_id), None)
+        # existing_friendship = crud.getFriendshipById(user_id, friend_user.id)
 
         if existing_friendship:
             return jsonify({'success': False, 'message': 'You are already friends with this user.'})
         
+        def add_friendship(friendships, userA, userB):
+            friendship = tuple(sorted([userA, userB]))  # Sort to avoid duplicates
+            if friendship not in friendships:
+                friendships.append(friendship)
+
+        # Example usage
+        # friendships = []
+        add_friendship(friendships, user_id, friend_id)
+        add_friendship(friendships, friend_id, user_id)  # This won't create a duplicate
+        # print(friendships)  # Output: [(1, 2)]
+
         # Add the friendship (both directions for bidirectional friendship)
-        friendships.append({'user_id': user_id, 'friend_id': friend_id})
-        friendships.append({'user_id': friend_id, 'friend_id': user_id})
+        # friendships.append({'user_id': user_id, 'friend_id': friend_id})
+        # friendships.append({'user_id': friend_id, 'friend_id': user_id})
+        # new_friendship1 = crud.createFriendship(user_id, friend_id)
+        # new_friendship2 = crud.createFriendship(friend_id, user_id)
+        # db.session.add(new_friendship1, new_friendship2)
+        # db.session.commit()
 
         return jsonify({'success': True, 'message': 'Friend added successfully!'})
     
@@ -400,6 +504,7 @@ def remove_friend():
     
     # Find the friend's user object by their username
     friend_user = next((u for u in users if u['username'] == friend_username), None)
+    # friend_user = crud.getUserByUsername(friend_username)
 
     if friend_user:
         friend_id = friend_user['id']
@@ -409,6 +514,9 @@ def remove_friend():
         friendships = [f for f in friendships if not 
                        ((f['user_id'] == user_id and f['friend_id'] == friend_id) or
                         (f['user_id'] == friend_id and f['friend_id'] == user_id))]
+        # crud.deleteFriendship(user_id, friend_id)
+        # crud.deleteFriendship(friend_id, user_id)
+        # db.session.commit()
 
         return jsonify({'success': True, 'message': 'Friend removed successfully!'})
     
@@ -423,10 +531,16 @@ def get_friends():
 
     # Retrieve the user data for all the friends
     friend_list = [u for u in users if u['id'] in friend_ids]
+    # friends = crud.getFriendsByUserId(user_id)
+    # need to figure out how to get usernames of all friends of user; perhaps for loop?
 
     return jsonify({'success': True, 'friends': friend_list})
 
 if __name__ == "__main__":
 #    app.env = "development"
     # connect_to_db(app, echo=False)
-    app.run(debug = True, port = 8000, host = "localhost")
+    # app.run(debug = True, port = 8000, host = "localhost")
+    # socketio.run(app, host='0.0.0.0', port=5000)
+    # replace app.run with line below so Flask server runs with
+    # WebSocket support
+    socketio.run(app, debug=True, port=8000, host="localhost")

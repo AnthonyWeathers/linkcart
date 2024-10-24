@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import socket from './socket';
 
 const Community = ({ currentUser }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
 
-    // After setting up public and private messaging and testing it
     // Look into implementing WebSockets through Socket.IO or Pusher to enable real-time messaging where users see new messages without
     // needing to refresh 
-
-    // Eventually make a private message component for friend dms
 
     // Fetch the messages from the backend
     const fetchMessages = async () => {
@@ -25,32 +23,73 @@ const Community = ({ currentUser }) => {
     useEffect(() => {
         // Fetch messages when the component mounts
         fetchMessages();
-    }, []);
+    }, [])
+
+    useEffect(() => {
+        // Manually connect the socket if autoConnect is set to false
+        if (!socket.connected) {
+            socket.connect();  // Establish the WebSocket connection
+        }
+
+        socket.on('connect', () => {
+            console.log("WebSocket connected", socket.id);
+        });
+
+        socket.on('message_response', (data) => {
+            console.log("Received message from server: ", data);
+            if (data.success) {
+                setMessages(prevMessages => [...prevMessages, {
+                    username: data.username,
+                    message: data.message
+                }]);
+            }
+        });
+
+        // Handle socket disconnection
+        socket.on('disconnect', () => {
+            console.log("WebSocket disconnected");
+        });
+
+        // Cleanup on component unmount
+        return () => {
+            socket.off('connect');
+            socket.off('message_response');
+            socket.off('disconnect');
+        };
+    }, []);  // Empty array ensures it only runs on mount
 
     // Handle sending a new message
-    const sendMessage = async () => {
+    // const sendMessage = async () => {
+    const sendMessage = () => {
         if (newMessage.trim() === '') return; // Prevent empty messages
+        // Emit the new message to the server
+        socket.emit('message', {
+            message: newMessage
+        });
 
-        try {
-            const response = await fetch('http://localhost:8000/messages/community', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: newMessage
-                }),
-                credentials: 'include'  // This ensures cookies (like session cookies) are sent with the request
-            });
-            if (response.ok) {
-                // Refresh the messages after sending the new message
-                fetchMessages();
-                setNewMessage(''); // Clear the input field
-            } else {
-                console.error("Failed to send message");
-            }
-        } catch (error) {
-            console.error("Error sending message:", error);
-        }
+        setNewMessage(''); // Clear the input field
+    //     try {
+    //         const response = await fetch('http://localhost:8000/messages/community', {
+    //             method: 'POST',
+    //             headers: { 'Content-Type': 'application/json' },
+    //             body: JSON.stringify({
+    //                 message: newMessage
+    //             }),
+    //             credentials: 'include'  // This ensures cookies (like session cookies) are sent with the request
+    //         });
+    //         if (response.ok) {
+    //             // Refresh the messages after sending the new message
+    //             fetchMessages();
+    //             setNewMessage(''); // Clear the input field
+    //         } else {
+    //             console.error("Failed to send message");
+    //         }
+    //     } catch (error) {
+    //         console.error("Error sending message:", error);
+    //     }
     };
+
+    // console.log("Messages array: ", messages); // Add this to see the updated messages state in the console
 
     return (
         <div>
@@ -82,4 +121,4 @@ const Community = ({ currentUser }) => {
     );
 };
 
-export default Community;
+export default Community

@@ -148,7 +148,12 @@ const ProductList = ({ user }) => {
                         <div key={product.productId}>
                             <span><h2>{product.productName}</h2></span>
                             <div>Favorited?{product.favorited ? "Yes" : "No"}</div>
-                            <p>URL: {product.url}</p>
+                            {/* <p>URL: {product.url}</p> */}
+                            {/* Make the URL clickable and open in a new tab */}
+                            {/* setting rel="noopener noreferrer" is for tab-napping prevention purposes*/}
+                            <p>
+                                URL: <a href={product.url} target="_blank" rel="noopener noreferrer">{product.url}</a>
+                            </p>
                             <p>Price: {product.price}</p>
                             <p>Category: {product.category}</p>
                             <button onClick={() => deleteProduct(product)}>Delete</button>
