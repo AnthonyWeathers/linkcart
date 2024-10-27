@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import socket from './socket';
 
 const Login = ({ onLogin }) => {
     const [username, setUsername] = useState('');
@@ -28,6 +29,11 @@ const Login = ({ onLogin }) => {
             if (data.success) {
                 alert(data.message);
                 onLogin(data.user);
+
+                if (!socket.connected) {
+                    socket.connect();
+                }
+
                 navigate('/');
             } else {
                 alert(data.message);

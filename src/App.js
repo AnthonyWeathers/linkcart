@@ -7,6 +7,7 @@ import Register from './components/Register';
 import Profile from './components/Profile';
 import Community from './components/Community';
 import Friends from './components/Friends';
+import socket from './components/socket';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -50,6 +51,10 @@ function App() {
       if (data.success) {
         alert(data.message); // Optional: show a message to the user
         setCurrentUser(null); // Clear current user state
+
+        if (socket.connected) {
+          socket.disconnect();
+        }
       } else {
         console.error('Error logging out:', data.message);
       }

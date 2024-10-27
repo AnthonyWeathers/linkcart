@@ -249,7 +249,10 @@ def favoriteProduct():
     # Retrieve the list of products for the current user
     user_products = get_user_products(user_id)
     user = next((u for u in users if (u['id'] == user_id)), None)
-    user['favoriteProducts'].append(products[productId - 1])
+    if products[productId - 1]["favorited"]:
+        user['favoriteProducts'].append(products[productId - 1])
+    else:
+        user['favoriteProducts'].remove(products[productId - 1])
     return jsonify({
             "success": True,
             "products": user_products
@@ -342,7 +345,7 @@ def profile(username):
         return jsonify({'error': 'User not found'}), 404
 
     # Check if the current user is friends with the profile user
-    is_friend = any(f['user_id'] == current_user_id and f['friend_id'] == user['id'] for f in friendships)
+    is_friend = any((f[0] == current_user_id and f[1] == user['id']) or (f[1] == current_user_id and f[0] == user['id']) for f in friendships)
     # error while running code: TypeError: tuple indices must be integers or slices, not str
     # is_friend = crud.getFriendshipById(current_user_id, user.id)
     
@@ -393,6 +396,7 @@ def handle_message(data):
     print('Received message: ' + data['message'])
     # Get user ID from session
     user_id = session.get('user_id')
+    # print('current session user_id is: ', user_id)
     
     if user_id is None:
         # If no user ID is in the session, you might want to handle this case
@@ -410,6 +414,7 @@ def handle_message(data):
     # db.session.commit()
 
     user = next((u for u in users if u['id'] == user_id), None)
+    # print('current user of message: ', user)
     message = data['message']
 
     new_message = {
@@ -468,12 +473,14 @@ def add_friend():
         friend_id = friend_user['id']
 
         # Check if the friendship already exists
-        existing_friendship = next((f for f in friendships if f['user_id'] == user_id and f['friend_id'] == friend_id), None)
+        existing_friendship = next(((f[0] == user_id and f[1] == friend_id) or (f[1] == user_id and f[0] == friend_id) for f in friendships), None)
         # existing_friendship = crud.getFriendshipById(user_id, friend_user.id)
 
         if existing_friendship:
             return jsonify({'success': False, 'message': 'You are already friends with this user.'})
         
+        # may need to add two extra elements; friendship status (pending, true), and maybe who added the other, so the request
+        # is sent to the person being added than both
         def add_friendship(friendships, userA, userB):
             friendship = tuple(sorted([userA, userB]))  # Sort to avoid duplicates
             if friendship not in friendships:
