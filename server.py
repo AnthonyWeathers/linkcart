@@ -519,8 +519,11 @@ def remove_friend():
         # Remove the friendship in both directions
         global friendships
         friendships = [f for f in friendships if not 
-                       ((f['user_id'] == user_id and f['friend_id'] == friend_id) or
-                        (f['user_id'] == friend_id and f['friend_id'] == user_id))]
+                    #    ((f['user_id'] == user_id and f['friend_id'] == friend_id) or
+                    #     (f['user_id'] == friend_id and f['friend_id'] == user_id))]
+                    # should achieve same state
+                        ((f[0] == user_id and f[1] == friend_id) or
+                        (f[1] == user_id and f[0] == friend_id))]
         # crud.deleteFriendship(user_id, friend_id)
         # crud.deleteFriendship(friend_id, user_id)
         # db.session.commit()
@@ -534,7 +537,16 @@ def get_friends():
     user_id = session.get('user_id')  # Get current user's ID from session
 
     # Find all friend relationships where the current user is the "user_id"
-    friend_ids = [f['friend_id'] for f in friendships if f['user_id'] == user_id]
+    # need to figure out how to get all friends of user when friendships is a list of tuples
+    # friend_ids = [f['friend_id'] for f in friendships if f['user_id'] == user_id]
+    # adds friend_id to friend_ids list if friend_id does not match the user_id, else adds other_id
+    # loops through friendships list with variables of other_id and friend_id for the element 0 and 1 of the tuple
+    # only checks the tuples where user_id exists, otherwise skips the tuples containing ids of other users
+    friend_ids = [
+        friend_id if friend_id != user_id else other_id
+        for (other_id, friend_id) in friendships
+        if user_id in (other_id, friend_id) 
+    ]
 
     # Retrieve the user data for all the friends
     friend_list = [u for u in users if u['id'] in friend_ids]
