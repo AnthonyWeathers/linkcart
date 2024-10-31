@@ -6,6 +6,8 @@ const Profile = ({ currentUser }) => {
     const [favoriteProducts, setFavoriteProducts] = useState([]);
     const [user, setUser] = useState(null);
     const [isFriend, setIsFriend] = useState(false); // New state for friend status
+    const [isPending, setIsPending] = useState(false) // New state for pending friend request status
+    const [receivedRequest, setReceivedRequest] = useState(false); // New state for received friend request
 
     const [isEditing, setIsEditing] = useState(false); // State for editing mode
     const [newDescription, setNewDescription] = useState(''); // State for new description
@@ -26,6 +28,8 @@ const Profile = ({ currentUser }) => {
                 setUser(userData.user);
                 setFavoriteProducts(userData.favoriteProducts);
                 setIsFriend(userData.isFriend); // Set friend status from backend
+                setIsPending(userData.sentRequest) // If current user has sent a pending friend request to other user
+                setReceivedRequest(userData.receivedRequest) // If current user had received a friend request from user of profile they're viewing
             } catch (error) {
                 console.error("Error fetching user profile:", error);
             }
@@ -96,6 +100,71 @@ const Profile = ({ currentUser }) => {
         }
     };
 
+    const handleFriendRequest = async (friendUsername) => {
+        try {
+          const response = await fetch('http://localhost:8000/make-request', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ friend_username: friendUsername }),
+            credentials: 'include'
+          });
+          const result = await response.json();
+      
+          if (result.success) {
+            alert(result.message);
+            // setIsFriend(true);
+            setIsPending(true)
+          } else {
+            alert(result.message);
+          }
+        } catch (error) {
+          console.error('Error adding friend:', error);
+        }
+    };
+
+    const handleAcceptFriend = async (friendUsername) => {
+        try {
+            const response = await fetch('http://localhost:8000/accept-friend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ friend_username: friendUsername }),
+                credentials: 'include'
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message);
+                setIsFriend(true);
+                setReceivedRequest(false);
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            console.error('Error accepting friend:', error);
+        }
+    };
+    
+    const handleDeclineFriend = async (friendUsername) => {
+        try {
+            const response = await fetch('http://localhost:8000/decline-friend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ friend_username: friendUsername }),
+                credentials: 'include'
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert(result.message);
+                setReceivedRequest(false);
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            console.error('Error declining friend request:', error);
+        }
+    };    
+
     const handleRemoveFriend = async (friendUsername) => {
         try {
             const response = await fetch('http://localhost:8000/remove-friend', {
@@ -137,11 +206,25 @@ const Profile = ({ currentUser }) => {
         <div className='profile'>
             <div>
                 <p className='username'>{user.username}</p>
-                {user.username !== currentUser && (
+                {/* {user.username !== currentUser && (
                     isFriend ? (
                         <button onClick={() => handleRemoveFriend(user.username)}>Remove as Friend</button>
                     ) : (
                         <button onClick={() => handleAddFriend(user.username)}>Add Friend</button>
+                    )
+                )} */}
+                {user.username !== currentUser && (
+                    isFriend ? (
+                        <button onClick={() => handleRemoveFriend(user.username)}>Remove as Friend</button>
+                    ) : isPending ? (
+                        <div>Request pending</div>
+                    ) : receivedRequest ? (
+                        <div>
+                            <button onClick={() => handleAcceptFriend(user.username)}>Accept Request</button>
+                            <button onClick={() => handleDeclineFriend(user.username)}>Decline Request</button>
+                        </div>
+                    ) : (
+                        <button onClick={() => handleFriendRequest(user.username)}>Send Friend Request</button>
                     )
                 )}
             </div>

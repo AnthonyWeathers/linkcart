@@ -107,6 +107,9 @@ users = [
 
 # Temporary storage for friendships
 friendships = []
+
+# Temporary storage for friend requests
+requests = []
     
 # Simulated array of public messages
 public_messages = []
@@ -116,6 +119,11 @@ def get_user_products(user_id):
     user_products = [product for product in products if product['user_id'] == user_id]
     # user_products = crud.getProductsByUserId(user_id)
     return user_products
+
+def add_friendship(friendships, userA, userB):
+    friendship = tuple(sorted([userA, userB]))  # Sort to avoid duplicates
+    if friendship not in friendships:
+        friendships.append(friendship)
 
 @app.route("/submit-product", methods=["POST"])
 def save():
@@ -348,6 +356,8 @@ def profile(username):
     is_friend = any((f[0] == current_user_id and f[1] == user['id']) or (f[1] == current_user_id and f[0] == user['id']) for f in friendships)
     # error while running code: TypeError: tuple indices must be integers or slices, not str
     # is_friend = crud.getFriendshipById(current_user_id, user.id)
+    existing_sent_request = any((r["sender_id"] == current_user_id and r["receiver_id"] == user['id']) for r in requests)
+    existing_received_request = any((r["receiver_id"] == current_user_id and r["sender_id"] == user['id']) for r in requests)
     
     # Return profile data, favorites, and friend status
     # simply user.favoriteProducts and such
@@ -359,7 +369,9 @@ def profile(username):
             "username": user["username"],
             "description": user["description"]
         },
-        'isFriend': is_friend
+        'isFriend': is_friend,
+        'sentRequest': existing_sent_request,
+        'receivedRequest': existing_received_request
     })
 
 @app.route('/user/<username>/edit-description', methods=['POST'])
@@ -481,10 +493,6 @@ def add_friend():
         
         # may need to add two extra elements; friendship status (pending, true), and maybe who added the other, so the request
         # is sent to the person being added than both
-        def add_friendship(friendships, userA, userB):
-            friendship = tuple(sorted([userA, userB]))  # Sort to avoid duplicates
-            if friendship not in friendships:
-                friendships.append(friendship)
 
         # Example usage
         # friendships = []
@@ -554,6 +562,106 @@ def get_friends():
     # need to figure out how to get usernames of all friends of user; perhaps for loop?
 
     return jsonify({'success': True, 'friends': friend_list})
+
+@app.route('/make-request', methods=['POST'])
+def make_request():
+    user_id = session.get("user_id")
+    other_username = request.json.get('friend_username')
+    
+    other_user = next((u for u in users if u['username'] == other_username), None)
+
+    if other_user:
+        other_user_id = other_user['id']
+
+        # Check if they are already friends
+        if any((f[0] == user_id and f[1] == other_user_id) or (f[1] == user_id and f[0] == other_user_id) for f in friendships):
+            return jsonify({'success': False, 'message': 'You are already friends with this user.'})
+        
+        # Check for an existing request
+        if any((r["sender_id"] == user_id and r["receiver_id"] == other_user_id) or 
+               (r["receiver_id"] == user_id and r["sender_id"] == other_user_id) for r in requests):
+            return jsonify({'success': False, 'message': 'A friend request is already pending.'})
+        
+        # Add the new friend request
+        requests.append({"sender_id": user_id, "receiver_id": other_user_id})
+        
+        return jsonify({'success': True, 'message': 'Friend request sent successfully!'})
+
+    return jsonify({'success': False, 'message': 'User not found.'}), 404
+
+@app.route('/accept-friend', methods=['POST'])
+def accept_friend():
+    # Retrieve user and friend details
+    user_id = session.get("user_id")
+    friend_username = request.json.get('friend_username')
+    
+    # Find the friend's user object by their username
+    friend = next((u for u in users if u['username'] == friend_username), None)
+
+    if friend:
+        friend_id = friend['id']
+        
+        # Check if they are already friends
+        if any((f[0] == user_id and f[1] == friend_id) or (f[1] == user_id and f[0] == friend_id) for f in friendships):
+            return jsonify({'success': False, 'message': 'You are already friends with this user.'})
+        
+        # Find the friend request and validate it
+        friend_request = next((r for r in requests if r["receiver_id"] == user_id and r["sender_id"] == friend_id), None)
+        
+        if not friend_request:
+            return jsonify({'success': False, 'message': 'No pending friend request found from this user.'}), 404
+        
+        # Add the friendship
+        friendships.append((user_id, friend_id))
+        
+        # Remove the request from the requests list
+        requests.remove(friend_request)
+        
+        return jsonify({'success': True, 'message': 'Friend request accepted successfully!', 'friend': friend})
+
+    return jsonify({'success': False, 'message': 'User of the friend request not found.'}), 404
+
+@app.route('/decline-friend', methods=['POST'])
+def decline_friend():
+    # Retrieve user and friend details
+    user_id = session.get("user_id")
+    other_username = request.json.get('friend_username')
+    
+    # Find the friend's user object by their username
+    other_user = next((u for u in users if u['username'] == other_username), None)
+
+    if other_user:
+        other_user_id = other_user['id']
+        
+        # Get the pending friend request
+        friend_request = next((r for r in requests if r["receiver_id"] == user_id and r["sender_id"] == other_user_id), None)
+        
+        if not friend_request:
+            return jsonify({'success': False, 'message': 'No pending friend request found from this user.'}), 404
+
+        # Remove the pending friend request
+        requests.remove(friend_request)
+        
+        return jsonify({'success': True, 'message': 'Friend request declined successfully!'})
+    
+    return jsonify({'success': False, 'message': 'User of the friend request not found.'}), 404
+
+@app.route('/friend-requests', methods=['GET'])
+def get_friend_requests():
+    # Retrieve the current user's ID from the session
+    user_id = session.get("user_id")
+    
+    # Get all pending requests where the current user is the receiver
+    user_requests = [r for r in requests if r["receiver_id"] == user_id]
+
+    # Find the usernames of the senders
+    sender_usernames = [
+        next((user['username'] for user in users if user['id'] == r['sender_id']), None) 
+        for r in user_requests
+    ]
+
+    # Return the list of usernames
+    return jsonify({'success': True, 'sender_usernames': sender_usernames})
 
 if __name__ == "__main__":
 #    app.env = "development"
