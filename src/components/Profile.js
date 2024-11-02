@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom'; // Hook to access URL params
 
-const Profile = ({ currentUser }) => {
+const Profile = ({ currentUser, handleNewRequest }) => {
     const { username } = useParams(); // Get the username from the URL
     const [favoriteProducts, setFavoriteProducts] = useState([]);
     const [user, setUser] = useState(null);
@@ -116,6 +116,7 @@ const Profile = ({ currentUser }) => {
             alert(result.message);
             // setIsFriend(true);
             setIsPending(true)
+            handleNewRequest();  // Call the function to update notification state
           } else {
             alert(result.message);
           }

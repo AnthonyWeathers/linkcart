@@ -12,6 +12,7 @@ import socket from './components/socket';
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true); // To handle loading state
+  const [hasNewRequests, setHasNewRequests] = useState(false); // Friend Request pending state
   const location = useLocation(); // Hook to get current route path
 
   // Fetch the current user on component mount
@@ -25,6 +26,7 @@ function App() {
         if (response.ok) {
           const userData = await response.json();
           setCurrentUser(userData.user); // Assuming the response includes user data
+          setHasNewRequests(userData.hasNewRequests); // Set the initial friend request state from backend
         } else {
           // Handle error or no user
           setCurrentUser(null);
@@ -40,6 +42,11 @@ function App() {
     fetchCurrentUser();
   }, []);
 
+  // Function to update friend request state
+  const handleNewRequest = () => {
+    setHasNewRequests(true);
+  };
+
   const logout = async () => {
     try {
       const response = await fetch('http://localhost:8000/logout', {
@@ -51,6 +58,7 @@ function App() {
       if (data.success) {
         alert(data.message); // Optional: show a message to the user
         setCurrentUser(null); // Clear current user state
+        setHasNewRequests(false); // Reset on logout
 
         if (socket.connected) {
           socket.disconnect();
@@ -101,9 +109,9 @@ function App() {
             {/* Routes for login and register pages */}
             <Route path="/login" element={<Login onLogin={setCurrentUser} />} />
             <Route path="/register" element={<Register onRegister={setCurrentUser} />} />
-            <Route path="/profile/:username" element={currentUser ? <Profile currentUser={currentUser} /> : <Navigate to="/login" />} />
+            <Route path="/profile/:username" element={currentUser ? <Profile currentUser={currentUser} handleNewRequest={handleNewRequest} /> : <Navigate to="/login" />} />
             <Route path="/community" element={currentUser ? <Community currentUser={currentUser} /> : <Navigate to='/login' />} />
-            <Route path="/friends" element={currentUser ? <Friends currentUser={currentUser} /> : <Navigate to='/login'/>} />
+            <Route path="/friends" element={currentUser ? <Friends currentUser={currentUser} hasNewRequests={hasNewRequests} /> : <Navigate to='/login'/>} />
             {/* Dynamic route for private messaging between the current user and a friend */}
             {/* <Route path="/messages/:friendUsername" element={<PrivateMessages currentUser={currentUser} />} /> */}
           </Routes>
@@ -112,7 +120,7 @@ function App() {
           <nav className="footer-navbar">
             <ul>
               {/* Friends page link */}
-              {currentUser && (<li><Link to="/friends">Friends</Link></li>)}
+              {currentUser && (<li><Link to="/friends" className={hasNewRequests ? "highlight" : ""}>Friends</Link></li>)}
 
               {/* Community page link */}
               {currentUser && (<li><Link to="/community">Community</Link></li>)}
