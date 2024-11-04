@@ -26,7 +26,7 @@ function App() {
         if (response.ok) {
           const userData = await response.json();
           setCurrentUser(userData.user); // Assuming the response includes user data
-          setHasNewRequests(userData.hasNewRequests); // Set the initial friend request state from backend
+          // setHasNewRequests(userData.hasNewRequests); // Set the initial friend request state from backend
         } else {
           // Handle error or no user
           setCurrentUser(null);
@@ -42,9 +42,48 @@ function App() {
     fetchCurrentUser();
   }, []);
 
+  useEffect(() => {
+    // Connect the socket if it's not already connected
+    if (!socket.connected) {
+        socket.connect();
+        console.log('WebSocket connected from App.js');
+    }
+
+    socket.on('connect', () => {
+        console.log('WebSocket connected', socket.id);
+    });
+
+    // Cleanup on component unmount
+    return () => {
+        socket.off('connect'); // Remove the connect listener
+        socket.disconnect(); // Optionally disconnect on unmount
+    };
+}, []);
+
+  useEffect(() => {
+    // Listen for WebSocket events when a new friend request is received
+    socket.on('new_friend_request', (data) => {
+      // currentUser is only username
+      console.log('Receiver user is: ', data.receiver_username)
+      console.log('Sender user is: ', data.sender_username)
+      if (data.receiver_username === currentUser) {
+        setHasNewRequests(true);
+      }
+    });
+
+    // Cleanup WebSocket listener on unmount
+    return () => {
+      socket.off('new_friend_request');
+    };
+  }, [currentUser]);
+
   // Function to update friend request state
   const handleNewRequest = () => {
     setHasNewRequests(true);
+  };
+
+  const handleRequestNotification = () => {
+    setHasNewRequests(false);
   };
 
   const logout = async () => {
@@ -111,7 +150,7 @@ function App() {
             <Route path="/register" element={<Register onRegister={setCurrentUser} />} />
             <Route path="/profile/:username" element={currentUser ? <Profile currentUser={currentUser} handleNewRequest={handleNewRequest} /> : <Navigate to="/login" />} />
             <Route path="/community" element={currentUser ? <Community currentUser={currentUser} /> : <Navigate to='/login' />} />
-            <Route path="/friends" element={currentUser ? <Friends currentUser={currentUser} hasNewRequests={hasNewRequests} /> : <Navigate to='/login'/>} />
+            <Route path="/friends" element={currentUser ? <Friends currentUser={currentUser} handleRequestNotification={handleRequestNotification} /> : <Navigate to='/login'/>} />
             {/* Dynamic route for private messaging between the current user and a friend */}
             {/* <Route path="/messages/:friendUsername" element={<PrivateMessages currentUser={currentUser} />} /> */}
           </Routes>

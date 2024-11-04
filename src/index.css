@@ -12,30 +12,142 @@ code {
     monospace;
 }
 
-/* Community Styling */
+/* App.js */
+/* .highlight { */
+  /* color: red; /* or another attention-grabbing color */
+  /* font-weight: bold; */
+/* } */
+/* General reset for list styling */
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Styling for the top navbar */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #333;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 20px;
+  z-index: 1000;
+}
+
+/* Ensure links in navbar are evenly spaced and centered */
+.navbar ul {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar li {
+  flex: 1;
+  text-align: center;
+}
+
+/* Styling for the footer navbar */
+.footer-navbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #333;
+  display: flex;
+  padding: 10px 20px;
+  z-index: 1000;
+}
+
+/* Evenly space links in footer navbar */
+.footer-navbar ul {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-navbar li {
+  flex: 1;
+  text-align: center;
+}
+
+/* Link styling for both navbars */
+.navbar a, .footer-navbar a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 10px 15px;
+  display: inline-block;
+}
+
+.navbar a:hover, .footer-navbar a:hover {
+  background-color: #555;
+  border-radius: 4px;
+}
+
+/* Highlighted link style for notifications */
+.footer-navbar .highlight {
+  color: yellow;
+}
+
+/* Main container styling to avoid content underlapping navbars */
+.block-container {
+  padding-top: 60px; /* Adjust to navbar height */
+  padding-bottom: 50px; /* Adjust to footer navbar height */
+}
+
+/* Community Page Styling */
+
+/* Ensures messages-container fits between navbars and is scrollable */
 .messages-container {
-  height: 300px;
-  overflow-y: scroll;
+  flex: 1; /* Makes the container expand within the available space */
+  height: calc(100vh - 160px); /* Adjusts height considering top and bottom navbars */
+  overflow-y: auto; /* Keeps messages scrollable */
   border: 1px solid #ccc;
   padding: 10px;
-  margin-bottom: 20px;
+  margin: 20px 0;
+  box-sizing: border-box; /* Ensures padding doesn’t increase the container’s size */
 }
 
+/* Each message aligns well and has spacing */
 .message-item {
   margin-bottom: 15px;
+  word-wrap: break-word; /* Ensures long messages wrap within the container */
 }
 
+/* Styling for the message input container */
 .message-input {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  padding: 10px 0; /* Adds spacing to avoid overlap with fixed elements */
+  border-top: 1px solid #ccc;
 }
 
+/* Ensures input field takes most space in the row */
 .message-input input {
   flex: 1;
+  padding: 8px;
   margin-right: 10px;
-  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
+/* Adjusts button style for alignment */
 .message-input button {
-  padding: 5px 10px;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.message-input button:hover {
+  background-color: #0056b3;
 }

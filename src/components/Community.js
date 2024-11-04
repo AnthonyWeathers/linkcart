@@ -26,15 +26,6 @@ const Community = ({ currentUser }) => {
     }, [])
 
     useEffect(() => {
-        // Manually connect the socket if autoConnect is set to false
-        if (!socket.connected) {
-            socket.connect();  // Establish the WebSocket connection
-        }
-
-        socket.on('connect', () => {
-            console.log("WebSocket connected", socket.id);
-        });
-
         socket.on('message_response', (data) => {
             console.log("Received message from server: ", data);
             if (data.success) {
@@ -52,7 +43,6 @@ const Community = ({ currentUser }) => {
 
         // Cleanup on component unmount
         return () => {
-            socket.off('connect');
             socket.off('message_response');
             socket.off('disconnect');
         };

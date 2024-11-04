@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, session
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, join_room
 import eventlet
 import jinja2
 
@@ -343,6 +343,22 @@ def logout():
     session.clear()  # Clear the session data
     return jsonify({"success": True, "message": "Logged out successfully"})
 
+@socketio.on('connect')
+def handle_connect():
+    user_id = session.get("user_id")
+    if user_id is not None:
+        # Join a room with the user's ID
+        join_room(user_id)
+        print(f"User {user_id} connected and joined room.")
+    else:
+        print("User not logged in, connection attempt rejected.")
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    user_id = session.get("user_id")
+    if user_id is not None:
+        print(f"User {user_id} disconnected.")
+
 @app.route('/user/<username>')
 def profile(username):
     user = next((u for u in users if u['username'] == username), None)
@@ -566,25 +582,35 @@ def get_friends():
 @app.route('/make-request', methods=['POST'])
 def make_request():
     user_id = session.get("user_id")
-    other_username = request.json.get('friend_username')
+    receiver_username = request.json.get('friend_username')
     
-    other_user = next((u for u in users if u['username'] == other_username), None)
+    receiver = next((u for u in users if u['username'] == receiver_username), None)
 
-    if other_user:
-        other_user_id = other_user['id']
+    if receiver:
+        receiver_id = receiver['id']
 
         # Check if they are already friends
-        if any((f[0] == user_id and f[1] == other_user_id) or (f[1] == user_id and f[0] == other_user_id) for f in friendships):
+        if any((f[0] == user_id and f[1] == receiver_id) or (f[1] == user_id and f[0] == receiver_id) for f in friendships):
             return jsonify({'success': False, 'message': 'You are already friends with this user.'})
         
         # Check for an existing request
-        if any((r["sender_id"] == user_id and r["receiver_id"] == other_user_id) or 
-               (r["receiver_id"] == user_id and r["sender_id"] == other_user_id) for r in requests):
+        if any((r["sender_id"] == user_id and r["receiver_id"] == receiver_id) or 
+               (r["receiver_id"] == user_id and r["sender_id"] == receiver_id) for r in requests):
             return jsonify({'success': False, 'message': 'A friend request is already pending.'})
         
         # Add the new friend request
-        requests.append({"sender_id": user_id, "receiver_id": other_user_id})
+        requests.append({"sender_id": user_id, "receiver_id": receiver_id})
         
+        # Emit a WebSocket event to notify the receiving user
+        currentUser = next((u for u in users if u['id'] == user_id), None)
+        # Emit to the room of the receiving user with their username as the room name
+        socketio.emit('new_friend_request', {
+            'sender_username': currentUser['username'],
+            'receiver_username': receiver_username
+        }, room=receiver_id)
+
+        # socketio.emit('message_response', {'success': True, 'username': user['username'], 'message': message})
+
         return jsonify({'success': True, 'message': 'Friend request sent successfully!'})
 
     return jsonify({'success': False, 'message': 'User not found.'}), 404

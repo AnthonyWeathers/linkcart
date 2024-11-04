@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-const Friends = ({ currentUser }) => {
+const Friends = ({ currentUser, handleRequestNotification }) => {
   const [friends, setFriends] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
 
@@ -64,6 +64,7 @@ const Friends = ({ currentUser }) => {
             alert(result.message);
             setFriendRequests((prev) => prev.filter((username) => username !== requester));
             setFriends((prev) => [...prev, result.friend]);
+            handleRequestNotification();
         } else {
             alert(result.message);
         }
@@ -84,6 +85,7 @@ const handleDeclineFriend = async (requester) => {
         if (result.success) {
             alert(result.message);
             setFriendRequests((prev) => prev.filter((username) => username !== requester));
+            handleRequestNotification();
         } else {
             alert(result.message);
         }
