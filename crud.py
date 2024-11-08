@@ -1,7 +1,7 @@
 """CRUD operations."""
 
 from model import User, Products
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 def create_user(username, password):
     """Create and return a new user."""
@@ -39,3 +39,15 @@ def get_product_by_id(product_id):
     """Returns product given product_id"""
     """Used for editing/deleting a product"""
     return Products.query.filter_by(id=product_id)
+
+# def check_friendship(user_id1, user_id2):
+#     """Check if a friendship exists between two users in an order-agnostic way."""
+#     friendship = (
+#         db.session.query(Friendship)
+#         .filter(
+#             func.LEAST(Friendship.user1_id, Friendship.user2_id) == func.LEAST(user_id1, user_id2),
+#             func.GREATEST(Friendship.user1_id, Friendship.user2_id) == func.GREATEST(user_id1, user_id2)
+#         )
+#         .first()
+#     )
+#     return friendship is not None  # Returns True if a friendship exists, otherwise False

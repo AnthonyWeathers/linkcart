@@ -116,7 +116,7 @@ const Profile = ({ currentUser, handleNewRequest }) => {
             alert(result.message);
             // setIsFriend(true);
             setIsPending(true)
-            handleNewRequest();  // Call the function to update notification state
+            // handleNewRequest();  // Call the function to update notification state
           } else {
             alert(result.message);
           }

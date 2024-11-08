@@ -141,24 +141,24 @@ const ProductList = ({ user }) => {
         const sortedProducts = handleSort(products);
 
         return (
-            <div>
+            <div className="product-list">
                 {sortedProducts
                     .filter(product => product !== '') // Exclude empty spots
                     .map(product => ( // add a line here to show the favorited status of each product, start as just a line, later maybe a star
-                        <div key={product.productId}>
-                            <span><h2>{product.productName}</h2></span>
-                            <div>Favorited?{product.favorited ? "Yes" : "No"}</div>
+                        <div key={product.productId} className="product-item">
+                            <span><h2 className="product-name">{product.productName}</h2></span>
+                            <div className="product-favorited">Favorited?{product.favorited ? "Yes" : "No"}</div>
                             {/* <p>URL: {product.url}</p> */}
                             {/* Make the URL clickable and open in a new tab */}
                             {/* setting rel="noopener noreferrer" is for tab-napping prevention purposes*/}
-                            <p>
+                            <p className="product-url">
                                 URL: <a href={product.url} target="_blank" rel="noopener noreferrer">{product.url}</a>
                             </p>
-                            <p>Price: {product.price}</p>
-                            <p>Category: {product.category}</p>
-                            <button onClick={() => deleteProduct(product)}>Delete</button>
-                            <button onClick={() => editProduct(product)}>Edit</button>
-                            <button onClick={() => favoriteProduct(product)}>Favorite</button>
+                            <p className="product-price">Price: {product.price}</p>
+                            <p className="product-category">Category: {product.category}</p>
+                            <button className="product-button" onClick={() => deleteProduct(product)}>Delete</button>
+                            <button className="product-button" onClick={() => editProduct(product)}>Edit</button>
+                            <button className="product-button" onClick={() => favoriteProduct(product)}>Favorite</button>
                         </div>
                 ))}
             </div>
@@ -166,20 +166,21 @@ const ProductList = ({ user }) => {
       };
 
     return (
-        <div>
+        <div className="product-container">
             {/* Dropdown for sorting */}
-            <select onChange={(e) => setSortBy(e.target.value)} value={sortBy}>
-                <option value="">Sort by...</option>
-                <option value="price">Price</option>
-                <option value="category">Category</option>
-            </select>
+            <div className="sort-dropdowns">
+                <select className="sort-select" onChange={(e) => setSortBy(e.target.value)} value={sortBy}>
+                    <option value="">Sort by...</option>
+                    <option value="price">Price</option>
+                    <option value="category">Category</option>
+                </select>
 
-            <select onChange={(e) => setExtraSortBy(e.target.value)} value={extraSortBy}>
-                <option value="">Sort by...</option>
-                <option value="descending">Descending Order</option>
-                <option value="ascending">Ascending Order</option>
-            </select>
-           
+                <select className="sort-select" onChange={(e) => setExtraSortBy(e.target.value)} value={extraSortBy}>
+                    <option value="">Sort Order...</option>
+                    <option value="descending">Descending</option>
+                    <option value="ascending">Ascending</option>
+                </select>
+            </div>
 
             <Products products={savedProducts}/>
 

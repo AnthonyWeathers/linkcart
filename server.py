@@ -218,6 +218,12 @@ def editProduct():
     # Retrieve the list of products for the current user
     user_products = get_user_products(user_id)
 
+    # likely need to do if product then update data of product, commit, then return list
+    # return jsonify({
+    #     "success": True,
+    #     "products": user_products
+    # })
+
     # Find the product that needs to be updated
     for product in user_products:
         if product["productId"] == product_id:
@@ -253,6 +259,7 @@ def favoriteProduct():
     # product = crud.getProductById(productId)
     # product.favorited = not product.favorited
     # db.session.commit()
+    # return product, or get list of products and return it
 
     # Retrieve the list of products for the current user
     user_products = get_user_products(user_id)
@@ -265,28 +272,6 @@ def favoriteProduct():
             "success": True,
             "products": user_products
     })
-
-@app.route('/api/user/<username>', methods=['GET'])
-def get_user_profile(username):
-    # Fetch the user profile by username (likely with database)
-    # user = find_user_by_username(username)
-    user = username # likely need to make a users array with
-    # preset info, and use users[username] or users[userId]
-    # user = crud.getUserByUsername(username)
-    # access user via user.username and such
-    if user:
-        favorite_products = [product for product in products if product['favorited']]
-        return jsonify({
-            "user": {
-                "username": user['username'],
-                "description": user['description'],
-            },
-            "favoriteProducts": favorite_products
-        })
-    else:
-        return jsonify({
-            "error": "User not found"
-        }), 404
     
 @app.route("/register", methods=["POST"])
 def register():
@@ -374,6 +359,8 @@ def profile(username):
     # is_friend = crud.getFriendshipById(current_user_id, user.id)
     existing_sent_request = any((r["sender_id"] == current_user_id and r["receiver_id"] == user['id']) for r in requests)
     existing_received_request = any((r["receiver_id"] == current_user_id and r["sender_id"] == user['id']) for r in requests)
+    # existing_request = crud.getFriendRequestByIds(current_user_id, user.id)
+    # may need to check other order if order of variable names matters in sql query
     
     # Return profile data, favorites, and friend status
     # simply user.favoriteProducts and such
@@ -438,6 +425,7 @@ def handle_message(data):
     # Here you might want to save the message to your database
     # For example:
     # new_message = Message(username=username, message=message)
+    # new_message = crud.createPublicMessage(user_id=user_id, username=username, message=message)
     # db.session.add(new_message)
     # db.session.commit()
 
@@ -453,9 +441,11 @@ def handle_message(data):
     public_messages.append(new_message)
 
     # Emit the message to all connected clients
-    # socketio.emit('message', {'username': username, 'message': message})
+    # socketio.emit('message_response', {'success': True, 'username': username, 'message': message})
     socketio.emit('message_response', {'success': True, 'username': user['username'], 'message': message})
-    
+
+
+# Below endpoint not used, above endpoint does the same job but also for websocket
 @app.route('/messages/community', methods=['POST'])
 def post_public_message():
     print('Entered post public message endpoint')
@@ -575,7 +565,7 @@ def get_friends():
     # Retrieve the user data for all the friends
     friend_list = [u for u in users if u['id'] in friend_ids]
     # friends = crud.getFriendsByUserId(user_id)
-    # need to figure out how to get usernames of all friends of user; perhaps for loop?
+    # friend_list = [friend.to_dict() for friend in friends]
 
     return jsonify({'success': True, 'friends': friend_list})
 
@@ -585,6 +575,7 @@ def make_request():
     receiver_username = request.json.get('friend_username')
     
     receiver = next((u for u in users if u['username'] == receiver_username), None)
+    # receiver = crud.get_user_by_username(receiver_username)
 
     if receiver:
         receiver_id = receiver['id']
@@ -609,6 +600,11 @@ def make_request():
             'receiver_username': receiver_username
         }, room=receiver_id)
 
+        # Uncomment for actual database interaction
+        # new_request = crud.create_friend_request(user_id, receiver.id)
+        # db.session.add(new_request)
+        # db.session.commit()
+
         # socketio.emit('message_response', {'success': True, 'username': user['username'], 'message': message})
 
         return jsonify({'success': True, 'message': 'Friend request sent successfully!'})
@@ -623,6 +619,7 @@ def accept_friend():
     
     # Find the friend's user object by their username
     friend = next((u for u in users if u['username'] == friend_username), None)
+    # friend = crud.get_user_by_username(friend_username)
 
     if friend:
         friend_id = friend['id']
@@ -642,6 +639,14 @@ def accept_friend():
         
         # Remove the request from the requests list
         requests.remove(friend_request)
+
+        # Uncomment for actual database interaction
+        # friend_request = crud.getFriendRequest(user_id, friend.id)
+
+        # crud.create_friendship(user_id, friend.id)
+        # crud.create_friendship(friend.id, user_id)
+        # crud.delete_friend_request(friend_request.id)
+        # db.session.commit()
         
         return jsonify({'success': True, 'message': 'Friend request accepted successfully!', 'friend': friend})
 
@@ -655,18 +660,23 @@ def decline_friend():
     
     # Find the friend's user object by their username
     other_user = next((u for u in users if u['username'] == other_username), None)
+    # other_user = crud.get_user_by_username(other_username)
 
     if other_user:
         other_user_id = other_user['id']
         
         # Get the pending friend request
         friend_request = next((r for r in requests if r["receiver_id"] == user_id and r["sender_id"] == other_user_id), None)
+        # friend_request = crud.getFriendRequest(user_id, other_user.id)
         
         if not friend_request:
             return jsonify({'success': False, 'message': 'No pending friend request found from this user.'}), 404
 
         # Remove the pending friend request
         requests.remove(friend_request)
+        # Uncomment for actual database interaction
+        # crud.delete_friend_request(friend_request.id)
+        # db.session.commit()
         
         return jsonify({'success': True, 'message': 'Friend request declined successfully!'})
     
@@ -679,6 +689,7 @@ def get_friend_requests():
     
     # Get all pending requests where the current user is the receiver
     user_requests = [r for r in requests if r["receiver_id"] == user_id]
+    # user_requests = crud.getReceivedRequests(user_id)
 
     # Find the usernames of the senders
     sender_usernames = [

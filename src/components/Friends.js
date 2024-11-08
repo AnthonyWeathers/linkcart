@@ -95,7 +95,7 @@ const handleDeclineFriend = async (requester) => {
 };
 
   return (
-    <div>
+    <div class='friends-page'>
       {friendRequests.length > 0 && (
         <div>
           <h2>Pending Friend Requests</h2>

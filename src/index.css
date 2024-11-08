@@ -94,9 +94,14 @@ ul {
   color: yellow;
 }
 
+.navbar, .footer-navbar {
+  height: 50px;
+  line-height: 50px; /* vertically centers content */
+}
+
 /* Main container styling to avoid content underlapping navbars */
 .block-container {
-  padding-top: 60px; /* Adjust to navbar height */
+  padding-top: 50px; /* Adjust to navbar height */
   padding-bottom: 50px; /* Adjust to footer navbar height */
 }
 
@@ -150,4 +155,439 @@ ul {
 
 .message-input button:hover {
   background-color: #0056b3;
+}
+
+/* Friends Page Styling */
+
+/* Ensures consistent spacing for both headers and list items */
+.friends-page {
+  padding: 20px; /* Inner padding for spacing within block-container */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Aligns content to the left */
+}
+
+/* Pending Friend Requests Section */
+.friends-page h2 {
+  margin: 0 0 10px 0; /* Small bottom margin for section headers */
+}
+
+/* Align friend request items to the left with even spacing */
+.friends-page ul {
+  list-style-type: none; /* Removes bullet points from list */
+  padding: 0;
+  margin: 0 0 20px 0; /* Adds spacing between sections */
+}
+
+.friends-page li {
+  display: flex;
+  align-items: center; /* Centers button and link in each item */
+  margin-bottom: 10px; /* Space between each list item */
+}
+
+.friends-page li a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: bold;
+  margin-right: 10px; /* Space between username and buttons */
+}
+
+.friends-page li button {
+  padding: 5px 10px;
+  margin-right: 5px; /* Space between "Accept" and "Decline" buttons */
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.friends-page li button:hover {
+  background-color: #0056b3;
+}
+
+/* My Friends Section */
+.friends-page .my-friends {
+  margin-top: 20px; /* Space between friend requests and friends sections */
+}
+
+/* General container for Profile Page */
+.profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center-aligns the username and top elements */
+  padding: 20px;
+  max-width: 800px; /* Set max width for easier reading */
+  margin: 0 auto; /* Centers profile container on the page */
+}
+
+/* Username styling */
+.username {
+  font-size: 1.8em;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+/* Button styling for friend actions */
+.profile button {
+  padding: 8px 16px;
+  margin-top: 5px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.profile button:hover {
+  background-color: #0056b3;
+}
+
+/* Aligns friend request message (like "Request Pending") under username */
+.profile .friend-status {
+  font-size: 1em;
+  color: #666;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Spacing between sections */
+.profile > div {
+  margin-bottom: 30px; /* Adds space between each main section */
+}
+
+/* Description section */
+.profile h4 {
+  font-size: 1.5em;
+  margin-bottom: 10px;
+  display: inline-block; /* Allows heading and button to align horizontally */
+}
+
+.description {
+  font-size: 1em;
+  color: #333;
+  text-align: left; /* Aligns description text to the left */
+  margin-top: 5px;
+}
+
+/* Edit Description button to the right of the header */
+.edit-description-button {
+  margin-left: 20px; /* Adds space between header and button */
+}
+
+/* Description form styling */
+textarea {
+  width: 100%;
+  max-width: 100%;
+  min-height: 80px;
+  margin-top: 10px;
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Submit and Cancel buttons styling */
+textarea + br + button {
+  margin-top: 10px;
+  margin-right: 10px;
+}
+
+.cancel-button {
+  background-color: #ccc;
+  color: #333;
+}
+
+.cancel-button:hover {
+  background-color: #999;
+}
+
+/* Favorite Products section styling */
+.products-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* Centers product rows */
+  gap: 20px; /* Space between product items */
+}
+
+.product-item {
+  width: calc(33.33% - 20px); /* Allows for 3 items per row */
+  box-sizing: border-box;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-align: center;
+  background-color: #f9f9f9;
+}
+
+/* Product title */
+.product-item h2 {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+}
+
+.product-item p {
+  margin: 5px 0;
+}
+
+/* Main container styling for AddProduct.js */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centers the form and submitted data sections */
+  padding: 20px;
+  max-width: 800px; /* Limits width for better readability */
+  margin: 0 auto; /* Center-aligns the container on the page */
+}
+
+/* Styling for ProductForm component */
+.product-link {
+  display: flex;
+  flex-direction: column; /* Stacks form elements vertically */
+  align-items: center;
+  gap: 15px; /* Adds space between form elements */
+  width: 100%; /* Ensures form spans full width of container */
+  max-width: 400px; /* Limits form width */
+}
+
+.product-link input,
+.product-link button {
+  width: 100%; /* Matches input fields to form width */
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.product-link button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.product-link button:hover {
+  background-color: #218838;
+}
+
+/* Submitted data container */
+.submitted-data {
+  display: flex;
+  flex-direction: column; /* Aligns text elements vertically */
+  align-items: flex-start; /* Left-aligns text within container */
+  width: 100%;
+  max-width: 600px; /* Limits width for better readability */
+  background-color: #f9f9f9;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.submitted-data h2 {
+  margin-bottom: 15px;
+  text-align: center; /* Centers header text */
+  width: 100%; /* Ensures header spans full container width */
+}
+
+.submitted-data p {
+  font-size: 1em;
+  margin-bottom: 10px; /* Adds space between details */
+  width: 100%;
+  text-align: left; /* Aligns each line from the left */
+}
+
+/* Buttons container within submitted-data */
+.data-btns {
+  display: flex;
+  justify-content: space-between; /* Space between buttons */
+  width: 100%;
+  margin-top: 20px; /* Adds space above buttons */
+}
+
+.data-btns button {
+  padding: 10px 20px;
+  font-size: 1em;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.data-btns button:nth-child(1) {
+  background-color: #007bff; /* Edit button color */
+}
+
+.data-btns button:nth-child(2) {
+  background-color: #ffc107; /* Clear button color */
+}
+
+.data-btns button:nth-child(3) {
+  background-color: #28a745; /* Confirm button color */
+}
+
+.data-btns button:hover:nth-child(1) {
+  background-color: #0056b3;
+}
+
+.data-btns button:hover:nth-child(2) {
+  background-color: #e0a800;
+}
+
+.data-btns button:hover:nth-child(3) {
+  background-color: #218838;
+}
+
+/* Container for ProductList.js */
+.product-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Sorting dropdowns */
+.sort-select {
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 200px; /* Ensures consistent width for both dropdowns */
+}
+
+.sort-dropdowns {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px; /* Space between the two dropdowns */
+  margin-bottom: 20px;
+}
+
+/* Products grid */
+.product-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Two columns on larger screens */
+  gap: 20px;
+  width: 100%;
+}
+
+.product-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Aligns details to the left */
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.product-name {
+  text-align: center; /* Centers product name within each card */
+  width: 100%;
+  font-size: 1.25em;
+  margin-bottom: 10px;
+}
+
+.product-url,
+.product-price,
+.product-category,
+.product-favorited {
+  margin: 5px 0;
+  word-wrap: break-word; /* Wraps long text to avoid overflow */
+}
+
+.product-url a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.product-url a:hover {
+  text-decoration: underline; /* Highlights link on hover */
+}
+
+/* Buttons container within product card */
+.product-button {
+  padding: 10px 15px;
+  font-size: 1em;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 10px; /* Adds space above each button */
+}
+
+.product-button:nth-child(5) {
+  background-color: #dc3545; /* Delete button */
+}
+
+.product-button:nth-child(6) {
+  background-color: #007bff; /* Edit button */
+}
+
+.product-button:nth-child(7) {
+  background-color: #ffc107; /* Favorite button */
+}
+
+.product-button:nth-child(5):hover {
+  background-color: #c82333;
+}
+
+.product-button:nth-child(6):hover {
+  background-color: #0056b3;
+}
+
+.product-button:nth-child(7):hover {
+  background-color: #e0a800;
+}
+
+/* Responsive design: adjusting to screen sizes */
+@media (max-width: 768px) {
+  .product-item {
+    width: calc(50% - 20px); /* Allows for 2 items per row */
+  }
+
+  .navbar,
+  .footer-navbar {
+    position: static; /* Allows scrolling when screen width is small */
+  }
+
+  .block-container {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .sort-dropdowns {
+    flex-direction: column; /* Stacks the sort dropdowns vertically */
+    gap: 10px;
+  }
+
+  .product-list {
+    grid-template-columns: 1fr; /* Switches to single column */
+  }
+}
+
+@media (max-width: 600px) {
+  .product-link, .submitted-data {
+    max-width: 100%; /* Expands form and submitted data to full width on small screens */
+  }
+
+  .data-btns {
+    flex-direction: column; /* Stacks buttons vertically on small screens */
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-item {
+    width: 100%; /* Single column layout for small screens */
+  }
 }

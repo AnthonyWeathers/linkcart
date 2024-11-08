@@ -78,9 +78,9 @@ function App() {
   }, [currentUser]);
 
   // Function to update friend request state
-  const handleNewRequest = () => {
-    setHasNewRequests(true);
-  };
+  // const handleNewRequest = () => {
+  //   setHasNewRequests(true);
+  // };
 
   const handleRequestNotification = () => {
     setHasNewRequests(false);
@@ -148,7 +148,8 @@ function App() {
             {/* Routes for login and register pages */}
             <Route path="/login" element={<Login onLogin={setCurrentUser} />} />
             <Route path="/register" element={<Register onRegister={setCurrentUser} />} />
-            <Route path="/profile/:username" element={currentUser ? <Profile currentUser={currentUser} handleNewRequest={handleNewRequest} /> : <Navigate to="/login" />} />
+            {/* <Route path="/profile/:username" element={currentUser ? <Profile currentUser={currentUser} handleNewRequest={handleNewRequest} /> : <Navigate to="/login" />} /> */}
+            <Route path="/profile/:username" element={currentUser ? <Profile currentUser={currentUser} /> : <Navigate to="/login" />} />
             <Route path="/community" element={currentUser ? <Community currentUser={currentUser} /> : <Navigate to='/login' />} />
             <Route path="/friends" element={currentUser ? <Friends currentUser={currentUser} handleRequestNotification={handleRequestNotification} /> : <Navigate to='/login'/>} />
             {/* Dynamic route for private messaging between the current user and a friend */}
