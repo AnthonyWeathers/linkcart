@@ -48,11 +48,12 @@ const Login = ({ onLogin }) => {
     };
 
     return (
-        <div>
-            <h2>Login</h2>
-            <form onSubmit={handleLogin}>
+        <div className="form-container">
+            <h2 className="form-title">Login</h2>
+            <form onSubmit={handleLogin} className="form">
                 <input 
                     type='text' 
+                    className="form-input"
                     required 
                     placeholder='Enter username' 
                     value={username} 
@@ -60,18 +61,17 @@ const Login = ({ onLogin }) => {
                 />
                 <input 
                     type='password' 
+                    className="form-input"
                     required 
                     placeholder='Enter password' 
                     value={password} 
                     onChange={(e) => setPassword(e.target.value)}
                 />
-                <button type="submit" disabled={isLoading}>Login</button> {/* Disable button while loading */}
-                {isLoading && <p>Loading...</p>} {/* Show loading message */}
-                {error && <p style={{ color: 'red' }}>{error}</p>}
+                <button type="submit" className="form-button" disabled={isLoading}>Login</button>
+                {isLoading && <p className="loading-text">Loading...</p>}
+                {error && <p className="error-text">{error}</p>}
             </form>
-
-            {/* Navigation link to the Register page */}
-            <p>New here? <Link to="/register">Register here</Link></p>
+            <p className="form-navigation">New here? <Link to="/register" className="form-link">Register here</Link></p>
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom'; // Hook to access URL params
 
-const Profile = ({ currentUser, handleNewRequest }) => {
+const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) => {
     const { username } = useParams(); // Get the username from the URL
     const [favoriteProducts, setFavoriteProducts] = useState([]);
     const [user, setUser] = useState(null);
@@ -138,6 +138,7 @@ const Profile = ({ currentUser, handleNewRequest }) => {
                 alert(result.message);
                 setIsFriend(true);
                 setReceivedRequest(false);
+                handleRequestNotification();
             } else {
                 alert(result.message);
             }
@@ -158,6 +159,7 @@ const Profile = ({ currentUser, handleNewRequest }) => {
             if (result.success) {
                 alert(result.message);
                 setReceivedRequest(false);
+                handleRequestNotification();
             } else {
                 alert(result.message);
             }
@@ -221,8 +223,8 @@ const Profile = ({ currentUser, handleNewRequest }) => {
                         <div>Request pending</div>
                     ) : receivedRequest ? (
                         <div>
-                            <button onClick={() => handleAcceptFriend(user.username)}>Accept Request</button>
-                            <button onClick={() => handleDeclineFriend(user.username)}>Decline Request</button>
+                            <button className='request-btns' onClick={() => handleAcceptFriend(user.username)}>Accept Request</button>
+                            <button className='request-btns' onClick={() => handleDeclineFriend(user.username)}>Decline Request</button>
                         </div>
                     ) : (
                         <button onClick={() => handleFriendRequest(user.username)}>Send Friend Request</button>

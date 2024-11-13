@@ -106,8 +106,8 @@ const handleDeclineFriend = async (requester) => {
             a list of the usernames of the users */}
                 <Link to={`/profile/${requester}`}>{requester}</Link>
                 <div>
-                  <button onClick={() => handleAcceptFriend(requester)}>Accept Request</button>
-                  <button onClick={() => handleDeclineFriend(requester)}>Decline Request</button>
+                  <button className='request-btns' onClick={() => handleAcceptFriend(requester)}>Accept Request</button>
+                  <button className='request-btns' onClick={() => handleDeclineFriend(requester)}>Decline Request</button>
                 </div>
               </li>
             ))}
@@ -120,7 +120,7 @@ const handleDeclineFriend = async (requester) => {
         {friends && friends.length > 0 ? (
           friends.map((friend) => (
             <Link to={`/profile/${friend.username}`} key={friend.id}>
-              <li>{friend.username}</li>
+              <li className="friend-item">{friend.username}</li>
             </Link>
           ))
         ) : (

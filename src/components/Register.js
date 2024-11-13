@@ -43,11 +43,12 @@ const Register = ({ onRegister }) => {
     };
 
     return (
-        <div>
-            <h2>Register</h2>
-            <form onSubmit={handleRegister}>
+        <div className="form-container">
+            <h2 className="form-title">Register</h2>
+            <form onSubmit={handleRegister} className="form">
                 <input 
                     type='text' 
+                    className="form-input"
                     required 
                     placeholder='Enter username' 
                     value={username} 
@@ -55,18 +56,17 @@ const Register = ({ onRegister }) => {
                 />
                 <input 
                     type='password' 
+                    className="form-input"
                     required
                     placeholder='Enter password' 
                     value={password} 
                     onChange={(e) => setPassword(e.target.value)}
                 />
-                <button type="submit" disabled={isLoading}>Register</button> {/* Disable button while loading */}
-                {isLoading && <p>Loading...</p>} {/* Show loading message */}
-                {error && <p style={{ color: 'red' }}>{error}</p>} {/* Display error message */}
+                <button type="submit" className="form-button" disabled={isLoading}>Register</button>
+                {isLoading && <p className="loading-text">Loading...</p>}
+                {error && <p className="error-text">{error}</p>}
             </form>
-
-            {/* Navigation link to the Register page */}
-            <p>New here? <Link to="/login">Register here</Link></p>
+            <p className="form-navigation">Already have an account? <Link to="/login" className="form-link">Login here</Link></p>
         </div>
     );
 };
