@@ -26,7 +26,7 @@ function App() {
         if (response.ok) {
           const userData = await response.json();
           setCurrentUser(userData.user); // Assuming the response includes user data
-          // setHasNewRequests(userData.hasNewRequests); // Set the initial friend request state from backend
+          setHasNewRequests(userData.hasNewRequests); // Set the initial friend request state from backend
         } else {
           // Handle error or no user
           setCurrentUser(null);

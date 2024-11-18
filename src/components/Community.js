@@ -50,7 +50,8 @@ const Community = ({ currentUser }) => {
 
     // Handle sending a new message
     // const sendMessage = async () => {
-    const sendMessage = () => {
+    const sendMessage = async e => {
+        e.preventDefault();
         if (newMessage.trim() === '') return; // Prevent empty messages
         // Emit the new message to the server
         socket.emit('message', {
@@ -83,30 +84,40 @@ const Community = ({ currentUser }) => {
 
     return (
         <div>
-            <h1>Community Messages</h1>
+            <h1 className='community-header'>Community Messages</h1>
 
             {/* Messages display */}
             <div className="messages-container">
-                {messages.map((msg, index) => (
-                    <div key={index} className="message-item">
-                        <Link to={`/profile/${msg.username}`}>
-                            <strong>{msg.username}:</strong>
-                        </Link>
-                        <p>{msg.message}</p>
-                    </div>
-                ))}
+                {messages.map((msg, index) => {
+                    // Check if this is the first message or the username has changed
+                    const showUsername = index === 0 || msg.username !== messages[index - 1].username;
+        
+                    return (
+                        <div key={index} className="message-item">
+                            {showUsername && (
+                                <Link to={`/profile/${msg.username}`}>
+                                    <strong>{msg.username}:</strong>
+                                </Link>
+                            )}
+                            <p>{msg.message}</p>
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Message input form */}
-            <div className="message-input">
+            <form
+                className="message-input"
+                onSubmit={sendMessage}
+            >
                 <input
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type a message..."
                 />
-                <button onClick={sendMessage}>Send</button>
-            </div>
+                <button type="submit">Send</button> {/* Change button type to submit */}
+            </form>
         </div>
     );
 };

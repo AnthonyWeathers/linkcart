@@ -233,7 +233,13 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
             </div>
 
             <div>
+            <div className="description-header">
                 <h4>Description</h4>
+                {/* Show Edit Description if current user is viewing their own profile */}
+                {currentUser === username && (
+                    <button className='edit-description-btn' onClick={handleEditClick}>Edit Description</button>
+                )}
+            </div>
 
                 {/* Show the form if user is editing, otherwise show the description */}
                 {isEditing ? (
@@ -249,13 +255,7 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                         <button type="button" onClick={handleCancel}>Cancel</button>
                     </form>
                 ) : (
-                    <>
-                        <p className='description'>{user.description || "This is the description/bio of user"}</p>
-                        {/* Show the "Edit Description" button only if viewing own profile */}
-                        {currentUser === username && (
-                            <button onClick={handleEditClick}>Edit Description</button>
-                        )}
-                    </>
+                    <p className='description'>{user.description || "This is the description/bio of user"}</p>
                 )}
             </div>
 

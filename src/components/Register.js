@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import socket from './socket';
 
 const Register = ({ onRegister }) => {
     const [username, setUsername] = useState('');
@@ -29,6 +30,11 @@ const Register = ({ onRegister }) => {
             if (response.ok) { // Check if response was successful
                 alert(data.message);
                 onRegister(data.user); // Call the onRegister function with user data
+
+                if (!socket.connected) {
+                    socket.connect();
+                }
+
                 navigate('/'); // Redirect to the Add Product route
             } else {
                 alert(data.message);

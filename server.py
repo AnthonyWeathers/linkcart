@@ -395,8 +395,10 @@ def check_user():
     user_id = session.get("user_id")
     user = next((u for u in users if u['id'] == user_id), None)
     # user = crud.getUserById(user_id)
+
+    pending_request = any(r["receiver_id"] == user_id for r in requests)
     if user:
-        return jsonify({"user": user['username']})
+        return jsonify({"user": user['username'], "hasNewRequests": pending_request})
     else:
         return jsonify({"message": "Couldn't retrieve user"}), 404
 
@@ -601,6 +603,10 @@ def make_request():
         }, room=receiver_id)
 
         # Uncomment for actual database interaction
+        # if crud.getFriendRequestByIds(current_user_id, user.id) or crud.getFriendRequestByIds(user.id, current_user_id):
+        #   return jsonify({'success': False, 'message': 'A friend request is already pending.'})
+        # else if crud.getFriendshipById(current_user_id, user.id):
+        #   return jsonify({'success': False, 'message': 'You are already friends with this user.'})
         # new_request = crud.create_friend_request(user_id, receiver.id)
         # db.session.add(new_request)
         # db.session.commit()
@@ -627,10 +633,13 @@ def accept_friend():
         # Check if they are already friends
         if any((f[0] == user_id and f[1] == friend_id) or (f[1] == user_id and f[0] == friend_id) for f in friendships):
             return jsonify({'success': False, 'message': 'You are already friends with this user.'})
+        # if crud.getFriendshipById(current_user_id, user.id):
+        #   return jsonify({'success': False, 'message': 'You are already friends with this user.'})
         
         # Find the friend request and validate it
         friend_request = next((r for r in requests if r["receiver_id"] == user_id and r["sender_id"] == friend_id), None)
-        
+        # friend_request = crud.getFriendRequest(user_id, friend.id)
+
         if not friend_request:
             return jsonify({'success': False, 'message': 'No pending friend request found from this user.'}), 404
         
@@ -641,7 +650,6 @@ def accept_friend():
         requests.remove(friend_request)
 
         # Uncomment for actual database interaction
-        # friend_request = crud.getFriendRequest(user_id, friend.id)
 
         # crud.create_friendship(user_id, friend.id)
         # crud.create_friendship(friend.id, user_id)
@@ -664,6 +672,7 @@ def decline_friend():
 
     if other_user:
         other_user_id = other_user['id']
+        # other_user_id = other_user.id
         
         # Get the pending friend request
         friend_request = next((r for r in requests if r["receiver_id"] == user_id and r["sender_id"] == other_user_id), None)

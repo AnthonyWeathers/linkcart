@@ -7,6 +7,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* Prevents horizontal scrolling */
+  height: 100%; /* Ensures they take the full viewport height */
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
@@ -33,7 +40,7 @@ ul {
   background-color: #333;
   display: flex;
   justify-content: space-between;
-  padding: 10px 20px;
+  padding: 3px 20px;
   z-index: 1000;
 }
 
@@ -58,7 +65,7 @@ ul {
   width: 100%;
   background-color: #333;
   display: flex;
-  padding: 10px 20px;
+  padding: 3px 10px;
   z-index: 1000;
 }
 
@@ -103,9 +110,17 @@ ul {
 .block-container {
   padding-top: 50px; /* Adjust to navbar height */
   padding-bottom: 50px; /* Adjust to footer navbar height */
+  min-height: calc(100vh - 100px); /* Ensures the container fills the viewport height minus the navbars */
+  /* Make sure the width is not causing overflow */
+  box-sizing: border-box; /* Ensure padding and border are included in width/height */
+  width: 100%; /* Ensures the container width fits within the viewport */
 }
 
 /* Community Page Styling */
+
+.community-header {
+  padding-left: 10px;
+}
 
 /* Ensures messages-container fits between navbars and is scrollable */
 .messages-container {
@@ -124,12 +139,17 @@ ul {
   word-wrap: break-word; /* Ensures long messages wrap within the container */
 }
 
+.message-item:first-child,
+.message-item + .message-item:not(:first-child) strong {
+    margin-top: 10px; /* Adjust as needed for spacing */
+}
+
 /* Styling for the message input container */
 .message-input {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0; /* Adds spacing to avoid overlap with fixed elements */
+  padding: 10px 5px; /* Adds spacing to avoid overlap with fixed elements */
   border-top: 1px solid #ccc;
 }
 
@@ -289,7 +309,7 @@ ul {
 }
 
 /* Edit Description button to the right of the header */
-.edit-description-button {
+.edit-description-btn {
   margin-left: 20px; /* Adds space between header and button */
 }
 
@@ -328,15 +348,16 @@ textarea + br + button {
   gap: 20px; /* Space between product items */
 }
 
-.product-item {
-  width: calc(33.33% - 20px); /* Allows for 3 items per row */
-  box-sizing: border-box;
+/* .product-item {
+  width: calc(50% - 20px);  */
+  /* Allows for 2 items per row */
+  /* box-sizing: border-box;
   padding: 15px;
   border: 1px solid #ddd;
   border-radius: 8px;
   text-align: center;
   background-color: #f9f9f9;
-}
+} */
 
 /* Product title */
 .product-item h2 {
@@ -352,10 +373,11 @@ textarea + br + button {
 .container {
   display: flex;
   flex-direction: column;
+  justify-content: center; /* Center content vertically */
   align-items: center; /* Centers the form and submitted data sections */
   padding: 20px;
   max-width: 800px; /* Limits width for better readability */
-  margin: 0 auto; /* Center-aligns the container on the page */
+  margin: 80px auto; /* Center-aligns the container on the page */
 }
 
 /* Styling for ProductForm component */
@@ -400,7 +422,7 @@ textarea + br + button {
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  margin-top: 20px;
+  /* margin-top: 20px; */
 }
 
 .submitted-data h2 {
@@ -492,9 +514,11 @@ textarea + br + button {
   grid-template-columns: repeat(2, 1fr); /* Two columns on larger screens */
   gap: 20px;
   width: 100%;
+  padding-left: 200px
 }
 
 .product-item {
+  width: calc(50% - 20px);
   display: flex;
   flex-direction: column;
   align-items: flex-start; /* Aligns details to the left */
@@ -653,6 +677,8 @@ textarea + br + button {
   .navbar,
   .footer-navbar {
     position: static; /* Allows scrolling when screen width is small */
+    height: auto; /* Allow the height to adjust automatically */
+    padding: 0px 20px;
   }
 
   .footer-navbar {
@@ -662,6 +688,9 @@ textarea + br + button {
   .block-container {
     padding-top: 0;
     padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensures the container spans the full viewport height */
   }
 
   .sort-dropdowns {
