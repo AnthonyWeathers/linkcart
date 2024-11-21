@@ -1,53 +1,171 @@
 """CRUD operations."""
 
-from model import User, Products
-from sqlalchemy import or_, func
+from model import User, Products, Friends, FriendRequest, CommunityMessage, db
+from sqlalchemy import or_, and_
+
+# -- User Operations --
 
 def create_user(username, password):
-    """Create and return a new user."""
-    """Used when registering as a new user"""
-    user = User(username=username, password=password)
+    """Create a new user with a hashed password and default description."""
+    from werkzeug.security import generate_password_hash
+    hashed_password = generate_password_hash(password)
+    user = User(username=username, password=hashed_password, description=User.description.default.arg)
+    db.session.add(user)
+    db.session.commit()
     return user
 
-def get_user_by_id(id):
-    """Return a user's profile."""
-    """Used when viewing own profile"""
-    return User.query.get(id)
+def get_user(**filters):
+    """Fetch a single user based on dynamic filters."""
+    return User.query.filter_by(**filters).first()
 
-def get_user_by_username(username):
-    """Return a user's profile."""
-    """Used when viewing another user's profile page"""
-    return User.query.filter(User.username == username).first()
+def update_user(user_id, **kwargs):
+    """Update user details and commit changes."""
+    user = User.query.get(user_id)
+    if not user:
+        return None
+    for key, value in kwargs.items():
+        setattr(user, key, value)
+    db.session.commit()
+    return user
 
-def get_user(username, password):
-    """Return user"""
-    """Used to check if user with username and password exists"""
-    return User.query.filter(User.username == username and User.password == password).first()
+def delete_user(user_id):
+    """Delete a user by ID and commit changes."""
+    user = User.query.get(user_id)
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+    return user is not None
 
-"""Product database operations"""
-def get_products_by_user(user_id):
-    """Return all products saved by a user"""
-    """Used when viewing saved products when logged in"""
-    return Products.query.filter(User.id == user_id)
+# -- Product Operations --
 
-def get_favorited_products_by_user(user_id):
-    """Return all favorited products saved by a user"""
-    """Used on viewing profile page of a user"""
-    return Products.query.filter((user_id == user_id) and (Products.favorited == True))
+def create_product(user_id, url, price, productName, category, favorited=False):
+    """Create a new product for a user."""
+    product = Products(
+        user_id=user_id,
+        url=url,
+        price=price,
+        productName=productName,
+        category=category,
+        favorited=favorited
+    )
+    db.session.add(product)
+    db.session.commit()
+    return product
 
-def get_product_by_id(product_id):
-    """Returns product given product_id"""
-    """Used for editing/deleting a product"""
-    return Products.query.filter_by(id=product_id)
+def get_products(**filters):
+    """Fetch products based on dynamic filters."""
+    return Products.query.filter_by(**filters).all()
 
-# def check_friendship(user_id1, user_id2):
-#     """Check if a friendship exists between two users in an order-agnostic way."""
-#     friendship = (
-#         db.session.query(Friendship)
-#         .filter(
-#             func.LEAST(Friendship.user1_id, Friendship.user2_id) == func.LEAST(user_id1, user_id2),
-#             func.GREATEST(Friendship.user1_id, Friendship.user2_id) == func.GREATEST(user_id1, user_id2)
-#         )
-#         .first()
-#     )
-#     return friendship is not None  # Returns True if a friendship exists, otherwise False
+def update_product(product_id, **kwargs):
+    """Update a product's details."""
+    product = Products.query.get(product_id)
+    if not product:
+        return None
+    for key, value in kwargs.items():
+        setattr(product, key, value)
+    db.session.commit()
+    return product
+
+def toggle_favorited(product_id):
+    """Toggle the favorited status of a product."""
+    product = Products.query.get(product_id)
+    if not product:
+        return None
+    product.favorited = not product.favorited  # Invert the current value
+    db.session.commit()
+    return product
+
+def delete_product(product_id):
+    """Delete a product by ID."""
+    product = Products.query.get(product_id)
+    if product:
+        db.session.delete(product)
+        db.session.commit()
+    return product is not None
+
+# -- Friend Operations --
+
+def create_friendship(user1_id, user2_id):
+    """Create a friendship between two users."""
+    friendship = Friends(user1_id=user1_id, user2_id=user2_id)
+    db.session.add(friendship)
+    db.session.commit()
+    return friendship
+
+def get_friends(user_id):
+    """Fetch all friends for a user."""
+    return Friends.query.filter(
+        or_(Friends.user1_id == user_id, Friends.user2_id == user_id)
+    ).all()
+
+def check_friendship(user1_id, user2_id):
+    """Check if a friendship exists between two users."""
+    return Friends.query.filter(
+        or_(
+            and_(Friends.user1_id == user1_id, Friends.user2_id == user2_id),
+            and_(Friends.user1_id == user2_id, Friends.user2_id == user1_id)
+        )
+    ).first()  # Use `.first()` to return the first matching relationship or None
+
+
+def delete_friendship(user1_id, user2_id):
+    """Delete a friendship between two users."""
+    friendship = Friends.query.filter(
+        or_(
+            (Friends.user1_id == user1_id) & (Friends.user2_id == user2_id),
+            (Friends.user1_id == user2_id) & (Friends.user2_id == user1_id)
+        )
+    ).first()
+    if friendship:
+        db.session.delete(friendship)
+        db.session.commit()
+    return friendship is not None
+
+# -- Friend Request Operations --
+
+def create_friend_request(sender_id, receiver_id):
+    """Create a friend request."""
+    friend_request = FriendRequest(sender_id=sender_id, receiver_id=receiver_id)
+    db.session.add(friend_request)
+    db.session.commit()
+    return friend_request
+
+def get_friend_requests(receiver_id=None, sender_id=None, status=None):
+    """Fetch friend requests dynamically based on filters."""
+    query = FriendRequest.query
+    if receiver_id:
+        query = query.filter_by(receiver_id=receiver_id)
+    if sender_id:
+        query = query.filter_by(sender_id=sender_id)
+    if status:
+        query = query.filter_by(status=status)
+    return query.all()
+
+def update_friend_request(request_id, status):
+    """Update the status of a friend request."""
+    friend_request = FriendRequest.query.get(request_id)
+    if friend_request:
+        friend_request.status = status
+        db.session.commit()
+    return friend_request
+
+def delete_friend_request(request_id):
+    """Delete a friend request."""
+    friend_request = FriendRequest.query.get(request_id)
+    if friend_request:
+        db.session.delete(friend_request)
+        db.session.commit()
+    return friend_request is not None
+
+# -- Community Message Operations --
+
+def create_community_message(user_id, content):
+    """Create a new community message."""
+    message = CommunityMessage(user_id=user_id, content=content)
+    db.session.add(message)
+    db.session.commit()
+    return message
+
+def get_community_messages():
+    """Fetch all community messages."""
+    return CommunityMessage.query.order_by(CommunityMessage.timestamp.desc()).all()
