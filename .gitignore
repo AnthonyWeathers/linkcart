@@ -24,3 +24,7 @@ yarn-error.log*
 
 current-features-to-test.txt
 .gitignore
+
+config.sh
+.venv
+__pycache

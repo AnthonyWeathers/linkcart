@@ -30,8 +30,9 @@ const Community = ({ currentUser }) => {
             console.log("Received message from server: ", data);
             if (data.success) {
                 setMessages(prevMessages => [...prevMessages, {
+                    id: data.id,
                     username: data.username,
-                    message: data.message
+                    content: data.content
                 }]);
             }
         });
@@ -93,13 +94,15 @@ const Community = ({ currentUser }) => {
                     const showUsername = index === 0 || msg.username !== messages[index - 1].username;
         
                     return (
-                        <div key={index} className="message-item">
+                        <div key={msg.id} className="message-item">
                             {showUsername && (
                                 <Link to={`/profile/${msg.username}`}>
                                     <strong>{msg.username}:</strong>
                                 </Link>
                             )}
-                            <p>{msg.message}</p>
+                            <p>
+                            <span className="timestamp">({new Date(msg.timestamp).toLocaleTimeString()})</span> {msg.content}
+                            </p>
                         </div>
                     );
                 })}

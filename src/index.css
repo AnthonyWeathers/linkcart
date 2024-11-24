@@ -144,6 +144,12 @@ ul {
     margin-top: 10px; /* Adjust as needed for spacing */
 }
 
+.timestamp {
+  font-size: 0.85em;
+  color: #888; /* Light gray for reduced prominence */
+  margin-right: 10px; /* Space it from the username/content */
+}
+
 /* Styling for the message input container */
 .message-input {
   display: flex;
