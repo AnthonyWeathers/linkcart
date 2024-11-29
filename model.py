@@ -40,11 +40,11 @@ class Products(db.Model):
     price = db.Column(db.String(50), nullable = False)
     productName = db.Column(db.String(255))
     category = db.Column(db.String(255))
-    favorited = db.Column(db.String(255) , nullable = False)
+    favorited = db.Column(db.Boolean , nullable = False, default=False)  # Use db.Boolean with a default value
 
     def to_dict(self):
         """Convert Video object to dictionary."""
-        # do i need to add userId to this?
+        
         return {
             "id": self.id,
             "user_id": self.user_id,

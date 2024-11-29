@@ -8,7 +8,7 @@ import jinja2
 # from sqlalchemy import create_engine
 # from sqlalchemy.orm import sessionmaker
 
-# from model import connect_to_db, db
+from model import connect_to_db, db
 import os
 import crud
 
@@ -20,7 +20,8 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = 'dev'
-socketio = SocketIO(app, cors_allowed_origins='*')  # Enable CORS if needed
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
+#socketio = SocketIO(app, cors_allowed_origins='*')  # Enable CORS if needed
 
 # Ensure session cookies are secure and http-only
 app.config['SESSION_COOKIE_SECURE'] = True  # Only send cookies over HTTPS
@@ -59,7 +60,6 @@ def get_public_messages():
         for message in messages
     ])
 
-# would replace the post public message function
 @socketio.on('message')
 def handle_message(data):
     print('Received message: ' + data['message'])
@@ -79,12 +79,6 @@ def handle_message(data):
 
     message = crud.create_community_message(user_id, data['message'])
 
-    # new_message = {
-    #     'user_id': user_id,
-    #     'username': user.username,  # Store username for frontend display
-    #     'message': data['message']
-    # }
-
     # Emit the message to all connected clients
     socketio.emit('message_response', {
         'success': True,
@@ -93,7 +87,6 @@ def handle_message(data):
         'content': message.content,
         'timestamp': message.timestamp.isoformat()  # Format timestamp as string
     })
-    # socketio.emit('message_response', {'success': True, 'username': user.username, 'message': data['message']})
 
 """ User Login/Registration related endpoints """
 @app.route("/login", methods=["POST"])
@@ -101,13 +94,12 @@ def login():
     username = request.json.get("username")
     password = request.json.get("password")
 
-    # Uncomment this line once you implement a database query
     user = crud.get_user(username=username, password=password)
 
     # for session usage
     if user:
-        session['user_id'] = user['id'] # Save user ID in session
-        return jsonify({"success": True, "message": "Logged in successfully", "user": user['username']})
+        session['user_id'] = user.id # Save user ID in session
+        return jsonify({"success": True, "message": "Logged in successfully", "user": user.username})
     else:
         return jsonify({"success": False, "message": "Invalid credentials"}), 401
     
@@ -124,8 +116,6 @@ def register():
         "success": True, 
         "message": "Your account was successfully created",
         "user": new_user.username
-        #"user": new_user.to_dict()  # Include user info in the response if needed, likely to bring user to the main part
-        # of the app upon registering
         }), 201
 
 @app.route("/logout", methods=["POST"])
@@ -159,7 +149,7 @@ def save():
     category = request.json.get("category")
     user_id = session.get("user_id")
 
-    product = crud.create_product(user_id, url, price, productName, category) # maybe add false, or set default false in crud
+    product = crud.create_product(user_id, url, price, productName, category)
     if product:
         return jsonify({
                 "save": True,
@@ -178,11 +168,19 @@ def delete():
 
     product = crud.delete_product(productId)
     if product:
-        user_products = crud.get_products(user_id)
+        user_products = crud.get_products(user_id=user_id)
+        user_products_data = [{
+            "productId": product.id,
+            "url": product.url,
+            "price": product.price,
+            "productName": product.productName,
+            "category": product.category,
+            "favorited": product.favorited
+        } for product in user_products]
         return jsonify({
             "success": True,
             "message": "Product deleted",
-            "products": user_products  # Only return remaining products for this user
+            "products": user_products_data  # Only return remaining products for this user
         })
     else:
         return jsonify({
@@ -195,10 +193,20 @@ def getProducts():
     user_id = session.get("user_id")  # Assuming you have session user_id tracking the current user
     user_products = crud.get_products(user_id=user_id)
 
+    # Convert each product object to a dictionary
+    user_products_data = [{
+        "productId": product.id,
+        "url": product.url,
+        "price": product.price,
+        "productName": product.productName,
+        "category": product.category,
+        "favorited": product.favorited
+    } for product in user_products]
+
     return jsonify({
         "success": True,
         "message": "User products fetched successfully",
-        "products": user_products
+        "products": user_products_data,
     })
 
 @app.route("/edit-product", methods=["PUT"])
@@ -219,11 +227,17 @@ def editProduct():
         category=category
     )
 
-    # likely need to do if product then update data of product, commit, then return list
     if product:
         return jsonify({
             "success": True,
-            "products": crud.get_products(user_id=user_id)
+            "products": [{
+                "productId": product.id,
+                "url": product.url,
+                "price": product.price,
+                "productName": product.productName,
+                "category": product.category,
+                "favorited": product.favorited
+            } for product in crud.get_products(user_id=user_id)]
         })
 
     # If no matching product was found
@@ -239,7 +253,14 @@ def favoriteProduct():
 
     product = crud.toggle_favorited(productId)
     if product:
-        user_products = crud.get_products(user_id=user_id)
+        user_products = [{
+            "productId": product.id,
+            "url": product.url,
+            "price": product.price,
+            "productName": product.productName,
+            "category": product.category,
+            "favorited": product.favorited
+        } for product in crud.get_products(user_id=user_id)]
         return jsonify({
                 "success": True,
                 "products": user_products
@@ -261,8 +282,9 @@ def profile(username):
     sent_request = False
     received_request = False
 
+    favorited_products = [product for product in crud.get_products(user_id=user.id, favorited=True)]
+
     # Check if the current user is friends with the profile user
-    is_friend = any((f[0] == current_user_id and f[1] == user['id']) or (f[1] == current_user_id and f[0] == user['id']) for f in friendships)
     if user.id != current_user_id:
         are_friends = crud.check_friendship(user.id, current_user_id)
         existing_sent_request = crud.get_friend_requests(receiver_id=user.id, sender_id=current_user_id, status='pending')
@@ -274,11 +296,16 @@ def profile(username):
             sent_request = True
         elif existing_received_request:
             received_request = True
+
     # Return profile data, favorites, and friend status
-    # simply user.favoriteProducts and such
-    print(user)
     return jsonify({
-        'favoriteProducts': user.favorited_products,
+        'favoriteProducts': [{
+            "productId": product.id,
+            "productName": product.productName,
+            "url": product.url,
+            "price": product.price,
+            "category": product.category
+        } for product in favorited_products],
         'user': {
             "username": user.username,
             "description": user.description
@@ -357,9 +384,13 @@ def accept_friend():
         friendship = crud.create_friendship(user_id, friend.id)
         
         # Remove the request from the requests list
-        request = crud.delete_friend_request(friend_request.id)
+        deleted_request = crud.delete_friend_request(friend_request[0].id)
+
         
-        return jsonify({'success': True, 'message': 'Friend request accepted successfully!', 'friend': friend})
+        
+        return jsonify({'success': True, 
+                        'message': 'Friend request accepted successfully!', 
+                        'friend': {'id': friend.id, 'username': friend.username}})
 
     return jsonify({'success': False, 'message': 'User of the friend request not found.'}), 404
 
@@ -381,7 +412,7 @@ def decline_friend():
             return jsonify({'success': False, 'message': 'No pending friend request found from this user.'}), 404
 
         # Remove the pending friend request
-        request = crud.delete_friend_request(friend_request.id)
+        deleted_request = crud.delete_friend_request(friend_request[0].id)
         
         return jsonify({'success': True, 'message': 'Friend request declined successfully!'})
     
@@ -396,11 +427,7 @@ def get_friend_requests():
     user_requests = crud.get_friend_requests(receiver_id=user_id)
 
     # Find the usernames of the senders
-    # Friend Request has 
-    # sender = db.relationship("User", foreign_keys=[sender_id], backref="sent_requests")
-    # so means you can access sender, which are a user object meaning it has
-    # access to username, but can i do .sender.username on a list of objects
-    sender_usernames = user_requests.sender.username
+    sender_usernames = [request.sender.username for request in user_requests]
 
     # Return the list of usernames
     return jsonify({'success': True, 'sender_usernames': sender_usernames})
@@ -425,34 +452,27 @@ def remove_friend():
 @app.route('/friends', methods=['GET'])
 def get_friends():
     user_id = session.get('user_id')  # Get current user's ID from session
+    if not user_id:
+        return jsonify({'success': False, 'message': 'User not logged in'}), 401
+    
+    print(f"Received request to /friends from user_id: {user_id}")  # Debug
 
-    # Find all friend relationships where the current user is the "user_id"
-    # need to figure out how to get all friends of user when friendships is a list of tuples
-    # friend_ids = [f['friend_id'] for f in friendships if f['user_id'] == user_id]
-    # adds friend_id to friend_ids list if friend_id does not match the user_id, else adds other_id
-    # loops through friendships list with variables of other_id and friend_id for the element 0 and 1 of the tuple
-    # only checks the tuples where user_id exists, otherwise skips the tuples containing ids of other users
-    friend_ids = [
-        friend_id if friend_id != user_id else other_id
-        for (other_id, friend_id) in friendships
-        if user_id in (other_id, friend_id) 
-    ]
+    # Find all friend relationships
 
     friendships = crud.get_friends(user_id)
 
     # Retrieve the user data for all the friends
-    friend_list = [crud.get_user(id=friendship.user1_id) 
-                  if friendship.user1_id != user_id 
-                  else crud.get_user(id=friendship.user2_id) 
-                  for friendship in friendships]
+    friend_list = [
+        {
+            'id': friend.id,
+            'username': friend.username
+        }
+        for friendship in friendships
+        for friend in [crud.get_user(id=friendship.user1_id if friendship.user1_id != user_id else friendship.user2_id)]
+    ]
 
     return jsonify({'success': True, 'friends': friend_list})
 
 if __name__ == "__main__":
-#    app.env = "development"
-    # connect_to_db(app, echo=False)
-    # app.run(debug = True, port = 8000, host = "localhost")
-    # socketio.run(app, host='0.0.0.0', port=5000)
-    # replace app.run with line below so Flask server runs with
-    # WebSocket support
+    connect_to_db(app, echo=False)
     socketio.run(app, debug=True, port=8000, host="localhost")

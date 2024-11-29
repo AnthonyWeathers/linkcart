@@ -114,9 +114,7 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
       
           if (result.success) {
             alert(result.message);
-            // setIsFriend(true);
             setIsPending(true)
-            // handleNewRequest();  // Call the function to update notification state
           } else {
             alert(result.message);
           }
@@ -193,7 +191,7 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
             <div>
                 {products
                     .filter(product => product !== '') // Exclude empty spots
-                    .map(product => ( // add a line here to show the favorited status of each product, start as just a line, later maybe a star
+                    .map(product => (
                         <div key={product.productId}>
                             <h2>{product.productName}</h2>
                             <p>URL: {product.url}</p>
@@ -209,13 +207,6 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
         <div className='profile'>
             <div>
                 <p className='username'>{user.username}</p>
-                {/* {user.username !== currentUser && (
-                    isFriend ? (
-                        <button onClick={() => handleRemoveFriend(user.username)}>Remove as Friend</button>
-                    ) : (
-                        <button onClick={() => handleAddFriend(user.username)}>Add Friend</button>
-                    )
-                )} */}
                 {user.username !== currentUser && (
                     isFriend ? (
                         <button onClick={() => handleRemoveFriend(user.username)}>Remove as Friend</button>

@@ -168,4 +168,4 @@ def create_community_message(user_id, content):
 
 def get_community_messages():
     """Fetch all community messages."""
-    return CommunityMessage.query.order_by(CommunityMessage.timestamp.desc()).all()
+    return CommunityMessage.query.order_by(CommunityMessage.timestamp.asc()).all()

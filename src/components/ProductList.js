@@ -117,9 +117,13 @@ const ProductList = ({ user }) => {
         if (sortBy === 'price') {
             productsArray.sort((a, b) => extraSortBy === 'descending' ? b.price - a.price : a.price - b.price);
         } else if (sortBy === 'category') {
-            productsArray.sort((a, b) => extraSortBy === 'descending' 
-                ? b.category.localeCompare(a.category) 
-                : a.category.localeCompare(b.category));
+            productsArray.sort((a, b) => {
+                const aCategory = a.category ? a.category.split(',')[0].trim().toLowerCase() : "zzzz"; // First subcategory or placeholder
+                const bCategory = b.category ? b.category.split(',')[0].trim().toLowerCase() : "zzzz";
+                return extraSortBy === 'descending' 
+                    ? bCategory.localeCompare(aCategory) 
+                    : aCategory.localeCompare(bCategory);
+            });
         }
         return productsArray;
     };
@@ -159,6 +163,20 @@ const ProductList = ({ user }) => {
                             <button className="product-button" onClick={() => deleteProduct(product)}>Delete</button>
                             <button className="product-button" onClick={() => editProduct(product)}>Edit</button>
                             <button className="product-button" onClick={() => favoriteProduct(product)}>Favorite</button>
+
+                            {selectedProduct && edittingData && selectedProduct.productId === product.productId && (
+                                <ProductForm
+                                    url={url}
+                                    setUrl={setUrl}
+                                    price={price}
+                                    setPrice={setPrice}
+                                    productName={productName}
+                                    setProductName={setProductName}
+                                    category={category}
+                                    setCategory={setCategory}
+                                    handleSubmit={handleSubmit}
+                                />
+                            )}
                         </div>
                 ))}
             </div>
@@ -183,20 +201,6 @@ const ProductList = ({ user }) => {
             </div>
 
             <Products products={savedProducts}/>
-
-            {edittingData && (
-                <ProductForm 
-                url={url}
-                setUrl={setUrl}
-                price={price}
-                setPrice={setPrice}
-                productName={productName}
-                setProductName={setProductName}
-                category={category}
-                setCategory={setCategory}
-                handleSubmit={handleSubmit}
-                />
-            )}
         </div>
     )
 }

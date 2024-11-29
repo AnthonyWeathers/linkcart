@@ -27,9 +27,9 @@ with server.app.app_context():
 
     def create_products():
         # Create sample products
-        product1 = Products(user_id=1, url="https://example.com/product1", price="$19.99", productName="Widget A", category="Gadgets", favorited="No")
-        product2 = Products(user_id=2, url="https://example.com/product2", price="$29.99", productName="Widget B", category="Gadgets", favorited="Yes")
-        product3 = Products(user_id=3, url="https://example.com/product3", price="$39.99", productName="Widget C", category="Tools", favorited="No")
+        product1 = Products(user_id=1, url="https://example.com/product1", price="$19.99", productName="Widget A", category="Gadgets", favorited=False)
+        product2 = Products(user_id=2, url="https://example.com/product2", price="$29.99", productName="Widget B", category="Gadgets", favorited=True)
+        product3 = Products(user_id=3, url="https://example.com/product3", price="$39.99", productName="Widget C", category="Tools", favorited=False)
         db.session.add_all([product1, product2, product3])
         db.session.commit()
 

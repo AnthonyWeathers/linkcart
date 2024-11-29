@@ -1,70 +1,56 @@
-# Getting Started with Create React App
+# ProductPals
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+The app is a versatile platform enabling users to save, organize, and interact with products. Users can log in, add products to their saved list, edit product details, sort and filter saved products, and mark favorites. Social features include managing friend lists, sending friend requests, and participating in a community messaging space. With the planned online/offline toggle feature, users can focus solely on product-related functionality in offline mode, hiding social features for a streamlined experience.
 
-## Available Scripts
+## Technologies Used:
 
-In the project directory, you can run:
+* React/Javascript (front-end)
+* Python (back-end)
+* Flask
+* HTML, CSS
+* postgresSQL
+* WebSocket
 
-### `npm start`
+## Features:
+* Login:
+    * Requires a username and password that has been registered into the database
+    
+* Register:
+    * Requires a username and password before clicking register button
+    * Needs a unique username that has not already been used, otherwise gives alert of “user already exists”
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+* Main Page:
+No main page but a consistent two navbars at top and bottom of the app page. The navbars keep links to subsequent features displayed.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+    * Add Product:
+        * Users can enter the url of a product, its price, name of the product, and categories to better clarify the product for themselves
+        * After entering product info, users see buttons to re-edit the info incase of a mistake, delete the info, or save the product
+        * Products are saved to the database and displayed in the Saved Products view.
+    
+    * Product List:
+        * Has all of the products the user saved, favorited products are displayed first
+        * Can edit or delete the info of a saved product, or can favorite/unfavorite a product
+        * Has sorting by price in ascending or descending order
+    
+    * Profile:
+        * Displays username, user's description/bio, and their favorited products
+        * Users can edit/update their description
+        * If viewing profile of another user
+            * User can send a friend request
+            * If other user had sent current user a friend request, the current user can accept or decline it
+            * If already friends, then current user sees a button to remove friend
+        
 
-### `npm test`
+    * Friends:
+        * View pending friend requests and accept/decline them.
+        * See a list of all current friends.
+        * Links to user profiles are provided for friends and requesters.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+    * Community:
+        * Engage with the community via a real-time chat feature powered by socket.io.
+        * Messages include the sender's username and a timestamp.
 
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+* Online/Offline Mode (Planned Feature)
+    * A toggle for users to switch between "Online" and "Offline" modes.
+    * Online Mode: Access full features, including friends, profiles, and community.
+    * Offline Mode: Simplifies the interface for product-related functionality only.
