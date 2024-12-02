@@ -9,7 +9,7 @@ def create_user(username, password):
     """Create a new user with a hashed password and default description."""
     from werkzeug.security import generate_password_hash
     hashed_password = generate_password_hash(password)
-    user = User(username=username, password=hashed_password, description=User.description.default.arg)
+    user = User(username=username, password=hashed_password, description=User.description.default.arg, mode=True)
     db.session.add(user)
     db.session.commit()
     return user
@@ -35,6 +35,15 @@ def delete_user(user_id):
         db.session.delete(user)
         db.session.commit()
     return user is not None
+
+def toggle_mode(user_id):
+    """Toggles the mode for the user (online/offline) and updates the database."""
+    user = User.query.get(user_id)
+    if not user:
+        return None
+    user.isOnline = not user.isOnline  # Toggle the mode
+    db.session.commit()  
+    return user
 
 # -- Product Operations --
 

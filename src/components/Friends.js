@@ -15,10 +15,10 @@ const Friends = ({ currentUser, handleRequestNotification }) => {
         });
         const result = await response.json();
 
-        if (result.success) {
+        if (result.ok) {
           setFriends(result.friends);
         } else {
-          alert('Failed to load friends');
+          alert(result.error);
         }
       } catch (error) {
         console.error('Error fetching friends:', error);
@@ -38,10 +38,10 @@ const Friends = ({ currentUser, handleRequestNotification }) => {
         });
         const result = await response.json();
 
-        if (result.success) {
+        if (result.ok) {
           setFriendRequests(result.sender_usernames);
         } else {
-          alert('Failed to load pending friend requests');
+          alert(result.error);
         }
       } catch (error) {
         console.error('Error fetching pending friend requests', error);
@@ -60,13 +60,13 @@ const Friends = ({ currentUser, handleRequestNotification }) => {
             credentials: 'include'
         });
         const result = await response.json();
-        if (result.success) {
+        if (result.ok) {
             alert(result.message);
             setFriendRequests((prev) => prev.filter((username) => username !== requester));
             setFriends((prev) => [...prev, result.friend]);
             handleRequestNotification();
         } else {
-            alert(result.message);
+            alert(result.error);
         }
     } catch (error) {
         console.error('Error accepting friend:', error);
@@ -83,11 +83,11 @@ const handleDeclineFriend = async (requester) => {
         });
         const result = await response.json();
         if (result.success) {
-            alert(result.message);
+            alert(result.ok);
             setFriendRequests((prev) => prev.filter((username) => username !== requester));
             handleRequestNotification();
         } else {
-            alert(result.message);
+            alert(result.error);
         }
     } catch (error) {
         console.error('Error declining friend request:', error);

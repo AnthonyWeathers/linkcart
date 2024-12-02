@@ -150,8 +150,19 @@ const ProductList = ({ user }) => {
                     .filter(product => product !== '') // Exclude empty spots
                     .map(product => ( // add a line here to show the favorited status of each product, start as just a line, later maybe a star
                         <div key={product.productId} className="product-item">
-                            <span><h2 className="product-name">{product.productName}</h2></span>
-                            <div className="product-favorited">Favorited?{product.favorited ? "Yes" : "No"}</div>
+                            <div className="product-header">
+                                <h2 className="product-name">
+                                    {product.productName}
+                                    <button
+                                        className={`favorite-star ${product.favorited ? 'filled' : 'empty'}`}
+                                        onClick={() => favoriteProduct(product)}
+                                        aria-label={product.favorited ? "Unfavorite" : "Favorite"}
+                                    >
+                                        {product.favorited ? '★' : '☆'}
+                                    </button>
+                                </h2>
+                            </div>
+                            {/* <div className="product-favorited">Favorited?{product.favorited ? "Yes" : "No"}</div> */}
                             {/* <p>URL: {product.url}</p> */}
                             {/* Make the URL clickable and open in a new tab */}
                             {/* setting rel="noopener noreferrer" is for tab-napping prevention purposes*/}
@@ -162,7 +173,7 @@ const ProductList = ({ user }) => {
                             <p className="product-category">Category: {product.category}</p>
                             <button className="product-button" onClick={() => deleteProduct(product)}>Delete</button>
                             <button className="product-button" onClick={() => editProduct(product)}>Edit</button>
-                            <button className="product-button" onClick={() => favoriteProduct(product)}>Favorite</button>
+                            {/* <button className="product-button" onClick={() => favoriteProduct(product)}>Favorite</button> */}
 
                             {selectedProduct && edittingData && selectedProduct.productId === product.productId && (
                                 <ProductForm

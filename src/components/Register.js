@@ -29,7 +29,7 @@ const Register = ({ onRegister }) => {
 
             if (response.ok) { // Check if response was successful
                 alert(data.message);
-                onRegister(data.user); // Call the onRegister function with user data
+                onRegister(data.user, data.isOnline); // Call the onRegister function with user data
 
                 if (!socket.connected) {
                     socket.connect();
@@ -37,8 +37,8 @@ const Register = ({ onRegister }) => {
 
                 navigate('/'); // Redirect to the Add Product route
             } else {
-                alert(data.message);
-                setError(data.message); // Set error state to display the error message
+                alert(data.error);
+                setError(data.error); // Set error state to display the error message
             }
         } catch (error) {
             console.error('Error registering new user:', error);

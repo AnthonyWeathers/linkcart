@@ -558,6 +558,22 @@ textarea + br + button {
   text-decoration: underline; /* Highlights link on hover */
 }
 
+.favorite-star {
+  font-size: 20px;
+  color: #ccc; /* Grey for empty star */
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 10px; /* Space between star and name */
+}
+.favorite-star.filled {
+  color: #FFD700; /* Gold for filled star */
+}
+.favorite-star:hover {
+  transform: scale(1.2); /* Slight zoom effect for interactivity */
+  transition: transform 0.2s ease;
+}
+
 /* Buttons container within product card */
 .product-button {
   padding: 10px 15px;

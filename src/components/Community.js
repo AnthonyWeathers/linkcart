@@ -10,8 +10,13 @@ const Community = ({ currentUser }) => {
     const fetchMessages = async () => {
         try {
             const response = await fetch('http://localhost:8000/messages/community');
-            const data = await response.json();
-            setMessages(data);
+            if(response.ok) {
+                const data = await response.json();
+                setMessages(data);
+            }
+            else {
+                alert(response.error)
+            }
         } catch (error) {
             console.error("Error fetching messages:", error);
         }

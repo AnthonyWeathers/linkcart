@@ -45,10 +45,14 @@ def check_user():
     if user:
         return jsonify({"user": user.username, "hasNewRequests": pending_request})
     else:
-        return jsonify({"message": "Couldn't retrieve user"}), 404
+        return jsonify({"error": "Couldn't retrieve user"}), 404
 
 @app.route('/messages/community', methods=['GET'])
 def get_public_messages():
+    isOnline = session.get('mode')
+    if not isOnline:
+        return jsonify({'error': 'You are offline. Community features are not available.'}), 403
+    
     messages = crud.get_community_messages()  # Fetch all messages
     return jsonify([
         {
@@ -99,29 +103,34 @@ def login():
     # for session usage
     if user:
         session['user_id'] = user.id # Save user ID in session
-        return jsonify({"success": True, "message": "Logged in successfully", "user": user.username})
+        session['mode'] = user.isOnline  # Store the user's mode (online/offline) in session
+        return jsonify({"message": "Logged in successfully", 
+                        "user": user.username,
+                        "isOnline": user.isOnline
+                        })
     else:
-        return jsonify({"success": False, "message": "Invalid credentials"}), 401
+        return jsonify({"error": "Invalid credentials"}), 401
     
 @app.route("/register", methods=["POST"])
 def register():
     username = request.json.get("username")
     password = request.json.get("password")
     if crud.get_user(username=username, password=password):
-        return jsonify({"success": False, "message": "This username is already in use, please use another."}), 400
+        return jsonify({"error": "This username is already in use, please use another."}), 400
     
     new_user = crud.create_user(username, password)
-    session['user_id'] = new_user['id']
+    session['user_id'] = new_user.id
+    session['mode'] = new_user.isOnline  # Store the user's mode (online/offline) in session
     return jsonify({
-        "success": True, 
         "message": "Your account was successfully created",
-        "user": new_user.username
+        "user": new_user.username,
+        "isOnline": new_user.isOnline
         }), 201
 
 @app.route("/logout", methods=["POST"])
 def logout():
     session.clear()  # Clear the session data
-    return jsonify({"success": True, "message": "Logged out successfully"})
+    return jsonify({"message": "Logged out successfully"})
 
 @socketio.on('connect')
 def handle_connect():
@@ -138,6 +147,25 @@ def handle_disconnect():
     user_id = session.get("user_id")
     if user_id is not None:
         print(f"User {user_id} disconnected.")
+
+""" Toggle mode endpoint """
+@app.route("/toggle-mode", methods=["POST"])
+def toggle_mode():
+    user_id = session.get('user_id')  # Get user ID from session
+    if not user_id:
+        return jsonify({"error": "User not logged in"}), 401
+
+    # Call the crud function to toggle the mode
+    user = crud.toggle_mode(user_id)
+    if user:
+        # Update the session with the new mode
+        session['mode'] = user.isOnline
+        return jsonify({
+            "message": f"User is now {'online' if user.isOnline else 'offline'}",
+            "isOnline": user.isOnline
+        })
+    else:
+        return jsonify({"error": "Failed to toggle mode"}), 400
 
 """ Add Products Endpoints """
 @app.route("/submit-product", methods=["POST"])
@@ -275,55 +303,72 @@ def favoriteProduct():
 def profile(username):
     user = crud.get_user(username=username)
     current_user_id = session.get('user_id')
+    isOnline = session.get('mode')
 
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    is_friend = False
-    sent_request = False
-    received_request = False
+    # If the user is offline, return an error message
+    if not isOnline:
+        return jsonify({'error': 'You are offline. Community features are not available.'}), 403
 
-    favorited_products = [product for product in crud.get_products(user_id=user.id, favorited=True)]
+    if isOnline:
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        is_friend = False
+        sent_request = False
+        received_request = False
 
-    # Check if the current user is friends with the profile user
-    if user.id != current_user_id:
-        are_friends = crud.check_friendship(user.id, current_user_id)
-        existing_sent_request = crud.get_friend_requests(receiver_id=user.id, sender_id=current_user_id, status='pending')
-        existing_received_request = crud.get_friend_requests(receiver_id=current_user_id, sender_id=user.id, status='pending')
+        favorited_products = [product for product in crud.get_products(user_id=user.id, favorited=True)]
 
-        if are_friends:
-            is_friend = True
-        elif existing_sent_request:
-            sent_request = True
-        elif existing_received_request:
-            received_request = True
+        # Check if the current user is friends with the profile user
+        if user.id != current_user_id:
+            are_friends = crud.check_friendship(user.id, current_user_id)
+            existing_sent_request = crud.get_friend_requests(receiver_id=user.id, sender_id=current_user_id, status='pending')
+            existing_received_request = crud.get_friend_requests(receiver_id=current_user_id, sender_id=user.id, status='pending')
 
-    # Return profile data, favorites, and friend status
-    return jsonify({
-        'favoriteProducts': [{
-            "productId": product.id,
-            "productName": product.productName,
-            "url": product.url,
-            "price": product.price,
-            "category": product.category
-        } for product in favorited_products],
-        'user': {
-            "username": user.username,
-            "description": user.description
-        },
-        'isFriend': is_friend,
-        'sentRequest': sent_request,
-        'receivedRequest': received_request
-    })
+            if are_friends:
+                is_friend = True
+            elif existing_sent_request:
+                sent_request = True
+            elif existing_received_request:
+                received_request = True
+
+        # Return profile data, favorites, and friend status
+        return jsonify({
+            'favoriteProducts': [{
+                "productId": product.id,
+                "productName": product.productName,
+                "url": product.url,
+                "price": product.price,
+                "category": product.category
+            } for product in favorited_products],
+            'user': {
+                "username": user.username,
+                "description": user.description
+            },
+            'isFriend': is_friend,
+            'sentRequest': sent_request,
+            'receivedRequest': received_request
+        })
+    # If mode is neither online nor valid
+    return jsonify({'error': 'Invalid user mode status'}), 400
 
 @app.route('/user/<username>/edit-description', methods=['POST'])
 def editDescription(username):
     user_id = session.get('user_id')
     user = crud.get_user(username=username)
     new_description = request.json.get("description")
+
+    isOnline = session.get('mode')
+
+    if not isOnline:
+        return jsonify({'error': 'You are offline. Community features are not available.'}), 403
+    
+    if user_id != user.id:
+        return jsonify({'error': 'You can only edit your own description'}), 403
+    
     if user and new_description:
         user = crud.update_user(user_id, description=new_description)
-        return jsonify({'success': True, 'message': 'Description updated successfully!'})
-    return jsonify({'success': False, 'message': 'User not found'}), 404
+        return jsonify({'message': 'Description updated successfully!'})
+    return jsonify({'error': 'User not found'}), 404
 
 """ Friend Request Endpoints """
 @app.route('/make-request', methods=['POST'])
@@ -333,17 +378,22 @@ def make_request():
     
     receiver = crud.get_user(username=receiver_username)
 
+    isOnline = session.get('mode')
+
+    if not isOnline:
+        return jsonify({'error': 'You are offline. Community features are not available.'}), 403
+
     if receiver:
         receiver_id = receiver.id
 
         # Check if they are already friends
         if crud.check_friendship(user_id, receiver_id):
-            return jsonify({'success': False, 'message': 'You are already friends with this user.'})
+            return jsonify({'error': 'You are already friends with this user.'})
 
         # Check for an existing request
         if (crud.get_friend_requests(receiver_id=receiver.id, sender_id=user_id, status='pending') or 
         crud.get_friend_requests(receiver_id=user_id, sender_id=receiver.id, status='pending')):
-            return jsonify({'success': False, 'message': 'A friend request is already pending.'})
+            return jsonify({'error': 'A friend request is already pending.'})
         
         # Add the new friend request
         new_request = crud.create_friend_request(user_id, receiver.id)
@@ -356,9 +406,9 @@ def make_request():
             'receiver_username': receiver_username
         }, room=receiver_id)
 
-        return jsonify({'success': True, 'message': 'Friend request sent successfully!'})
+        return jsonify({'message': 'Friend request sent successfully!'})
 
-    return jsonify({'success': False, 'message': 'User not found.'}), 404
+    return jsonify({'error': 'User not found.'}), 404
 
 @app.route('/accept-friend', methods=['POST'])
 def accept_friend():
@@ -369,16 +419,21 @@ def accept_friend():
     # Find the friend's user object by their username
     friend = crud.get_user(username=friend_username)
 
+    isOnline = session.get('mode')
+
+    if not isOnline:
+        return jsonify({'error': 'You are offline. Community features are not available.'}), 403
+
     if friend:
         # Check if they are already friends
         if crud.check_friendship(user_id, friend.id):
-            return jsonify({'success': False, 'message': 'You are already friends with this user.'})
+            return jsonify({'error': 'You are already friends with this user.'})
         
         # Find the friend request and validate it
         friend_request = crud.get_friend_requests(receiver_id=user_id, sender_id=friend.id, status='pending')
 
         if not friend_request:
-            return jsonify({'success': False, 'message': 'No pending friend request found from this user.'}), 404
+            return jsonify({'error': 'No pending friend request found from this user.'}), 404
         
         # Add the friendship
         friendship = crud.create_friendship(user_id, friend.id)
@@ -388,16 +443,19 @@ def accept_friend():
 
         
         
-        return jsonify({'success': True, 
-                        'message': 'Friend request accepted successfully!', 
+        return jsonify({'message': 'Friend request accepted successfully!', 
                         'friend': {'id': friend.id, 'username': friend.username}})
 
-    return jsonify({'success': False, 'message': 'User of the friend request not found.'}), 404
+    return jsonify({'error': 'User of the friend request not found.'}), 404
 
 @app.route('/decline-friend', methods=['POST'])
 def decline_friend():
     # Retrieve user and friend details
     user_id = session.get("user_id")
+    isOnline = session.get('mode')
+    if not isOnline:
+        return jsonify({'error': 'You are offline. Community features are not available.'}), 403
+    
     other_username = request.json.get('friend_username')
     
     # Find the friend's user object by their username
@@ -409,19 +467,22 @@ def decline_friend():
         friend_request = crud.get_friend_requests(receiver_id=user_id, sender_id=other_user.id, status='pending')
         
         if not friend_request:
-            return jsonify({'success': False, 'message': 'No pending friend request found from this user.'}), 404
+            return jsonify({'error': 'No pending friend request found from this user.'}), 404
 
         # Remove the pending friend request
         deleted_request = crud.delete_friend_request(friend_request[0].id)
         
         return jsonify({'success': True, 'message': 'Friend request declined successfully!'})
     
-    return jsonify({'success': False, 'message': 'User of the friend request not found.'}), 404
+    return jsonify({'error': 'User of the friend request not found.'}), 404
 
 @app.route('/friend-requests', methods=['GET'])
 def get_friend_requests():
     # Retrieve the current user's ID from the session
     user_id = session.get("user_id")
+    isOnline = session.get('mode')
+    if not isOnline:
+        return jsonify({'error': 'You are offline. Community features are not available.'}), 403
     
     # Get all pending requests where the current user is the receiver
     user_requests = crud.get_friend_requests(receiver_id=user_id)
@@ -436,6 +497,10 @@ def get_friend_requests():
 @app.route('/remove-friend', methods=['POST'])
 def remove_friend():
     user_id = session.get("user_id")
+    isOnline = session.get('mode')
+    if not isOnline:
+        return jsonify({'error': 'You are offline. Community features are not available.'}), 403
+    
     friend_username = request.json.get('friend_username')
     
     # Find the friend's user object by their username
@@ -445,15 +510,19 @@ def remove_friend():
 
         deleted_friendship = crud.delete_friendship(user_id, friend_user.id)
 
-        return jsonify({'success': True, 'message': 'Friend removed successfully!'})
+        return jsonify({'message': 'Friend removed successfully!'})
     
-    return jsonify({'success': False, 'message': 'User not found.'}), 404
+    return jsonify({'error': 'User not found.'}), 404
 
 @app.route('/friends', methods=['GET'])
 def get_friends():
     user_id = session.get('user_id')  # Get current user's ID from session
     if not user_id:
-        return jsonify({'success': False, 'message': 'User not logged in'}), 401
+        return jsonify({'error': 'User not logged in'}), 401
+    
+    isOnline = session.get('mode')
+    if not isOnline:
+        return jsonify({'error': 'You are offline. Community features are not available.'}), 403
     
     print(f"Received request to /friends from user_id: {user_id}")  # Debug
 
@@ -471,7 +540,7 @@ def get_friends():
         for friend in [crud.get_user(id=friendship.user1_id if friendship.user1_id != user_id else friendship.user2_id)]
     ]
 
-    return jsonify({'success': True, 'friends': friend_list})
+    return jsonify({'friends': friend_list})
 
 if __name__ == "__main__":
     connect_to_db(app, echo=False)

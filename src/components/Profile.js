@@ -64,7 +64,7 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
             setUser((prev) => ({ ...prev, description: newDescription })); // Update user description locally
             setIsEditing(false); // Exit editing mode
         } else {
-            console.error('Failed to update description:', data.message);
+            console.error('Failed to update description:', data.error);
         }
         } catch (error) {
         console.error('Error updating description:', error);
@@ -112,11 +112,11 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
           });
           const result = await response.json();
       
-          if (result.success) {
+          if (result.ok) {
             alert(result.message);
             setIsPending(true)
           } else {
-            alert(result.message);
+            alert(result.error);
           }
         } catch (error) {
           console.error('Error adding friend:', error);
@@ -132,13 +132,13 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                 credentials: 'include'
             });
             const result = await response.json();
-            if (result.success) {
+            if (result.ok) {
                 alert(result.message);
                 setIsFriend(true);
                 setReceivedRequest(false);
                 handleRequestNotification();
             } else {
-                alert(result.message);
+                alert(result.error);
             }
         } catch (error) {
             console.error('Error accepting friend:', error);
@@ -154,12 +154,12 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                 credentials: 'include'
             });
             const result = await response.json();
-            if (result.success) {
+            if (result.ok) {
                 alert(result.message);
                 setReceivedRequest(false);
                 handleRequestNotification();
             } else {
-                alert(result.message);
+                alert(result.error);
             }
         } catch (error) {
             console.error('Error declining friend request:', error);
@@ -175,11 +175,11 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                 credentials: 'include'
             });
             const result = await response.json();
-            if (result.success) {
+            if (result.ok) {
                 alert('Friend removed successfully!');
                 setIsFriend(false); // Update to reflect unfriend status
             } else {
-                alert(result.message);
+                alert(result.error);
             }
         } catch (error) {
             console.error('Error removing friend:', error);

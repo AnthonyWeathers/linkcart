@@ -15,6 +15,8 @@ function App() {
   const [hasNewRequests, setHasNewRequests] = useState(false); // Friend Request pending state
   const location = useLocation(); // Hook to get current route path
 
+  const [isOnline, setIsOnline] = useState(false); // Track online/offline mode
+
   // Fetch the current user on component mount
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -30,6 +32,7 @@ function App() {
         } else {
           // Handle error or no user
           setCurrentUser(null);
+          alert(response.error)
         }
       } catch (error) {
         console.error('Error fetching current user:', error);
@@ -43,22 +46,25 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Connect the socket if it's not already connected
-    if (!socket.connected) {
-        socket.connect();
-        console.log('WebSocket connected from App.js');
+    if (!isOnline && socket.connected) {
+      socket.disconnect(); // Disconnect when isOnline changes to false
+    } else if (isOnline && !socket.connected) {
+      socket.connect(); // Connect when isOnline changes to true
     }
-
+  
     socket.on('connect', () => {
-        console.log('WebSocket connected', socket.id);
+      console.log('WebSocket connected', socket.id);
     });
-
+  
     // Cleanup on component unmount
     return () => {
-        socket.off('connect'); // Remove the connect listener
-        socket.disconnect(); // Optionally disconnect on unmount
+      socket.off('connect');
+      if (socket.connected) {
+        socket.disconnect(); // Disconnect when component unmounts
+      }
     };
-}, []);
+  }, [isOnline]); // React to changes in isOnline
+  
 
   useEffect(() => {
     // Listen for WebSocket events when a new friend request is received
@@ -77,14 +83,17 @@ function App() {
     };
   }, [currentUser]);
 
-  // Function to update friend request state
-  // const handleNewRequest = () => {
-  //   setHasNewRequests(true);
-  // };
-
   const handleRequestNotification = () => {
     setHasNewRequests(false);
   };
+
+  const handleSetCurrentUser = (user, onlineStatus) => {
+    setCurrentUser(user); // Set the logged-in user
+    setIsOnline(onlineStatus); // Set the initial mode
+    if (onlineStatus && !socket.connected) {
+      socket.connect();
+    }
+  }
 
   const logout = async () => {
     try {
@@ -94,19 +103,41 @@ function App() {
       });
       const data = await response.json();
 
-      if (data.success) {
+      if (data.ok) {
         alert(data.message); // Optional: show a message to the user
         setCurrentUser(null); // Clear current user state
         setHasNewRequests(false); // Reset on logout
+        setIsOnline(false); // sets status to offline for logged out user
 
         if (socket.connected) {
           socket.disconnect();
         }
       } else {
-        console.error('Error logging out:', data.message);
+        console.error('Error logging out:');
       }
     } catch (error) {
       console.error('Error during logout:', error);
+    }
+  };
+
+  // Toggle online/offline status
+  const toggleOnlineStatus = async () => {
+    try {
+        const response = await fetch('http://localhost:8000/toggle-mode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+        });
+
+        if (response.ok) {
+            setIsOnline(response.isOnline);
+        } else {
+            console.error('Failed to update online status');
+        }
+    } catch (error) {
+        console.error('Error toggling online status:', error);
     }
   };
 
@@ -129,8 +160,18 @@ function App() {
           )}
   
           {/* Show "My Profile" if user is not on their own profile */}
-          {currentUser && !isOnOwnProfile && (
+          {currentUser && isOnline && !isOnOwnProfile && (
             <li><Link to={`/profile/${currentUser}`}>My Profile</Link></li>
+          )}
+
+          {/* Checkbox to toggle online mode */}
+          {currentUser && (
+            <li>
+              <label>
+                <input type="checkbox" checked={isOnline} onChange={toggleOnlineStatus} />
+                Online
+              </label>
+            </li>
           )}
   
           {/* Logout button */}
@@ -146,12 +187,39 @@ function App() {
             <Route path="/" element={currentUser ? <AddProduct user={currentUser} /> : <Navigate to="/login" />} />
             <Route path="/saved-products" element={currentUser ? <ProductList user={currentUser} /> : <Navigate to="/login" />} />
             {/* Routes for login and register pages */}
-            <Route path="/login" element={<Login onLogin={setCurrentUser} />} />
-            <Route path="/register" element={<Register onRegister={setCurrentUser} />} />
-            {/* <Route path="/profile/:username" element={currentUser ? <Profile currentUser={currentUser} handleNewRequest={handleNewRequest} /> : <Navigate to="/login" />} /> */}
-            <Route path="/profile/:username" element={currentUser ? <Profile currentUser={currentUser} handleRequestNotification={handleRequestNotification} /> : <Navigate to="/login" />} />
-            <Route path="/community" element={currentUser ? <Community currentUser={currentUser} /> : <Navigate to='/login' />} />
-            <Route path="/friends" element={currentUser ? <Friends currentUser={currentUser} handleRequestNotification={handleRequestNotification} /> : <Navigate to='/login'/>} />
+            <Route path="/login" element={<Login onLogin={handleSetCurrentUser} />} />
+            <Route path="/register" element={<Register onRegister={handleSetCurrentUser} />} />
+
+            {/* Routes for online community */}
+            <Route path="/profile/:username" 
+              element={
+                isOnline
+                ? currentUser 
+                  ? <Profile currentUser={currentUser} handleRequestNotification={handleRequestNotification} /> 
+                  : <Navigate to="/login" state={{ message: 'You must be online to access this page.' }} />
+                : null
+              } 
+            />
+            <Route
+              path="/community"
+              element={
+                isOnline
+                ? currentUser
+                  ? <Community currentUser={currentUser} /> 
+                  : <Navigate to="/login" state={{ message: 'You must be online to access this page.' }} />
+                :null
+              }
+            />
+            <Route
+              path="/friends"
+              element={
+                isOnline 
+                  ? currentUser 
+                    ? <Friends currentUser={currentUser} handleRequestNotification={handleRequestNotification} /> 
+                    : <Navigate to="/login" state={{ message: 'You must be online to access this page.' }} />
+                  : null
+              }              
+            />
             {/* Dynamic route for private messaging between the current user and a friend */}
             {/* <Route path="/messages/:friendUsername" element={<PrivateMessages currentUser={currentUser} />} /> */}
           </Routes>
@@ -160,10 +228,10 @@ function App() {
           <nav className="footer-navbar">
             <ul>
               {/* Friends page link */}
-              {currentUser && (<li><Link to="/friends" className={hasNewRequests ? "highlight" : ""}>Friends</Link></li>)}
+              {currentUser && isOnline && (<li><Link to="/friends" className={hasNewRequests ? "highlight" : ""}>Friends</Link></li>)}
 
               {/* Community page link */}
-              {currentUser && (<li><Link to="/community">Community</Link></li>)}
+              {currentUser & isOnline && (<li><Link to="/community">Community</Link></li>)}
             </ul>
           </nav>
         </>

@@ -19,6 +19,7 @@ class User(db.Model):
     description = db.Column(db.Text, nullable=True, default="This user has not added a description yet.")
     products = db.relationship("Products", backref = "user", lazy = True)
     favorited_products = db.relationship("Products", secondary=favorited_products, backref="favorited_by_users")
+    isOnline = db.Column(db.Boolean, nullable = False, default=True) # tracks if user is in online or offline mode
 
     def to_dict(self):
         """Convert User object to dictionary."""

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import socket from './socket';
+import { useLocation } from 'react-router-dom';
 
 const Login = ({ onLogin }) => {
     const [username, setUsername] = useState('');
@@ -8,6 +9,9 @@ const Login = ({ onLogin }) => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false); // Track loading state
     const navigate = useNavigate();
+
+    const location = useLocation();
+    const alertMessage = location.state?.message;
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -26,9 +30,9 @@ const Login = ({ onLogin }) => {
             });
 
             const data = await response.json();
-            if (data.success) {
+            if (data.ok) {
                 alert(data.message);
-                onLogin(data.user);
+                onLogin(data.user, data.isOnline);
 
                 if (!socket.connected) {
                     socket.connect();
@@ -36,8 +40,8 @@ const Login = ({ onLogin }) => {
 
                 navigate('/');
             } else {
-                alert(data.message);
-                setError(data.message);
+                alert(data.error);
+                setError(data.error);
             }
         } catch (error) {
             console.error('Error logging in:', error);
@@ -49,6 +53,7 @@ const Login = ({ onLogin }) => {
 
     return (
         <div className="form-container">
+            {alertMessage && <div className="alert">{alertMessage}</div>}
             <h2 className="form-title">Login</h2>
             <form onSubmit={handleLogin} className="form">
                 <input 
