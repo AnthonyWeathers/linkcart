@@ -36,12 +36,12 @@ def delete_user(user_id):
         db.session.commit()
     return user is not None
 
-def toggle_mode(user_id):
+def set_user_online_status(user_id, new_status):
     """Toggles the mode for the user (online/offline) and updates the database."""
     user = User.query.get(user_id)
     if not user:
         return None
-    user.isOnline = not user.isOnline  # Toggle the mode
+    user.isOnline = new_status  # Set the status
     db.session.commit()  
     return user
 

@@ -37,6 +37,8 @@ const Community = ({ currentUser }) => {
                     content: data.content,
                     timestamp: data.timestamp
                 }]);
+            } else {
+                alert(data.error)
             }
         });
 

@@ -44,26 +44,63 @@ function App() {
 
     fetchCurrentUser();
   }, []);
-
-  useEffect(() => {
-    if (!isOnline && socket.connected) {
-      socket.disconnect(); // Disconnect when isOnline changes to false
-    } else if (isOnline && !socket.connected) {
-      socket.connect(); // Connect when isOnline changes to true
-    }
   
+  useEffect(() => {
+    const handleConnection = async () => {
+      if (isOnline && !socket.connected) {
+        let token = localStorage.getItem('access_token');
+        if (!token) {
+          token = await refreshToken();
+        }
+  
+        if (token) {
+          socket.io.opts.query = { token }; // Pass token in connection query
+          socket.connect(); // Connect the socket
+        } else {
+          console.error('Unable to connect due to missing token');
+        }
+      } else if (!isOnline && socket.connected) {
+        socket.disconnect(); // Disconnect the socket if going offline
+      }
+    };
+  
+    handleConnection();
+  
+    // Log socket connection
     socket.on('connect', () => {
       console.log('WebSocket connected', socket.id);
+    });
+
+    // Log socket disconnection
+    socket.on('disconnect', () => {
+      console.log('WebSocket disconnected');
     });
   
     // Cleanup on component unmount
     return () => {
       socket.off('connect');
+      socket.off('disconnect');
       if (socket.connected) {
-        socket.disconnect(); // Disconnect when component unmounts
+        socket.disconnect(); // Ensure socket is disconnected
       }
     };
-  }, [isOnline]); // React to changes in isOnline
+  }, [isOnline]);
+
+  useEffect(() => {
+    socket.on('disconnect', (reason) => {
+      console.log('WebSocket disconnected:', reason);
+      if (reason === 'io server disconnect') {
+        // Attempt reconnect if disconnected due to token issues
+        socket.connect();
+      }
+    });
+  
+    return () => {
+      socket.off('disconnect');
+    };
+  }, []);
+  
+  
   
 
   useEffect(() => {
@@ -82,6 +119,23 @@ function App() {
       socket.off('new_friend_request');
     };
   }, [currentUser]);
+
+  const refreshToken = async () => {
+    const response = await fetch('/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
+    });
+  
+    if (response.ok) {
+      const data = await response.json();
+      localStorage.setItem('access_token', data.access_token);
+      return data.access_token;
+    } else {
+      console.error('Failed to refresh token');
+      return null;
+    }
+  };
 
   const handleRequestNotification = () => {
     setHasNewRequests(false);
@@ -120,27 +174,6 @@ function App() {
     }
   };
 
-  // Toggle online/offline status
-  const toggleOnlineStatus = async () => {
-    try {
-        const response = await fetch('http://localhost:8000/toggle-mode', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-        });
-
-        if (response.ok) {
-            setIsOnline(response.isOnline);
-        } else {
-            console.error('Failed to update online status');
-        }
-    } catch (error) {
-        console.error('Error toggling online status:', error);
-    }
-  };
-
   // Check if user is on their own profile
   const isOnOwnProfile = location.pathname === `/profile/${currentUser}`;
 
@@ -168,11 +201,13 @@ function App() {
           {currentUser && (
             <li>
               <label>
-                <input type="checkbox" checked={isOnline} onChange={toggleOnlineStatus} />
+                <input type="checkbox" checked={isOnline} disabled={loading} />
                 Online
               </label>
             </li>
-          )}
+          )
+          // <StatusToggle currentUser={currentUser} isOnline={isOnline} setIsOnline={setIsOnline} />
+          }
   
           {/* Logout button */}
           {currentUser && <li><button onClick={logout}>Logout</button></li>}

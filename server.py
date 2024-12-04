@@ -1,7 +1,17 @@
 from flask import Flask, request, jsonify, session
-from flask_socketio import SocketIO, join_room
+from flask_socketio import SocketIO, join_room, emit, disconnect
 import eventlet
 import jinja2
+
+from functools import wraps  # For creating decorators
+import logging  # For logging events and errors
+from flask_limiter import Limiter  # For rate limiting
+from flask_limiter.util import get_remote_address  # Utility for rate limiter
+from flask_wtf.csrf import CSRFProtect, generate_csrf
+import jwt  # For token-based authentication
+import datetime  # For token expiration
+
+# need to install flask limited and jwt?
 
 # probably used if I'm making batches of
 # 5+ saved products per viewing page
@@ -19,9 +29,17 @@ from sqlalchemy.orm import sessionmaker
 from flask_cors import CORS
 
 app = Flask(__name__)
-app.secret_key = 'dev'
+app.secret_key = 'dev' # think of a separate key for jwt
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000")
 #socketio = SocketIO(app, cors_allowed_origins='*')  # Enable CORS if needed
+
+csrf = CSRFProtect(app)  # Enable CSRF protection
+
+# Rate limiter initialization
+limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
+
+# Logging configuration
+logging.basicConfig(level=logging.INFO)
 
 # Ensure session cookies are secure and http-only
 app.config['SESSION_COOKIE_SECURE'] = True  # Only send cookies over HTTPS
@@ -36,24 +54,127 @@ CORS(app, supports_credentials=True, origins=["http://localhost:3000"])  # Enabl
 # setting origins ensures that the backend connects to the port 3000 that the React server is hosted on, change if using a different
 # port for the React side
 
+def create_jwt(user):
+    """Generates a JWT token for a user."""
+    payload = {
+        "user_id": user.id,
+        "username": user.username,
+        "isOnline": user.isOnline,  # Include the mode in the token
+        "exp": datetime.utcnow() + timedelta(hours=12)  # Token expiry
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+    return token
+
+
+@app.route('/refresh', methods=['POST'])
+def refresh_token():
+    refresh_token = request.json.get("refresh_token")
+    if not refresh_token:
+        return jsonify({"error": "No refresh token provided"}), 400
+    
+    try:
+        payload = jwt.decode(refresh_token, app.secret_key, algorithms=["HS256"])
+        user_id = payload['user_id']
+        # Optionally validate against a list of valid refresh tokens if tracking them server-side.
+        
+        # Create a new access token
+        user = crud.get_user_by_id(user_id)
+        new_access_token = create_jwt(user)
+        return jsonify({"access_token": new_access_token})
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Refresh token expired"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Invalid refresh token"}), 403
+
+# JWT token verification helper
+def verify_token(token):
+    try:
+        payload = jwt.decode(token, app.secret_key, algorithms=["HS256"])
+        return payload  # Return the decoded payload if valid
+    except jwt.ExpiredSignatureError:
+        logging.warning("Token expired")
+        return None
+    except jwt.InvalidTokenError:
+        logging.error("Invalid token")
+        return None
+
+def token_required(f):
+    """Unified token decorator for Flask routes and Socket.IO events."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check if this is a Flask request or Socket.IO event
+        token = None
+        if request:  # REST API
+            token = request.headers.get('Authorization')
+        elif args and hasattr(args[0], 'args'):  # Socket.IO
+            token = args[0].args.get('token')
+
+        if not token:
+            logging.warning("No token provided")
+            if not request:
+                disconnect()# For Socket.IO
+            return jsonify({"error": "Token is required"}), 401
+        
+        user_payload = verify_token(token)
+        if not user_payload:
+            if not request:
+                disconnect() # For Socket.IO
+            return jsonify({"error": "Invalid or expired token"}), 401
+        
+        # Attach the user payload to the request or pass via kwargs
+        if request:
+            request.user_payload = user_payload
+        else:
+            kwargs['user'] = user_payload
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route("/current-user", methods=['GET'])
+@csrf.exempt  # Exempt from CSRF to simplify GET request handling
+@limiter.limit("10 per minute")  # Rate limiting for login checks
 def check_user():
-    user_id = session.get("user_id")
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({"error": "Missing token"}), 401
+    
+    token = token.split(" ")[1]  # Strip the 'Bearer ' part
+    user_payload = verify_token(token)
+    
+    if not user_payload:
+        return jsonify({"error": "Invalid or expired token"}), 401
+    
+    user_id = user_payload['user_id']  # Extract user_id from the token payload
     user = crud.get_user(id=user_id)
 
     pending_request = True if crud.get_friend_requests(receiver_id=user_id) else False
     if user:
+        logging.info(f"User check successful for user {user.username}")
         return jsonify({"user": user.username, "hasNewRequests": pending_request})
     else:
+        logging.warning("Couldn't retrieve user")
         return jsonify({"error": "Couldn't retrieve user"}), 404
 
 @app.route('/messages/community', methods=['GET'])
+@csrf.exempt  # Exempt because it's a safe GET request
+@limiter.limit("15 per minute")  # Rate limiting
 def get_public_messages():
-    isOnline = session.get('mode')
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({'error': 'Missing token'}), 401
+    
+    token = token.split(" ")[1]  # Strip the 'Bearer ' part
+    user_payload = verify_token(token)
+    
+    if not user_payload:
+        return jsonify({"error": "Invalid or expired token"}), 401
+    
+    isOnline = user_payload.get('isOnline', False)  # Extract 'isOnline' from the token payload
     if not isOnline:
+        logging.warning("User tried accessing community messages while offline")
         return jsonify({'error': 'You are offline. Community features are not available.'}), 403
     
     messages = crud.get_community_messages()  # Fetch all messages
+    logging.info(f"Fetched {len(messages)} community messages")
     return jsonify([
         {
             'id': message.id,
@@ -65,35 +186,33 @@ def get_public_messages():
     ])
 
 @socketio.on('message')
-def handle_message(data):
-    print('Received message: ' + data['message'])
-    # Get user ID from session
-    user_id = session.get('user_id')
-    
-    if user_id is None:
-        # If no user ID is in the session, you might want to handle this case
+@token_required  # Require token-based authentication
+def handle_message(data, user):
+    # The 'user' object is passed from the token_required decorator, which contains the user details
+    if not user:
         socketio.emit('message_response', {'success': False, 'error': 'User not authenticated'})
         return
 
-    user = crud.get_user(id=user_id)
+    # Get message content and username from the data payload
+    message_content = data.get('message')
 
-    if not user:
-        socketio.emit('message_response', {'success': False, 'error': 'User not found'})
-        return
+    logging.info(f"Message received from {user['username']}: {message_content}")
 
-    message = crud.create_community_message(user_id, data['message'])
+    message = crud.create_community_message(user['user_id'], message_content)
+    logging.info(f"Created new message with ID {message.id}")
 
     # Emit the message to all connected clients
     socketio.emit('message_response', {
         'success': True,
         'id': message.id,
-        'username': user.username,  # Use the user object for the username
+        'username': user['username'],  # Use the user object for the username
         'content': message.content,
         'timestamp': message.timestamp.isoformat()  # Format timestamp as string
-    })
+    }, broadcast=True)
 
 """ User Login/Registration related endpoints """
 @app.route("/login", methods=["POST"])
+@csrf.exempt  # Exempt from CSRF as JWT will be used
 def login():
     username = request.json.get("username")
     password = request.json.get("password")
@@ -102,11 +221,13 @@ def login():
 
     # for session usage
     if user:
-        session['user_id'] = user.id # Save user ID in session
-        session['mode'] = user.isOnline  # Store the user's mode (online/offline) in session
+        #session['user_id'] = user.id # Save user ID in session
+        #session['mode'] = user.isOnline  # Store the user's mode (online/offline) in session
+        token = create_jwt(user)
         return jsonify({"message": "Logged in successfully", 
-                        "user": user.username,
-                        "isOnline": user.isOnline
+                        # "user": user.username,
+                        # "isOnline": user.isOnline
+                        "token": token
                         })
     else:
         return jsonify({"error": "Invalid credentials"}), 401
@@ -116,56 +237,93 @@ def register():
     username = request.json.get("username")
     password = request.json.get("password")
     if crud.get_user(username=username, password=password):
+        logging.warning(f"Registration failed: Username {username} already in use.")
         return jsonify({"error": "This username is already in use, please use another."}), 400
     
     new_user = crud.create_user(username, password)
-    session['user_id'] = new_user.id
-    session['mode'] = new_user.isOnline  # Store the user's mode (online/offline) in session
+    #session['user_id'] = new_user.id
+    #session['mode'] = new_user.isOnline  # Store the user's mode (online/offline) in session
+    token = create_jwt(new_user)
+    logging.info(f"User {new_user.username} registered successfully.")
     return jsonify({
         "message": "Your account was successfully created",
-        "user": new_user.username,
-        "isOnline": new_user.isOnline
+        # "user": new_user.username,
+        # "isOnline": new_user.isOnline
+        "token": token
         }), 201
 
 @app.route("/logout", methods=["POST"])
+@csrf.exempt  # Exempt as there’s no state-changing server-side logic in logout here
 def logout():
     session.clear()  # Clear the session data
+    logging.info("User logged out.")
     return jsonify({"message": "Logged out successfully"})
 
+# with connect and disconnect, are linked with online or offline
+# so could call toggle isOnline here
 @socketio.on('connect')
-def handle_connect():
-    user_id = session.get("user_id")
-    if user_id is not None:
-        # Join a room with the user's ID
-        join_room(user_id)
-        print(f"User {user_id} connected and joined room.")
+@token_required
+def handle_connect(user=None):
+    user_id = user["id"]
+    toggled_user = crud.set_user_online_status(user_id, True)  # Update the database to online
+    if toggled_user:
+        logging.info(f"User {toggled_user.username} is now online")
+        join_room("community")  # Join the community room
+
+        # For future features involving updating ui based off
+        # a user's online stauts
+        # socketio.emit('status_update', {
+        #     "user_id": user_id,
+        #     "isOnline": True
+        # }, broadcast=True)  # Notify all clients
     else:
-        print("User not logged in, connection attempt rejected.")
+        logging.error("Failed to toggle mode during connection")
+    # user_id = session.get("user_id")
+    # if user_id is not None:
+    #     # Join a room with the user's ID
+    #     join_room(user_id)
+    #     print(f"User {user_id} connected and joined room.")
+    # else:
+    #     print("User not logged in, connection attempt rejected.")
 
 @socketio.on('disconnect')
-def handle_disconnect():
-    user_id = session.get("user_id")
-    if user_id is not None:
-        print(f"User {user_id} disconnected.")
+@token_required
+def handle_disconnect(user=None):
+    user_id = user["id"]
+    toggled_user = crud.set_user_online_status(user_id, False)  # Explicit toggle
+    if toggled_user:
+        logging.info(f"User {toggled_user.username} is now offline")
+
+        # For future features involving updating ui based off
+        # a user's online stauts
+        # socketio.emit('status_update', {
+        #     "user_id": user_id,
+        #     "isOnline": False
+        # }, broadcast=True)
+    else:
+        logging.error("Failed to update online status on disconnect")
+    # user_id = session.get("user_id")
+    # if user_id is not None:
+    #     print(f"User {user_id} disconnected.")
 
 """ Toggle mode endpoint """
-@app.route("/toggle-mode", methods=["POST"])
-def toggle_mode():
-    user_id = session.get('user_id')  # Get user ID from session
-    if not user_id:
-        return jsonify({"error": "User not logged in"}), 401
+# @app.route("/toggle-mode", methods=["POST"])
+# def toggle_mode():
+#     user_id = session.get('user_id')  # Get user ID from session
+#     if not user_id:
+#         return jsonify({"error": "User not logged in"}), 401
 
-    # Call the crud function to toggle the mode
-    user = crud.toggle_mode(user_id)
-    if user:
-        # Update the session with the new mode
-        session['mode'] = user.isOnline
-        return jsonify({
-            "message": f"User is now {'online' if user.isOnline else 'offline'}",
-            "isOnline": user.isOnline
-        })
-    else:
-        return jsonify({"error": "Failed to toggle mode"}), 400
+#     # Call the crud function to toggle the mode
+#     user = crud.toggle_mode(user_id)
+#     if user:
+#         # Update the session with the new mode
+#         session['mode'] = user.isOnline
+#         return jsonify({
+#             "message": f"User is now {'online' if user.isOnline else 'offline'}",
+#             "isOnline": user.isOnline
+#         })
+#     else:
+#         return jsonify({"error": "Failed to toggle mode"}), 400
 
 """ Add Products Endpoints """
 @app.route("/submit-product", methods=["POST"])
@@ -414,6 +572,9 @@ def make_request():
 def accept_friend():
     # Retrieve user and friend details
     user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({'error': 'Authentication required.'}), 401
+
     friend_username = request.json.get('friend_username')
     
     # Find the friend's user object by their username
@@ -440,8 +601,6 @@ def accept_friend():
         
         # Remove the request from the requests list
         deleted_request = crud.delete_friend_request(friend_request[0].id)
-
-        
         
         return jsonify({'message': 'Friend request accepted successfully!', 
                         'friend': {'id': friend.id, 'username': friend.username}})
