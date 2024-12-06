@@ -60,8 +60,8 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
             credentials: 'include'
         });
         const data = await response.json();
-        if (response.ok) {
-            setUser((prev) => ({ ...prev, description: newDescription })); // Update user description locally
+        if (data.ok) {
+            setUser((prev) => ({ ...prev, description: data.description })); // Update user description locally
             setIsEditing(false); // Exit editing mode
         } else {
             console.error('Failed to update description:', data.error);

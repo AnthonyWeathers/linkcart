@@ -137,7 +137,7 @@ def create_friend_request(sender_id, receiver_id):
     friend_request = FriendRequest(sender_id=sender_id, receiver_id=receiver_id)
     db.session.add(friend_request)
     db.session.commit()
-    return friend_request
+    return #friend_request
 
 def get_friend_requests(receiver_id=None, sender_id=None, status=None):
     """Fetch friend requests dynamically based on filters."""

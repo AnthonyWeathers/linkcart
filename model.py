@@ -21,6 +21,7 @@ class User(db.Model):
     favorited_products = db.relationship("Products", secondary=favorited_products, backref="favorited_by_users")
     isOnline = db.Column(db.Boolean, nullable = False, default=True) # tracks if user is in online or offline mode
 
+    # Perhaps remove as is not used
     def to_dict(self):
         """Convert User object to dictionary."""
         return {
@@ -47,8 +48,7 @@ class Products(db.Model):
         """Convert Video object to dictionary."""
         
         return {
-            "id": self.id,
-            "user_id": self.user_id,
+            "productId": self.id,
             "url": self.url,
             "price": self.price,
             "productName": self.productName,
@@ -68,6 +68,7 @@ class CommunityMessage(db.Model):
     # enables getting username of a community message (if using variable named message; message.user.username)
     user = db.relationship("User", backref="community_messages")
 
+    # Perhaps remove as unused
     def to_dict(self):
         return {
             "id": self.id,
@@ -88,6 +89,7 @@ class FriendRequest(db.Model):
     sender = db.relationship("User", foreign_keys=[sender_id], backref="sent_requests")
     receiver = db.relationship("User", foreign_keys=[receiver_id], backref="received_requests")
 
+    # Perhaps remove as unused
     def to_dict(self):
         return {
             "id": self.id,

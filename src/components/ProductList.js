@@ -57,9 +57,16 @@ const ProductList = ({ user }) => {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            if (data.ok) {
                 alert('Product edited');
                 setSavedProducts(data.products)
+                setSavedProducts(prevProducts => 
+                    prevProducts.map(product =>
+                        product.productId === updatedProduct.id
+                            ? { ...product, ...updatedProduct } // Replace all fields with updated info
+                            : product // Keep other products unchanged
+                    )
+                );
                 setEdittingData(false) // would hide the form after submitting and successful edit
             }
         })
@@ -77,12 +84,15 @@ const ProductList = ({ user }) => {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            if (data.ok) {
                 alert('Product deleted');
                 setSavedProducts(data.products)
+                setSavedProducts(prevProducts => 
+                    prevProducts.filter(p => p.productId !== product.productId)
+                );
             }
         })
-        .catch(error => console.error('Error loading videos:', error));
+        .catch(error => console.error('Error deleting product:', error));
     };
     const editProduct = product => {
         // grabs details of product and auto fills the form with said details
@@ -105,8 +115,16 @@ const ProductList = ({ user }) => {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                setSavedProducts(data.products) // should update the favorite status of 
+            if (data.ok) {
+                setSavedProducts(prevProducts => 
+                    prevProducts.map(p =>
+                        p.productId === product.productId
+                            ? { ...p, favorited: data.favorited } // Update favorited status of product
+                            : p // Keep other products unchanged
+                    )
+                );
+            } else {
+                alert(data.error)
             }
         })
         .catch(error => console.error('Error favoriting product:', error));
