@@ -1,11 +1,11 @@
 function StatusToggle({ currentUser, isOnline, setIsOnline }) {
     const handleToggle = async () => {
-        const token = localStorage.getItem('access_token');
+        // const token = localStorage.getItem('access_token');
         
         if (!isOnline) {
             // User is going online, connect to socket with token
             if (token) {
-                socket.io.opts.query = { token };  // Pass token in connection query
+                // socket.io.opts.query = { token };  // Pass token in connection query
                 socket.connect();  // Connect the socket
             } else {
                 console.error('Unable to connect due to missing token');

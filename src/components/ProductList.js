@@ -27,7 +27,7 @@ const ProductList = ({ user }) => {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            if (data.ok) {
                 setSavedProducts(data.products);
             } else {
                 alert(data.message);

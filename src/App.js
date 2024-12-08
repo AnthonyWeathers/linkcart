@@ -48,16 +48,31 @@ function App() {
   useEffect(() => {
     const handleConnection = async () => {
       if (isOnline && !socket.connected) {
-        let token = localStorage.getItem('access_token');
-        if (!token) {
-          token = await refreshToken();
-        }
+        // let token = localStorage.getItem('access_token');
+        // if (!token) {
+        //   token = await refreshToken();
+        // }
   
-        if (token) {
-          socket.io.opts.query = { token }; // Pass token in connection query
-          socket.connect(); // Connect the socket
-        } else {
-          console.error('Unable to connect due to missing token');
+        // if (token) {
+        //   socket.io.opts.query = { token }; // Pass token in connection query
+        //   socket.connect(); // Connect the socket
+        // } else {
+        //   console.error('Unable to connect due to missing token');
+        // }
+        try {
+          // const response = await fetch('http://localhost:8000/me', {
+          const response = await fetch('http://localhost:8000/current-user', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          const data = await response.json();
+          if (data.ok) {
+              socket.connect(); // HttpOnly cookie will handle auth automatically
+          } else {
+              console.error('Unable to connect socket due to failed authentication');
+          }
+        } catch (error) {
+            console.error('Error authenticating socket connection:', error);
         }
       } else if (!isOnline && socket.connected) {
         socket.disconnect(); // Disconnect the socket if going offline
@@ -94,9 +109,28 @@ function App() {
         socket.connect();
       }
     });
+
+    const handleReconnection = () => {
+        console.log('Attempting to reconnect...');
+    };
+
+    const handleReconnect = () => {
+        console.log('Reconnected successfully');
+    };
+
+    const handleReconnectError = (error) => {
+        console.error('Reconnection failed:', error);
+    };
+
+    socket.on('reconnect_attempt', handleReconnection);
+    socket.on('reconnect', handleReconnect);
+    socket.on('reconnect_error', handleReconnectError);
   
     return () => {
       socket.off('disconnect');
+      socket.off('reconnect_attempt', handleReconnection);
+      socket.off('reconnect', handleReconnect);
+      socket.off('reconnect_error', handleReconnectError);
     };
   }, []);
   

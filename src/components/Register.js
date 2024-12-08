@@ -31,10 +31,6 @@ const Register = ({ onRegister }) => {
                 alert(data.message);
                 onRegister(data.user, data.isOnline); // Call the onRegister function with user data
 
-                if (!socket.connected) {
-                    socket.connect();
-                }
-
                 navigate('/'); // Redirect to the Add Product route
             } else {
                 alert(data.error);

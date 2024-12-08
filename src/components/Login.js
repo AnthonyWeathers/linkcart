@@ -30,15 +30,11 @@ const Login = ({ onLogin }) => {
             });
 
             const data = await response.json();
-            if (data.ok) {
+            if (response.ok) {
                 alert(data.message);
-                onLogin(data.user, data.isOnline);
+                onLogin(data.username, data.isOnline);
 
-                if (!socket.connected) {
-                    socket.connect();
-                }
-
-                navigate('/');
+                navigate('/'); // Redirect to the home page
             } else {
                 alert(data.error);
                 setError(data.error);
