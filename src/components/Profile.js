@@ -24,12 +24,19 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                     },
                     credentials: 'include'
                 });
-                const userData = await response.json();
-                setUser(userData.user);
-                setFavoriteProducts(userData.favoriteProducts);
-                setIsFriend(userData.isFriend); // Set friend status from backend
-                setIsPending(userData.sentRequest) // If current user has sent a pending friend request to other user
-                setReceivedRequest(userData.receivedRequest) // If current user had received a friend request from user of profile they're viewing
+
+                if(response.ok){
+                    const userData = await response.json();
+                    setUser(userData.user);
+                    setFavoriteProducts(userData.favoriteProducts);
+                    setIsFriend(userData.isFriend); // Set friend status from backend
+                    setIsPending(userData.sentRequest) // If current user has sent a pending friend request to other user
+                    setReceivedRequest(userData.receivedRequest) // If current user had received a friend request from user of profile they're viewing
+                } else {
+                    const userData = await response.json();
+                    alert(userData.error)
+                }
+                
             } catch (error) {
                 console.error("Error fetching user profile:", error);
             }
@@ -59,12 +66,15 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
             body: JSON.stringify({ description: newDescription }),
             credentials: 'include'
         });
-        const data = await response.json();
-        if (data.ok) {
+        
+        if (response.ok) {
+            const data = await response.json();
+            alert(data.message)
             setUser((prev) => ({ ...prev, description: data.description })); // Update user description locally
             setIsEditing(false); // Exit editing mode
         } else {
-            console.error('Failed to update description:', data.error);
+            const data = await response.json();
+            console.error(data.error);
         }
         } catch (error) {
         console.error('Error updating description:', error);
@@ -110,12 +120,13 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
             body: JSON.stringify({ friend_username: friendUsername }),
             credentials: 'include'
           });
-          const result = await response.json();
       
-          if (result.ok) {
+          if (response.ok) {
+            const result = await response.json();
             alert(result.message);
             setIsPending(true)
           } else {
+            const result = await response.json();
             alert(result.error);
           }
         } catch (error) {
@@ -131,13 +142,15 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                 body: JSON.stringify({ friend_username: friendUsername }),
                 credentials: 'include'
             });
-            const result = await response.json();
-            if (result.ok) {
+            
+            if (response.ok) {
+                const result = await response.json();
                 alert(result.message);
                 setIsFriend(true);
                 setReceivedRequest(false);
                 handleRequestNotification();
             } else {
+                const result = await response.json();
                 alert(result.error);
             }
         } catch (error) {
@@ -153,12 +166,14 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                 body: JSON.stringify({ friend_username: friendUsername }),
                 credentials: 'include'
             });
-            const result = await response.json();
-            if (result.ok) {
+            
+            if (response.ok) {
+                const result = await response.json();
                 alert(result.message);
                 setReceivedRequest(false);
                 handleRequestNotification();
             } else {
+                const result = await response.json();
                 alert(result.error);
             }
         } catch (error) {
@@ -174,11 +189,13 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                 body: JSON.stringify({ friend_username: friendUsername }),
                 credentials: 'include'
             });
-            const result = await response.json();
-            if (result.ok) {
-                alert('Friend removed successfully!');
+            
+            if (response.ok) {
+                const result = await response.json();
+                alert(result.message || 'Friend removed successfully!');
                 setIsFriend(false); // Update to reflect unfriend status
             } else {
+                const result = await response.json();
                 alert(result.error);
             }
         } catch (error) {

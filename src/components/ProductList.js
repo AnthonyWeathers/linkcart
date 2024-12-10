@@ -25,13 +25,16 @@ const ProductList = ({ user }) => {
             method: 'GET',
             credentials: 'include'
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.ok) {
-                setSavedProducts(data.products);
-            } else {
-                alert(data.message);
+        .then(response => {
+            if(!response.ok) {
+                data = response.json()
+                alert(data.error)
             }
+            return response.json()
+        })
+        .then(data => {
+            alert(data.message)
+            setSavedProducts(data.products);
         })
         .catch(error => console.error('Error loading videos:', error));
     };
@@ -55,20 +58,24 @@ const ProductList = ({ user }) => {
                 favorited: selectedProduct.favorited
             })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.ok) {
-                alert('Product edited');
-                setSavedProducts(data.products)
-                setSavedProducts(prevProducts => 
-                    prevProducts.map(product =>
-                        product.productId === updatedProduct.id
-                            ? { ...product, ...updatedProduct } // Replace all fields with updated info
-                            : product // Keep other products unchanged
-                    )
-                );
-                setEdittingData(false) // would hide the form after submitting and successful edit
+        .then(response => {
+            if(!response.ok){
+                errorData = response.json()
+                alert(errorData.error)
             }
+            return response.json()
+        })
+        .then(data => {
+            alert('Product edited');
+            // setSavedProducts(data.products)
+            setSavedProducts(prevProducts => 
+                prevProducts.map(product =>
+                    product.productId === data.product.productId
+                        ? { ...product, ...data.product } // Replace all fields with updated info
+                        : product // Keep other products unchanged
+                )
+            );
+            setEdittingData(false) // would hide the form after submitting and successful edit
         })
         .catch(error => console.error('Error editing the product:', error));
     };
@@ -82,15 +89,19 @@ const ProductList = ({ user }) => {
             },
             body: JSON.stringify({ id: product.productId })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.ok) {
-                alert('Product deleted');
-                setSavedProducts(data.products)
-                setSavedProducts(prevProducts => 
-                    prevProducts.filter(p => p.productId !== product.productId)
-                );
+        .then(response => {
+            if (!response.ok) {
+                const errorData = response.json();
+                console.error(errorData.error);
             }
+            return response.json()
+        })
+        .then(data => {
+            alert(data.message);
+            // setSavedProducts(data.products)
+            setSavedProducts(prevProducts => 
+                prevProducts.filter(p => p.productId !== product.productId)
+            );
         })
         .catch(error => console.error('Error deleting product:', error));
     };

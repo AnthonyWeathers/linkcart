@@ -11,8 +11,6 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf
 import jwt  # For token-based authentication
 import datetime  # For token expiration
 
-# need to install flask limited and jwt?
-
 # probably used if I'm making batches of
 # 5+ saved products per viewing page
 # from sqlalchemy import create_engine
@@ -65,27 +63,6 @@ def create_jwt(user):
     token = jwt.encode(payload, app.secret_key, algorithm="HS256")
     return token
 
-
-@app.route('/refresh', methods=['POST'])
-def refresh_token():
-    refresh_token = request.json.get("refresh_token")
-    if not refresh_token:
-        return jsonify({"error": "No refresh token provided"}), 400
-    
-    try:
-        payload = jwt.decode(refresh_token, app.secret_key, algorithms=["HS256"])
-        user_id = payload['user_id']
-        # Optionally validate against a list of valid refresh tokens if tracking them server-side.
-        
-        # Create a new access token
-        user = crud.get_user_by_id(user_id)
-        new_access_token = create_jwt(user)
-        return jsonify({"access_token": new_access_token})
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Refresh token expired"}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({"error": "Invalid refresh token"}), 403
-
 # JWT token verification helper
 def verify_token(token):
     try:
@@ -129,31 +106,52 @@ def token_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@app.route('/refresh', methods=['POST'])
+@token_required
+def refresh_token(user=None):
+    """Refreshes the user's access token."""
+    try:
+        # User is injected by the `token_required` decorator
+        if not user:
+            return jsonify({"error": "Unauthorized"}), 401
+        
+        # Generate a new access token using the current user's data
+        new_access_token = create_jwt(user)
+        response = jsonify({"message": "Token refreshed successfully"})
+        response.set_cookie(
+            "access_token", 
+            new_access_token, 
+            httponly=True, 
+            secure=False,  # False for local dev; True for production with HTTPS
+            # secure=True,
+            samesite='Strict') # or Lax
+        return response
+    
+    except Exception as e:
+        logging.exception("Error during token refresh")
+        return jsonify({"error": "Failed to refresh token"}), 500
+
+
+
 @app.route("/current-user", methods=['GET'])
 @csrf.exempt  # Exempt from CSRF to simplify GET request handling
 @limiter.limit("10 per minute")  # Rate limiting for login checks
-def check_user():
+@token_required  # Use the unified token decorator
+def check_user(user=None):
     try:
-        token = request.headers.get('Authorization')
-        if not token:
-            return jsonify({"error": "Missing token"}), 401
+        # User is injected by the @token_required decorator
+        if not user:
+            return jsonify({"error": "Unauthorized"}), 401
         
-        token = token.split(" ")[1]  # Strip the 'Bearer ' part
-        user_payload = verify_token(token)
+        user_id = user["user_id"]
+        username = user["username"]
         
-        if not user_payload:
-            return jsonify({"error": "Invalid or expired token"}), 401
-        
-        user_id = user_payload['user_id']  # Extract user_id from the token payload
-        user = crud.get_user(id=user_id)
-
+        # Check for pending friend requests
         pending_request = True if crud.get_friend_requests(receiver_id=user_id) else False
-        if user:
-            logging.info(f"User check successful for user {user.username}")
-            return jsonify({"user": user.username, "hasNewRequests": pending_request})
-        else:
-            logging.warning("Couldn't retrieve user")
-            return jsonify({"error": "Couldn't retrieve user"}), 404
+
+        logging.info(f"User check successful for user {username}")
+        return jsonify({"user": username, "hasNewRequests": pending_request})
+
     except Exception as e:
         logging.exception("Unexpected error in /current-user")
         return jsonify({"error": "An unexpected error occurred in getting current user"}), 500
@@ -161,19 +159,14 @@ def check_user():
 @app.route('/messages/community', methods=['GET'])
 @csrf.exempt  # Exempt because it's a safe GET request
 @limiter.limit("15 per minute")  # Rate limiting
-def get_public_messages():
+@token_required  # Use the unified token decorator
+def get_public_messages(user=None):
     try:
-        token = request.headers.get('Authorization')
-        if not token:
-            return jsonify({'error': 'Missing token'}), 401
-        
-        token = token.split(" ")[1]  # Strip the 'Bearer ' part
-        user_payload = verify_token(token)
-        
-        if not user_payload:
-            return jsonify({"error": "Invalid or expired token"}), 401
-        
-        isOnline = user_payload.get('isOnline', False)  # Extract 'isOnline' from the token payload
+        # User is injected by the @token_required decorator
+        if not user:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        isOnline = user['isOnline']  # Extract 'isOnline' from the user payload
         if not isOnline:
             logging.warning("User tried accessing community messages while offline")
             return jsonify({'error': 'You are offline. Community features are not available.'}), 403
@@ -249,15 +242,11 @@ def login():
                 "jwtToken",
                 token,
                 httponly=True,  # Prevent JavaScript access
-                secure=True,  # Only allow over HTTPS
+                # secure=True,  # Only allow over HTTPS
+                secure=False,  # False for local dev; True for production with HTTPS
                 samesite='Lax',  # CSRF protection
             )
             return response
-            # return jsonify({"message": "Logged in successfully", 
-            #                 # "user": user.username,
-            #                 # "isOnline": user.isOnline
-            #                 "token": token
-            #                 })
         else:
             return jsonify({"error": "Invalid credentials"}), 401
 
@@ -265,7 +254,7 @@ def login():
         logging.exception("Unexpected error in /login")
         return jsonify({"error": "An unexpected error occurred while logging in"}), 500
     
-@app.route("/register", methods=["POST"])
+@app.route("/register", methods=["POST"]) # update register and login frontend to use the returned data
 @csrf.exempt  # Exempt from CSRF as JWT will be used
 def register():
     try:
@@ -292,16 +281,11 @@ def register():
                 "jwtToken",
                 token,
                 httponly=True,  # Prevent JavaScript access
-                secure=True,  # Only allow over HTTPS
+                # secure=True,  # Only allow over HTTPS
+                secure=False,  # False for local dev; True for production with HTTPS
                 samesite='Lax',  # CSRF protection
             )
             return response
-            # return jsonify({
-            #     "message": "Your account was successfully created",
-            #     # "user": new_user.username,
-            #     # "isOnline": new_user.isOnline
-            #     "token": token
-            #     }), 201
         else:
             return jsonify({"error": "Failed to register user"}), 401
 
@@ -315,12 +299,17 @@ def logout():
     session.clear()  # Clear the session data
     logging.info("User logged out.")
     response = jsonify({"message": "Logged out successfully"})
-    response.set_cookie("jwtToken", "", expires=0, httponly=True, secure=True)
+    response.set_cookie(
+        "jwtToken", 
+        "", 
+        expires=0, 
+        httponly=True, 
+        secure=True,
+        samesite='Lax',  # CSRF protection
+    )
     return response
     # return jsonify({"message": "Logged out successfully"})
 
-# with connect and disconnect, are linked with online or offline
-# so could call toggle isOnline here
 @socketio.on('connect')
 @token_required
 def handle_connect(user=None):
@@ -339,13 +328,6 @@ def handle_connect(user=None):
             }, broadcast=True)  # Notify all clients
         else:
             logging.error("Failed to toggle mode during connection")
-        # user_id = session.get("user_id")
-        # if user_id is not None:
-        #     # Join a room with the user's ID
-        #     join_room(user_id)
-        #     print(f"User {user_id} connected and joined room.")
-        # else:
-        #     print("User not logged in, connection attempt rejected.")
 
     except Exception as e:
         logging.exception("Unexpected error in connecting socketio")
@@ -368,32 +350,10 @@ def handle_disconnect(user=None):
             }, broadcast=True)
         else:
             logging.error("Failed to update online status on disconnect")
-        # user_id = session.get("user_id")
-        # if user_id is not None:
-        #     print(f"User {user_id} disconnected.")
 
     except Exception as e:
         logging.exception("Unexpected error in disconnecting socketio")
         return jsonify({"error": "An unexpected error occurred while disconnecting from socketio"}), 500
-
-""" Toggle mode endpoint """
-# @app.route("/toggle-mode", methods=["POST"])
-# def toggle_mode():
-#     user_id = session.get('user_id')  # Get user ID from session
-#     if not user_id:
-#         return jsonify({"error": "User not logged in"}), 401
-
-#     # Call the crud function to toggle the mode
-#     user = crud.toggle_mode(user_id)
-#     if user:
-#         # Update the session with the new mode
-#         session['mode'] = user.isOnline
-#         return jsonify({
-#             "message": f"User is now {'online' if user.isOnline else 'offline'}",
-#             "isOnline": user.isOnline
-#         })
-#     else:
-#         return jsonify({"error": "Failed to toggle mode"}), 400
 
 """ Products Endpoints """
 @app.route("/submit-product", methods=["POST"])
@@ -458,15 +418,7 @@ def delete(user=None):
 
         crud.delete_product(productId)
         logging.info("User %s successfully deleted product %s", user["id"], productId)
-        # user_products = crud.get_products(user_id=user['id'])
-        # user_products_data = [{
-        #     "productId": product.id,
-        #     "url": product.url,
-        #     "price": product.price,
-        #     "productName": product.productName,
-        #     "category": product.category,
-        #     "favorited": product.favorited
-        # } for product in user_products]
+
         return jsonify({
             "message": "Product deleted",
             #"products": user_products_data  # Only return remaining products for this user
@@ -484,14 +436,6 @@ def getProducts(user=None):
         user_products = crud.get_products(user_id=user['id'])
 
         # Convert each product object to a dictionary
-        # user_products_data = [{
-        #     "productId": product.id,
-        #     "url": product.url,
-        #     "price": product.price,
-        #     "productName": product.productName,
-        #     "category": product.category,
-        #     "favorited": product.favorited
-        # } for product in user_products]
         user_products_data = [{
             product.to_dict()
         } for product in user_products]
@@ -511,7 +455,6 @@ def getProducts(user=None):
 def editProduct(user=None):
     try:
         logging.info("User %s is attempting to edit a product", user["id"])
-    # user_id = session.get("user_id")
 
         product_id = int(request.json.get("id"))
         if not product_id: #or not all([url, price, productName, category]):
@@ -536,27 +479,9 @@ def editProduct(user=None):
             category=request.json.get("category")
         )
         if updated_product:
-            # update product table for to_dict to have
-            # id, url, price, productName, category, and favorited
             logging.info("User %s successfully edited product %s", user["id"], product_id)
             return jsonify({
                 "product": updated_product.to_dict()
-                # "product": {
-                #     "productId": updated_product.id,
-                #     "url": updated_product.url,
-                #     "price": updated_product.price,
-                #     "productName": updated_product.productName,
-                #     "category": updated_product.category,
-                #     "favorited": updated_product.favorited
-                # }
-                # "products": [{
-                #     "productId": product.id,
-                #     "url": product.url,
-                #     "price": product.price,
-                #     "productName": product.productName,
-                #     "category": product.category,
-                #     "favorited": product.favorited
-                # } for product in crud.get_products(user_id=user['id'])]
             })
 
         # If no matching product was found
@@ -591,17 +516,8 @@ def favoriteProduct(user=None):
         
         updated_product = crud.toggle_favorited(productId)
         if updated_product:
-            # user_products = [{
-            #     "productId": product.id,
-            #     "url": product.url,
-            #     "price": product.price,
-            #     "productName": product.productName,
-            #     "category": product.category,
-            #     "favorited": product.favorited
-            # } for product in crud.get_products(user_id=user['id'])]
             logging.info("User %s successfully favorited product %s", user["id"], productId)
             return jsonify({
-                    # "products": user_products
                     "favorited": updated_product.favorited
             })
         logging.error("Failed to favorite product %s for user %s", productId, user["id"])
@@ -820,7 +736,7 @@ def get_friend_requests(user=None):
         sender_usernames = [request.sender.username for request in user_requests]
 
         logging.info(f"User {user['username']} retrieved their pending friend requests.")
-        return jsonify({'success': True, 'sender_usernames': sender_usernames})
+        return jsonify({'sender_usernames': sender_usernames})
     except Exception as e:
         logging.exception(f"Error retrieving friend requests for {user['username']}: {str(e)}")
         return jsonify({'error': 'An error occurred.'}), 500

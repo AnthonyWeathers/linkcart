@@ -29,8 +29,8 @@ const Login = ({ onLogin }) => {
                 }),
             });
 
-            const data = await response.json();
             if (response.ok) {
+                const data = await response.json();
                 alert(data.message);
                 onLogin(data.username, data.isOnline);
 

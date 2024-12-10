@@ -26,13 +26,14 @@ function App() {
           credentials: 'include', // Include credentials for session management
         });
         if (response.ok) {
-          const userData = await response.json();
-          setCurrentUser(userData.user); // Assuming the response includes user data
-          setHasNewRequests(userData.hasNewRequests); // Set the initial friend request state from backend
+          const data = await response.json();
+          setCurrentUser(data.user); // User info
+          setHasNewRequests(data.hasNewRequests); // Set the initial friend request state from backend
         } else {
-          // Handle error or no user
+          // Parse JSON for error responses
+          const errorData = await response.json();
+          alert(errorData.error || "An unexpected error occurred");
           setCurrentUser(null);
-          alert(response.error)
         }
       } catch (error) {
         console.error('Error fetching current user:', error);
@@ -48,27 +49,19 @@ function App() {
   useEffect(() => {
     const handleConnection = async () => {
       if (isOnline && !socket.connected) {
-        // let token = localStorage.getItem('access_token');
-        // if (!token) {
-        //   token = await refreshToken();
-        // }
-  
-        // if (token) {
-        //   socket.io.opts.query = { token }; // Pass token in connection query
-        //   socket.connect(); // Connect the socket
-        // } else {
-        //   console.error('Unable to connect due to missing token');
-        // }
         try {
-          // const response = await fetch('http://localhost:8000/me', {
           const response = await fetch('http://localhost:8000/current-user', {
             method: 'GET',
             credentials: 'include',
           });
-          const data = await response.json();
-          if (data.ok) {
+          // const data = await response.json();
+          if (response.ok) {
+              const userData = await response.json();
+              setCurrentUser(userData.user); // Assuming the response includes user data
+              setHasNewRequests(userData.hasNewRequests); // Set the initial friend request state from backend
               socket.connect(); // HttpOnly cookie will handle auth automatically
           } else {
+              setCurrentUser(null); // Assuming the response includes user data
               console.error('Unable to connect socket due to failed authentication');
           }
         } catch (error) {
@@ -98,6 +91,7 @@ function App() {
       if (socket.connected) {
         socket.disconnect(); // Ensure socket is disconnected
       }
+      setIsOnline(false); // Ensure frontend state is consistent
     };
   }, [isOnline]);
 
@@ -155,19 +149,24 @@ function App() {
   }, [currentUser]);
 
   const refreshToken = async () => {
-    const response = await fetch('/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: localStorage.getItem('refresh_token') }),
-    });
-  
-    if (response.ok) {
-      const data = await response.json();
-      localStorage.setItem('access_token', data.access_token);
-      return data.access_token;
-    } else {
-      console.error('Failed to refresh token');
-      return null;
+    try {
+      const response = await fetch('/refresh', {
+        method: 'POST',
+        credentials: 'include', // Include credentials for session management
+        // headers: { 'Content-Type': 'application/json' },
+      });
+    
+      if (response.ok) {
+        console.log('Token refreshed successfully');
+        return true; // Indicate token refresh success
+      } else {
+        const errorData = await response.json(); // Parse JSON for the error messages
+        console.error('Failed to refresh token:', errorData.error || 'Unknown error');
+        return false; // Indicate token refresh failure
+      }
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return false;
     }
   };
 
@@ -178,9 +177,9 @@ function App() {
   const handleSetCurrentUser = (user, onlineStatus) => {
     setCurrentUser(user); // Set the logged-in user
     setIsOnline(onlineStatus); // Set the initial mode
-    if (onlineStatus && !socket.connected) {
-      socket.connect();
-    }
+    // if (onlineStatus && !socket.connected) {
+    //   socket.connect();
+    // }
   }
 
   const logout = async () => {
@@ -189,9 +188,10 @@ function App() {
         method: 'POST',
         credentials: 'include', // Include credentials for session management
       });
-      const data = await response.json();
+      // const data = await response.json();
 
-      if (data.ok) {
+      if (response.ok) {
+        const data = await response.json();
         alert(data.message); // Optional: show a message to the user
         setCurrentUser(null); // Clear current user state
         setHasNewRequests(false); // Reset on logout
@@ -201,7 +201,8 @@ function App() {
           socket.disconnect();
         }
       } else {
-        console.error('Error logging out:');
+        const errorData = await response.json();
+        console.error('Error logging out:' || errorData.error);
       }
     } catch (error) {
       console.error('Error during logout:', error);

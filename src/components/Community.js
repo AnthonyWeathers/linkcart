@@ -9,13 +9,17 @@ const Community = ({ currentUser }) => {
     // Fetch the messages from the backend
     const fetchMessages = async () => {
         try {
-            const response = await fetch('http://localhost:8000/messages/community');
+            const response = await fetch('http://localhost:8000/messages/community', {
+                method: 'GET',
+                credentials: 'include', // Include credentials for session management
+            });
             if(response.ok) {
-                const data = await response.json();
-                setMessages(data);
+                const messages = await response.json();
+                setMessages(messages);
             }
             else {
-                alert(response.error)
+                const messages = await response.json();
+                alert(messages.error)
             }
         } catch (error) {
             console.error("Error fetching messages:", error);
@@ -42,15 +46,9 @@ const Community = ({ currentUser }) => {
             }
         });
 
-        // Handle socket disconnection
-        socket.on('disconnect', () => {
-            console.log("WebSocket disconnected");
-        });
-
         // Cleanup on component unmount
         return () => {
             socket.off('message_response');
-            socket.off('disconnect');
         };
     }, []);  // Empty array ensures it only runs on mount
 

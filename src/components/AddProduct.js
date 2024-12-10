@@ -63,6 +63,7 @@ const AddProduct = ({ user }) => {
 
     fetch(`http://localhost:8000/submit-product`, {
       method: 'POST',
+      credentials: 'include', // Include credentials for session management
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: user.id, url, price, productName, category }),
       credentials: 'include'
@@ -77,7 +78,7 @@ const AddProduct = ({ user }) => {
         if (data.save) {
           alert(data.message);
         } else {
-          alert(data.message);
+          alert(data.error);
         }
       })
       .catch((error) => {

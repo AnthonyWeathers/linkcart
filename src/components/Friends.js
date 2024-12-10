@@ -13,11 +13,12 @@ const Friends = ({ currentUser, handleRequestNotification }) => {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include'  // This ensures cookies (like session cookies) are sent with the request
         });
-        const result = await response.json();
 
-        if (result.ok) {
+        if (response.ok) {
+          const result = await response.json();
           setFriends(result.friends);
         } else {
+          const result = await response.json();
           alert(result.error);
         }
       } catch (error) {
@@ -36,11 +37,12 @@ const Friends = ({ currentUser, handleRequestNotification }) => {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include'  // This ensures cookies (like session cookies) are sent with the request
         });
-        const result = await response.json();
 
         if (result.ok) {
+          const result = await response.json();
           setFriendRequests(result.sender_usernames);
         } else {
+          const result = await response.json();
           alert(result.error);
         }
       } catch (error) {
@@ -59,13 +61,15 @@ const Friends = ({ currentUser, handleRequestNotification }) => {
             body: JSON.stringify({ friend_username: requester }),
             credentials: 'include'
         });
-        const result = await response.json();
-        if (result.ok) {
+        
+        if (response.ok) {
+            const result = await response.json();
             alert(result.message);
             setFriendRequests((prev) => prev.filter((username) => username !== requester));
             setFriends((prev) => [...prev, result.friend]);
             handleRequestNotification();
         } else {
+            const result = await response.json();
             alert(result.error);
         }
     } catch (error) {
@@ -81,12 +85,14 @@ const handleDeclineFriend = async (requester) => {
             body: JSON.stringify({ friend_username: requester }),
             credentials: 'include'
         });
-        const result = await response.json();
-        if (result.success) {
-            alert(result.ok);
+        
+        if (response.ok) {
+            const result = await response.json();
             setFriendRequests((prev) => prev.filter((username) => username !== requester));
+            alert(result.message)
             handleRequestNotification();
         } else {
+            const result = await response.json();
             alert(result.error);
         }
     } catch (error) {
