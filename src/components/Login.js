@@ -32,10 +32,12 @@ const Login = ({ onLogin }) => {
             if (response.ok) {
                 const data = await response.json();
                 alert(data.message);
+                // console.log("User info is: ", data)
                 onLogin(data.username, data.isOnline);
 
                 navigate('/'); // Redirect to the home page
             } else {
+                const data = await response.json();
                 alert(data.error);
                 setError(data.error);
             }

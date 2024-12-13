@@ -38,7 +38,7 @@ const Friends = ({ currentUser, handleRequestNotification }) => {
           credentials: 'include'  // This ensures cookies (like session cookies) are sent with the request
         });
 
-        if (result.ok) {
+        if (response.ok) {
           const result = await response.json();
           setFriendRequests(result.sender_usernames);
         } else {

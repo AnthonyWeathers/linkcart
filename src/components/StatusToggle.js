@@ -1,36 +1,23 @@
-function StatusToggle({ currentUser, isOnline, setIsOnline }) {
-    const handleToggle = async () => {
-        // const token = localStorage.getItem('access_token');
-        
-        if (!isOnline) {
-            // User is going online, connect to socket with token
-            if (token) {
-                // socket.io.opts.query = { token };  // Pass token in connection query
-                socket.connect();  // Connect the socket
-            } else {
-                console.error('Unable to connect due to missing token');
-            }
-        } else {
-            // User is going offline, disconnect the socket
-            socket.disconnect();
-        }
-    
-        // Toggle the online status locally
-        setIsOnline(prevState => !prevState);
-    };    
+import React, { useContext } from "react";
+import { UserStatusContext } from "./UserStatusContext";
+
+function StatusToggle({ currentUser }) {
+  const { isOnline, toggleStatus } = useContext(UserStatusContext);
   
     return (
-      <div>
+      <li>
         <label>
           <input
             type="checkbox"
             checked={isOnline}
-            onChange={handleToggle}
-            disabled={!currentUser} // Only allow toggle if logged in
+            // onChange={handleToggle}
+            onChange={toggleStatus}
+            disabled={!currentUser} // Disable if no user is logged in
           />
-          {isOnline ? 'Online' : 'Offline'}
+          Online
+          {/* {isOnline ? 'Online' : 'Offline'} */}
         </label>
-      </div>
+      </li>
     );
 }
 export default StatusToggle  

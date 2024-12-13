@@ -9,7 +9,7 @@ def create_user(username, password):
     """Create a new user with a hashed password and default description."""
     from werkzeug.security import generate_password_hash
     hashed_password = generate_password_hash(password)
-    user = User(username=username, password=hashed_password, description=User.description.default.arg, mode=True)
+    user = User(username=username, password=hashed_password, description=User.description.default.arg, isOnline=True)
     db.session.add(user)
     db.session.commit()
     return user

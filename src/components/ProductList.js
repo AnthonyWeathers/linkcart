@@ -27,7 +27,7 @@ const ProductList = ({ user }) => {
         })
         .then(response => {
             if(!response.ok) {
-                data = response.json()
+                const data = response.json()
                 alert(data.error)
             }
             return response.json()
@@ -60,7 +60,7 @@ const ProductList = ({ user }) => {
         })
         .then(response => {
             if(!response.ok){
-                errorData = response.json()
+                const errorData = response.json()
                 alert(errorData.error)
             }
             return response.json()

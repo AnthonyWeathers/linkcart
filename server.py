@@ -9,7 +9,7 @@ from flask_limiter import Limiter  # For rate limiting
 from flask_limiter.util import get_remote_address  # Utility for rate limiter
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 import jwt  # For token-based authentication
-import datetime  # For token expiration
+from datetime import datetime, timedelta, timezone  # For token expiration
 
 # probably used if I'm making batches of
 # 5+ saved products per viewing page
@@ -58,7 +58,7 @@ def create_jwt(user):
         "user_id": user.id,
         "username": user.username,
         "isOnline": user.isOnline,  # Include the mode in the token
-        "exp": datetime.utcnow() + timedelta(hours=12)  # Token expiry
+        "exp": datetime.now(timezone.utc) + timedelta(hours=12)  # Token expiry
     }
     token = jwt.encode(payload, app.secret_key, algorithm="HS256")
     return token
@@ -82,9 +82,12 @@ def token_required(f):
         # Check if this is a Flask request or Socket.IO event
         token = None
         if request:  # REST API
-            token = request.headers.get('Authorization')
+            token = request.cookies.get('jwtToken')
+            # token = request.cookies.get('access_token')
+            print("verified token is: ", token)
         elif args and hasattr(args[0], 'args'):  # Socket.IO
-            token = args[0].args.get('token')
+            token = args[0].cookies.get('jwtToken')
+            # token = args[0].cookies.get('access_token')
 
         if not token:
             logging.warning("No token provided")
@@ -93,6 +96,7 @@ def token_required(f):
             return jsonify({"error": "Token is required"}), 401
         
         user_payload = verify_token(token)
+        print("user payload is: ", user_payload)
         if not user_payload:
             if not request:
                 disconnect() # For Socket.IO
@@ -140,6 +144,7 @@ def refresh_token(user=None):
 def check_user(user=None):
     try:
         # User is injected by the @token_required decorator
+        print("current user is: ", user)
         if not user:
             return jsonify({"error": "Unauthorized"}), 401
         
@@ -228,7 +233,9 @@ def login():
         user = crud.get_user(username=username, password=password)
 
         if user:
+            print("Reached getting token part of login")
             token = create_jwt(user)
+            print("the token is: ", token)
 
             # Response object
             response = jsonify({
@@ -246,6 +253,7 @@ def login():
                 secure=False,  # False for local dev; True for production with HTTPS
                 samesite='Lax',  # CSRF protection
             )
+            print("response is: ", response)
             return response
         else:
             return jsonify({"error": "Invalid credentials"}), 401

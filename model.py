@@ -15,7 +15,7 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     username = db.Column(db.String(50) , nullable = False)
-    password = db.Column(db.String(50) , nullable = False)
+    password = db.Column(db.String(250) , nullable = False)
     description = db.Column(db.Text, nullable=True, default="This user has not added a description yet.")
     products = db.relationship("Products", backref = "user", lazy = True)
     favorited_products = db.relationship("Products", secondary=favorited_products, backref="favorited_by_users")
