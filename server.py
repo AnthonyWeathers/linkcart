@@ -37,7 +37,7 @@ csrf = CSRFProtect(app)  # Enable CSRF protection
 limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
 
 # Logging configuration
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 # Ensure session cookies are secure and http-only
 app.config['SESSION_COOKIE_SECURE'] = True  # Only send cookies over HTTPS
@@ -81,34 +81,84 @@ def token_required(f):
     def decorated_function(*args, **kwargs):
         # Check if this is a Flask request or Socket.IO event
         token = None
-        if request:  # REST API
+
+        # Check if it's a Socket.IO connection attempt
+        if request.path.startswith('/socket.io') and request.method == 'GET':
             token = request.cookies.get('jwtToken')
-            # token = request.cookies.get('access_token')
-            print("verified token is: ", token)
-        elif args and hasattr(args[0], 'args'):  # Socket.IO
-            token = args[0].cookies.get('jwtToken')
-            # token = args[0].cookies.get('access_token')
+            logging.debug(f"Token from initial Socket.IO connection: {token}")
+
+            if not token:
+                logging.warning("No token provided for Socket.IO connection")
+                disconnect()  # Disconnect if no token
+                return jsonify({"error": "Token is required for Socket.IO"}), 401
+            
+        # For other API requests (non-Socket.IO)
+        elif request and request.cookies.get('jwtToken') and request.method in ['GET', 'POST', 'PUT', 'DELETE']:
+            token = request.cookies.get('jwtToken')
+            logging.debug(f"Token from API cookies: {token}")
+
+        else:
+            token = request.cookies.get('jwtToken')
+            logging.debug(f"Token from socketio event handler: {token}")
 
         if not token:
             logging.warning("No token provided")
-            if not request:
-                disconnect()# For Socket.IO
             return jsonify({"error": "Token is required"}), 401
         
+        # Verify the token
         user_payload = verify_token(token)
-        print("user payload is: ", user_payload)
+        logging.debug(f"User payload after verification: {user_payload}")
+
         if not user_payload:
-            if not request:
-                disconnect() # For Socket.IO
+            logging.warning("Invalid or expired token")
             return jsonify({"error": "Invalid or expired token"}), 401
-        
-        # Attach the user payload to the request or pass via kwargs
-        if request:
-            request.user_payload = user_payload
-        else:
+
+        # Attach the user payload based on request type
+        if request.path.startswith('/socket.io'):  # For Socket.IO events
             kwargs['user'] = user_payload
+        else:  # For REST API requests
+            request.user_payload = user_payload
+
         return f(*args, **kwargs)
+
     return decorated_function
+
+        # REST API
+        # if request.method:
+    #     if request and request.method in ['GET', 'POST', 'PUT', 'DELETE']:
+    #         token = request.cookies.get('jwtToken')
+    #         logging.debug(f"Token from request cookies: {token}")
+
+    #     # Socket.IO
+    #     # elif hasattr(request, 'cookies'):
+    #     elif args and hasattr(args[0], 'cookies'):  # Check for Socket.IO
+    #         # token = request.cookies.get('jwtToken')
+    #         token = args[0].cookies.get('jwtToken')
+    #         logging.debug(f"[Socket.IO] Token from Socket.IO cookies: {token}")
+
+    #     if not token:
+    #         logging.warning("No token provided")
+    #         if not request.method:  # If it's a Socket.IO request
+    #             disconnect()
+    #         return jsonify({"error": "Token is required"}), 401
+        
+    #     user_payload = verify_token(token)
+    #     logging.debug(f"User payload after verification: {user_payload}")
+        
+    #     if not user_payload:
+    #         logging.warning("Invalid or expired token")
+    #         if not request.method:  # If it's a Socket.IO request
+    #             disconnect() # For Socket.IO
+    #         return jsonify({"error": "Invalid or expired token"}), 401
+        
+    #     # Attach user to request (for REST) or kwargs (for Socket.IO)
+    #     # if request.method:
+    #     if request and request.method in ['GET', 'POST', 'PUT', 'DELETE']:
+    #         request.user_payload = user_payload
+    #     else:
+    #         kwargs['user'] = user_payload
+    #     return f(*args, **kwargs)
+    # return decorated_function
 
 @app.route('/refresh', methods=['POST'])
 @token_required
@@ -141,8 +191,11 @@ def refresh_token(user=None):
 @csrf.exempt  # Exempt from CSRF to simplify GET request handling
 @limiter.limit("10 per minute")  # Rate limiting for login checks
 @token_required  # Use the unified token decorator
-def check_user(user=None):
+# def check_user(user=None):
+def check_user():
     try:
+        # Access user payload from request.user_payload
+        user = request.user_payload
         # User is injected by the @token_required decorator
         print("current user is: ", user)
         if not user:
@@ -165,8 +218,10 @@ def check_user(user=None):
 @csrf.exempt  # Exempt because it's a safe GET request
 @limiter.limit("15 per minute")  # Rate limiting
 @token_required  # Use the unified token decorator
-def get_public_messages(user=None):
+def get_public_messages():
     try:
+        # Access user payload from request.user_payload
+        user = request.user_payload
         # User is injected by the @token_required decorator
         if not user:
             return jsonify({"error": "Unauthorized"}), 401
@@ -192,17 +247,20 @@ def get_public_messages(user=None):
         logging.exception("Unexpected error in retrieving community messages")
         return jsonify({"error": "An unexpected error occurred getting community messages"}), 500
 
+# Need to modify this to make use of the keyword token, likely same way as connect
 @socketio.on('message')
 @token_required  # Require token-based authentication
-def handle_message(data, user):
+def handle_message(*args, **kwargs):
     try:
-        # The 'user' object is passed from the token_required decorator, which contains the user details
+        # Retrieve the user from kwargs
+        user = kwargs.get('user')
+        # The 'user' object is passed in through kwargs from the token_required decorator, which contains the user details
         if not user:
             socketio.emit('message_response', {'success': False, 'error': 'User not authenticated'})
             return
 
         # Get message content and username from the data payload
-        message_content = data.get('message')
+        message_content = args[0].get('message')
 
         logging.info(f"Message received from {user['username']}: {message_content}")
 
@@ -216,7 +274,8 @@ def handle_message(data, user):
             'username': user['username'],  # Use the user object for the username
             'content': message.content,
             'timestamp': message.timestamp.isoformat()  # Format timestamp as string
-        }, broadcast=True)
+        }, to='/') # / or community
+        # }, broadcast=True)
 
     except Exception as e:
         logging.exception("Unexpected error in adding new message")
@@ -233,9 +292,9 @@ def login():
         user = crud.get_user(username=username, password=password)
 
         if user:
-            print("Reached getting token part of login")
+            # print("Reached getting token part of login")
             token = create_jwt(user)
-            print("the token is: ", token)
+            # print("the token is: ", token)
 
             # Response object
             response = jsonify({
@@ -253,7 +312,7 @@ def login():
                 secure=False,  # False for local dev; True for production with HTTPS
                 samesite='Lax',  # CSRF protection
             )
-            print("response is: ", response)
+            # print("response is: ", response)
             return response
         else:
             return jsonify({"error": "Invalid credentials"}), 401
@@ -320,12 +379,21 @@ def logout():
 
 @socketio.on('connect')
 @token_required
-def handle_connect(user=None):
+def handle_connect(*args, **kwargs):
     try:
-        user_id = user["id"]
+        # Retrieve the user from kwargs
+        user = kwargs.get('user')
+
+        logging.debug(f"[Socket.IO] User in handle_connect: {user}")
+        if not user:
+            logging.warning("No user provided to handle_connect")
+            disconnect()
+            return
+        
+        user_id = user["user_id"]
         toggled_user = crud.set_user_online_status(user_id, True)  # Update the database to online
         if toggled_user:
-            logging.info(f"User {toggled_user.username} is now online")
+            logging.info(f"User {toggled_user.username} (ID: {user_id})  is now online")
             join_room("community")  # Join the community room
 
             # For future features involving updating ui based off
@@ -333,19 +401,31 @@ def handle_connect(user=None):
             socketio.emit('status_update', {
                 "user_id": user_id,
                 "isOnline": True
-            }, broadcast=True)  # Notify all clients
+            }, to='community')
+            # }, broadcast=True)  # Notify all clients
         else:
-            logging.error("Failed to toggle mode during connection")
+            logging.error(f"Failed to toggle online status for user ID {user_id}")
+            disconnect()
 
     except Exception as e:
         logging.exception("Unexpected error in connecting socketio")
+        disconnect()
         return jsonify({"error": "An unexpected error occurred in connecting user to socketio"}), 500
 
 @socketio.on('disconnect')
 @token_required
-def handle_disconnect(user=None):
+def handle_disconnect(*args, **kwargs):
     try:
-        user_id = user["id"]
+        # Retrieve the user from kwargs
+        user = kwargs.get('user')
+
+        logging.debug(f"[Socket.IO] User in handle_connect: {user}")
+        if not user:
+            logging.warning("No user provided to handle_connect")
+            disconnect()
+            return
+        
+        user_id = user["user_id"]
         toggled_user = crud.set_user_online_status(user_id, False)  # Explicit toggle
         if toggled_user:
             logging.info(f"User {toggled_user.username} is now offline")
@@ -355,7 +435,8 @@ def handle_disconnect(user=None):
             socketio.emit('status_update', {
                 "user_id": user_id,
                 "isOnline": False
-            }, broadcast=True)
+            }, to='community')
+            # }, broadcast=True)
         else:
             logging.error("Failed to update online status on disconnect")
 
@@ -368,9 +449,12 @@ def handle_disconnect(user=None):
 @csrf.exempt  # CSRF protection is typically applied to forms; for JSON requests, use exemptions carefully
 @token_required
 @limiter.limit("10/minute")  # Restrict this endpoint to 10 requests per minute per IP
-def save(user=None):
+def save():
     try:
-        logging.info("User %s is attempting to save a product", user["id"])
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_id = user['user_id']
+        logging.info("User %s is attempting to save a product", currentUser_id)
         
         # when user saves/adds a new product
         url = request.json.get("url")
@@ -384,99 +468,106 @@ def save(user=None):
                 # logger.warning("User %s submitted incomplete product data", user["id"])
                 # return jsonify({"error": "Missing required fields"}), 400
 
-        product = crud.create_product(user['id'], url, price, productName, category)
+        product = crud.create_product(currentUser_id, url, price, productName, category)
         if product:
-            logging.info("User %s successfully saved a product", user["id"])
+            logging.info("User %s successfully saved a product", currentUser_id)
             return jsonify({
                     "save": True,
                     "message": 'Product added'
             }), 201
         else:
-            logging.error("Failed to save product for user %s", user["id"])
+            logging.error("Failed to save product for user %s", currentUser_id)
             return jsonify({
                 "save": False,
                 "message": 'Failed to add product'
             })
     except Exception as e:
-        logging.exception("Error saving product for user %s", user["id"])
+        logging.exception("Error saving product for user %s", currentUser_id)
         return jsonify({"error": "An error occurred while adding the product", "details": str(e)}), 500
 
 @app.route("/delete-product", methods=["DELETE"])
 @csrf.exempt
 @token_required
 @limiter.limit("5/minute")  # Restrict this endpoint to 5 requests per minute
-def delete(user=None):
+def delete():
     try:
-        logging.info("User %s is attempting to delete a product", user["id"])
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_id = user['user_id']
+        logging.info("User %s is attempting to delete a product", currentUser_id)
         
         productId = int(request.json.get("id"))
         if not productId:
-            logging.warning("User %s failed to provide a product ID for deletion", user["id"])
+            logging.warning("User %s failed to provide a product ID for deletion", currentUser_id)
             return jsonify({"error": "Product ID is required"}), 400
 
         products = crud.get_products(id=productId)
         if not products:
-            logging.warning("User %s attempted to delete a nonexistent product", user["id"])
+            logging.warning("User %s attempted to delete a nonexistent product", currentUser_id)
             return jsonify({"error": "Product not found"}), 404
         
         product = products[0]
-        if product.user_id != user["id"]:
-            logging.warning("User %s attempted to delete an unauthorized product", user["id"])
+        if product.user_id != currentUser_id:
+            logging.warning("User %s attempted to delete an unauthorized product", currentUser_id)
             return jsonify({"error": "Access denied"}), 403
 
         crud.delete_product(productId)
-        logging.info("User %s successfully deleted product %s", user["id"], productId)
+        logging.info("User %s successfully deleted product %s", currentUser_id, productId)
 
         return jsonify({
             "message": "Product deleted",
             #"products": user_products_data  # Only return remaining products for this user
         })
     except Exception as e:
-        logging.exception("Error deleting product for user %s", user["id"])
+        logging.exception("Error deleting product for user %s", currentUser_id)
         return jsonify({"error": "Failed to delete product", "details": str(e)}), 500
 
 @app.route("/products", methods=["GET"])
 @token_required
 @limiter.limit("20/minute")
-def getProducts(user=None):
+def getProducts():
     try:
-        logging.info("User %s is fetching their products", user["id"])
-        user_products = crud.get_products(user_id=user['id'])
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_id = user['user_id']
+        logging.info("User %s is fetching their products", currentUser_id)
+        user_products = crud.get_products(user_id=currentUser_id)
 
         # Convert each product object to a dictionary
-        user_products_data = [{
-            product.to_dict()
-        } for product in user_products]
+        user_products_data = [product.to_dict() for product in user_products]
 
         return jsonify({
             "message": "User products fetched successfully",
             "products": user_products_data,
         })
     except Exception as e:
-        logging.exception("Error fetching products for user %s", user["id"])
+        logging.exception("Error fetching products for user %s", currentUser_id)
         return jsonify({"error": "Failed to fetch products", "details": str(e)}), 500
 
 @app.route("/edit-product", methods=["PUT"])
 @csrf.exempt
 @token_required
 @limiter.limit("5/minute")
-def editProduct(user=None):
+def editProduct():
     try:
-        logging.info("User %s is attempting to edit a product", user["id"])
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_id = user['user_id']
+        logging.info("User %s is attempting to edit a product", currentUser_id)
 
         product_id = int(request.json.get("id"))
         if not product_id: #or not all([url, price, productName, category]):
-            logging.warning("User %s failed to provide a product ID for editing", user["id"])
+            logging.warning("User %s failed to provide a product ID for editing", currentUser_id)
             return jsonify({"error": "Missing product or required fields"}), 400
 
         products = crud.get_products(id=product_id)
         if not products:
-            logging.warning("User %s attempted to edit a nonexistent product", user["id"])
+            logging.warning("User %s attempted to edit a nonexistent product", currentUser_id)
             return jsonify({"error": "Product not found"}), 404
         
         product = products[0]
-        if product.user_id != user["id"]:
-            logging.warning("User %s attempted to edit an unauthorized product", user["id"])
+        if product.user_id != currentUser_id:
+            logging.warning("User %s attempted to edit an unauthorized product", currentUser_id)
             return jsonify({"error": "Access denied"}), 403
 
         updated_product = crud.update_product(
@@ -487,53 +578,56 @@ def editProduct(user=None):
             category=request.json.get("category")
         )
         if updated_product:
-            logging.info("User %s successfully edited product %s", user["id"], product_id)
+            logging.info("User %s successfully edited product %s", currentUser_id, product_id)
             return jsonify({
                 "product": updated_product.to_dict()
             })
 
         # If no matching product was found
-        logging.error("Failed to edit product %s for user %s", product_id, user["id"])
+        logging.error("Failed to edit product %s for user %s", product_id, currentUser_id)
         return jsonify({
             "error": 'Error occurred while updating product'
         }), 400
     except Exception as e:
-        logging.exception("Error editing product for user %s", user["id"])
+        logging.exception("Error editing product for user %s", currentUser_id)
         return jsonify({"error": "Failed to edit product", "details": str(e)}), 500
     
 @app.route("/favorite-product", methods=["PUT"])
 @csrf.exempt
 @token_required
 @limiter.limit("5/minute")
-def favoriteProduct(user=None):
+def favoriteProduct():
     try:
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_id = user['user_id']
         productId = int(request.json.get("id"))
         if not productId:
-            logging.warning("User %s failed to provide a product ID for favoriting", user["id"])
+            logging.warning("User %s failed to provide a product ID for favoriting", currentUser_id)
             return jsonify({"error": "Product ID is required"}), 400
         
         products = crud.get_products(id=productId)
         if not products:
-            logging.warning("User %s attempted to favorite a nonexistent product", user["id"])
+            logging.warning("User %s attempted to favorite a nonexistent product", currentUser_id)
             return jsonify({"error": "Product not found"}), 404
         
         product = products[0]
-        if product.user_id != user["id"]:
-            logging.warning("User %s attempted to favorite an unauthorized product", user["id"])
+        if product.user_id != currentUser_id:
+            logging.warning("User %s attempted to favorite an unauthorized product", currentUser_id)
             return jsonify({"error": "Access denied"}), 403
         
         updated_product = crud.toggle_favorited(productId)
         if updated_product:
-            logging.info("User %s successfully favorited product %s", user["id"], productId)
+            logging.info("User %s successfully favorited product %s", currentUser_id, productId)
             return jsonify({
                     "favorited": updated_product.favorited
             })
-        logging.error("Failed to favorite product %s for user %s", productId, user["id"])
+        logging.error("Failed to favorite product %s for user %s", productId, currentUser_id)
         return jsonify({
             "error": "Product favoriting process failed"
         }), 400
     except Exception as e:
-        logging.exception("Error favoriting product for user %s", user["id"])
+        logging.exception("Error favoriting product for user %s", currentUser_id)
         return jsonify({"error": "Failed to toggle favorite", "details": str(e)}), 500
 
 """ Profile Endpoints """
@@ -541,17 +635,20 @@ def favoriteProduct(user=None):
 @limiter.limit("10/minute")  # Rate-limiting: 10 requests per minute
 @csrf.exempt  # Enforce CSRF protection
 @token_required
-def profile(username, user=None):
+def profile(username):
     """Fetch profile details of the given username."""
     # `user` is the authenticated user, injected by @token_required
     # `username` is the user profile being accessed
     try:
-        logging.info(f"Authenticated user {user['username']} is accessing profile of {username}")
-        current_user_id = user["user_id"]
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_id = user["user_id"]
+        currentUser_username = user['username']
+        logging.info(f"Authenticated user {currentUser_username} is accessing profile of {username}")
 
         # Check if authenticated user is online
         if not user["isOnline"]:
-            logging.warning(f"User {user['username']} attempted to access profiles while offline.")
+            logging.warning(f"User {currentUser_username} attempted to access profiles while offline.")
             return jsonify({'error': 'You are offline. Community features are not available.'}), 403
 
         # Fetch the target user's data
@@ -565,18 +662,18 @@ def profile(username, user=None):
         sent_request = False
         received_request = False
 
-        if target_user.id != current_user_id:
-            if crud.check_friendship(target_user.id, current_user_id):
+        if target_user.id != currentUser_id:
+            if crud.check_friendship(target_user.id, currentUser_id):
                 is_friend = True
-            elif crud.get_friend_requests(receiver_id=target_user.id, sender_id=current_user_id, status='pending'):
+            elif crud.get_friend_requests(receiver_id=target_user.id, sender_id=currentUser_id, status='pending'):
                 sent_request = True
-            elif crud.get_friend_requests(receiver_id=current_user_id, sender_id=target_user.id, status='pending'):
+            elif crud.get_friend_requests(receiver_id=currentUser_id, sender_id=target_user.id, status='pending'):
                 received_request = True
 
         # Fetch favorited products
         favorited_products = crud.get_products(user_id=target_user.id, favorited=True)
 
-        logging.info(f"User {user['username']} successfully fetched profile data for {username}")
+        logging.info(f"User {currentUser_username} successfully fetched profile data for {username}")
         return jsonify({
             'favoriteProducts': [product.to_dict() for product in favorited_products],
             'user': {
@@ -596,157 +693,174 @@ def profile(username, user=None):
 @limiter.limit("5/minute")  # Rate-limiting: 5 requests per minute
 @csrf.exempt  # Enforce CSRF protection
 @token_required
-def editDescription(username, user=None):
+def editDescription(username):
     """Edit the description of the authenticated user's profile."""
     # `user` is the authenticated user
     try:
-        logging.info(f"Authenticated user {user['username']} is attempting to edit their profile description.")
-        current_user_id = user["user_id"]
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_id = user["user_id"]
+        currentUser_username = user['username']
+        logging.info(f"Authenticated user {currentUser_username} is attempting to edit their profile description.")
 
         # Ensure the user is online
         if not user["isOnline"]:
-            logging.warning(f"User {user['username']} attempted to edit description while offline.")
+            logging.warning(f"User {currentUser_username} attempted to edit description while offline.")
             return jsonify({'error': 'You are offline. Community features are not available.'}), 403
 
         # Ensure user is editing their own profile
         target_user = crud.get_user(username=username)
-        if not target_user or target_user.id != current_user_id:
-            logging.warning(f"User {user['username']} tried to edit the description of {username}.")
+        if not target_user or target_user.id != currentUser_id:
+            logging.warning(f"User {currentUser_username} tried to edit the description of {username}.")
             return jsonify({'error': 'You can only edit your own description'}), 403
 
         # Validated the new description
         new_description = request.json.get("description")
         if not new_description:
-            logging.warning(f"User {user['username']} submitted an empty description.")
+            logging.warning(f"User {currentUser_username} submitted an empty description.")
             return jsonify({'error': 'Description cannot be empty'}), 400
 
         # Update description
-        updated_user = crud.update_user(user_id=user.id, description=new_description)
-        logging.info(f"User {user['username']} successfully updated their description.")
+        updated_user = crud.update_user(user_id=currentUser_id, description=new_description)
+        logging.info(f"User {currentUser_username} successfully updated their description.")
         return jsonify({'message': 'Description updated successfully!', 'description': updated_user.description})
 
     except Exception as e:
-        logging.error(f"Error while editing description for {user['username']}: {str(e)}")
+        logging.error(f"Error while editing description for {currentUser_username}: {str(e)}")
         return jsonify({'error': 'An error occurred while updating the description'}), 500
 
 """ Friend Request Endpoints """
 @app.route('/make-request', methods=['POST'])
 @csrf.exempt  # Optional if you rely solely on token auth
 @token_required
-def make_request(user=None):
+def make_request():
     try:
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_id = user["user_id"]
+        currentUser_username = user['username']
         if not user["isOnline"]:
-            logging.warning(f"Offline user {user['username']} attempted to send a friend request.")
+            logging.warning(f"Offline user {currentUser_username} attempted to send a friend request.")
             return jsonify({'error': 'You are offline.'}), 403
 
         receiver_username = request.json.get('friend_username')
         receiver = crud.get_user(username=receiver_username)
 
         if not receiver:
-            logging.error(f"User {user['username']} tried to request a non-existent user: {receiver_username}")
+            logging.error(f"User {currentUser_username} tried to request a non-existent user: {receiver_username}")
             return jsonify({'error': 'User not found.'}), 404
         
         # check if they're already friends
-        if crud.check_friendship(user["id"], receiver.id):
-            logging.info(f"User {user['username']} attempted to re-friend {receiver_username}.")
+        if crud.check_friendship(currentUser_id, receiver.id):
+            logging.info(f"User {currentUser_username} attempted to re-friend {receiver_username}.")
             return jsonify({'error': 'You are already friends.'}), 400
         # check if a pending request already exists
-        if (crud.get_friend_requests(receiver_id=receiver.id, sender_id=user["id"], status="pending") or
-        crud.get_friend_requests(receiver_id=user["id"], sender_id=receiver.id, status="pending")):
-            logging.info(f"Duplicate friend request from {user['username']} to {receiver_username}.")
+        if (crud.get_friend_requests(receiver_id=receiver.id, sender_id=currentUser_id, status="pending") or
+        crud.get_friend_requests(receiver_id=currentUser_id, sender_id=receiver.id, status="pending")):
+            logging.info(f"Duplicate friend request from {currentUser_username} to {receiver_username}.")
             return jsonify({'error': 'A friend request is already pending.'}), 400
         
         # Add the new friend request
-        crud.create_friend_request(user["id"], receiver.id)
-        logging.info(f"User {user['username']} sent a friend request to {receiver_username}.")
+        crud.create_friend_request(currentUser_id, receiver.id)
+        logging.info(f"User {currentUser_username} sent a friend request to {receiver_username}.")
 
         # Emit to the room of the receiving user with their username as the room name
         socketio.emit('new_friend_request', {
-            'sender_username': user['username'],
+            'sender_username': currentUser_username,
             'receiver_username': receiver_username
         }, room=receiver.id)
 
         return jsonify({'message': 'Friend request sent successfully!'})
     except Exception as e:
-        logging.exception(f"Error processing friend request by {user['username']}: {str(e)}")
+        logging.exception(f"Error processing friend request by {currentUser_username}: {str(e)}")
         return jsonify({'error': 'An error occurred'}), 404
 
 @app.route('/accept-friend', methods=['POST'])
 @csrf.exempt
 @limiter.limit("5/minute")  # Accept requests are less frequent
 @token_required
-def accept_friend(user=None):
+def accept_friend():
     try:
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_id = user["user_id"]
+        currentUser_username = user["username"]
         if not user.get("isOnline"):
-            logging.warning(f"Offline user {user['username']} attempted to accept a friend request.")
+            logging.warning(f"Offline user {currentUser_username} attempted to accept a friend request.")
             return jsonify({'error': 'You are offline.'}), 403
         
         friend_username = request.json.get('friend_username')
         friend = crud.get_user(username=friend_username)
 
         if not friend:
-            logging.error(f"User {user['username']} tried to accept a request from a non-existent user: {friend_username}.")
+            logging.error(f"User {currentUser_username} tried to accept a request from a non-existent user: {friend_username}.")
             return jsonify({'error': 'User not found.'}), 404
         
-        friend_request = crud.get_friend_requests(receiver_id=user["id"], sender_id=friend.id, status="pending")
+        friend_request = crud.get_friend_requests(receiver_id=currentUser_id, sender_id=friend.id, status="pending")
         if not friend_request:
-            logging.info(f"No pending friend request from {friend_username} to {user['username']}.")
+            logging.info(f"No pending friend request from {friend_username} to {currentUser_username}.")
             return jsonify({'error': 'No pending friend request found.'}), 404
         
-        crud.create_friendship(user["id"], friend.id)
+        crud.create_friendship(currentUser_id, friend.id)
         crud.delete_friend_request(friend_request[0].id)
 
-        logging.info(f"User {user['username']} accepted a friend request from {friend_username}.")
+        logging.info(f"User {currentUser_username} accepted a friend request from {friend_username}.")
         return jsonify({'message': 'Friend request accepted successfully!', 'friend': {'id': friend.id, 'username': friend.username}})
     except Exception as e:
-        logging.exception(f"Error accepting friend request by {user['username']}: {str(e)}")
+        logging.exception(f"Error accepting friend request by {currentUser_username}: {str(e)}")
         return jsonify({'error': 'An error occurred.'}), 500
 
 @app.route('/decline-friend', methods=['POST'])
 @csrf.exempt
 @limiter.limit("5/minute")  # Decline requests are infrequent
 @token_required
-def decline_friend(user=None):
+def decline_friend():
     try:
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_username = user["username"]
         if not user.get("isOnline"):
-            logging.warning(f"Offline user {user['username']} attempted to decline a friend request.")
+            logging.warning(f"Offline user {currentUser_username} attempted to decline a friend request.")
             return jsonify({'error': 'You are offline.'}), 403
 
         other_username = request.json.get('friend_username')
         other_user = crud.get_user(username=other_username)
 
         if not other_user:
-            logging.error(f"User {user['username']} tried to decline a request from a non-existent user: {other_username}.")
+            logging.error(f"User {currentUser_username} tried to decline a request from a non-existent user: {other_username}.")
             return jsonify({'error': 'User not found.'}), 404
 
         friend_request = crud.get_friend_requests(receiver_id=user["id"], sender_id=other_user.id, status="pending")
         if not friend_request:
-            logging.info(f"No pending friend request from {other_username} to {user['username']}.")
+            logging.info(f"No pending friend request from {other_username} to {currentUser_username}.")
             return jsonify({'error': 'No pending friend request found.'}), 404
 
         crud.delete_friend_request(friend_request[0].id)
-        logging.info(f"User {user['username']} declined a friend request from {other_username}.")
+        logging.info(f"User {currentUser_username} declined a friend request from {other_username}.")
         return jsonify({'message': 'Friend request declined successfully!'})
     except Exception as e:
-        logging.exception(f"Error declining friend request by {user['username']}: {str(e)}")
+        logging.exception(f"Error declining friend request by {currentUser_username}: {str(e)}")
         return jsonify({'error': 'An error occurred.'}), 500
 
 @app.route('/friend-requests', methods=['GET'])
 @limiter.limit("10/minute")  # Can be queried frequently
 @token_required
-def get_friend_requests(user=None):
+def get_friend_requests():
     try:
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_username = user['username']
         if not user["isOnline"]:
-            logging.warning(f"Offline user {user['username']} attempted to view friend requests.")
+            logging.warning(f"Offline user {currentUser_username} attempted to view friend requests.")
             return jsonify({'error': 'You are offline.'}), 403
 
         user_requests = crud.get_friend_requests(receiver_id=user["id"], status="pending")
         sender_usernames = [request.sender.username for request in user_requests]
 
-        logging.info(f"User {user['username']} retrieved their pending friend requests.")
+        logging.info(f"User {currentUser_username} retrieved their pending friend requests.")
         return jsonify({'sender_usernames': sender_usernames})
     except Exception as e:
-        logging.exception(f"Error retrieving friend requests for {user['username']}: {str(e)}")
+        logging.exception(f"Error retrieving friend requests for {currentUser_username}: {str(e)}")
         return jsonify({'error': 'An error occurred.'}), 500
 
 """ Friends endpoints """
@@ -754,27 +868,30 @@ def get_friend_requests(user=None):
 @csrf.exempt  # CSRF exemption for token-based authentication
 @limiter.limit("5/minute")  # Rate limiting: Max 5 requests per minute
 @token_required
-def remove_friend(user=None):
+def remove_friend():
     try:
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_username = user['username']
         # Ensure user is online
         if not user["isOnline"]:
-            logging.warning(f"Offline user {user['username']} attempted to view friend requests.")
+            logging.warning(f"Offline user {currentUser_username} attempted to view friend requests.")
             return jsonify({'error': 'You are offline. Community features are not available.'}), 403
     
         friend_username = request.json.get('friend_username')
         friend_user = crud.get_user(username=friend_username)
 
         if not friend_user:
-            logging.error(f"Friend user with {user['username']}, was not found.")
+            logging.error(f"Friend user with {currentUser_username}, was not found.")
             return jsonify({'error': 'User not found.'}), 404
 
         # Delete the friendship
         deleted_friendship = crud.delete_friendship(user['id'], friend_user.id)
         if deleted_friendship:
-            logging.info(f"Friendship removed: {user['username']} -> {friend_username}")
+            logging.info(f"Friendship removed: {currentUser_username} -> {friend_username}")
             return jsonify({'message': 'Friend removed successfully!'}), 200
     
-        logging.warning(f"Failed to remove friendship: {user['username']} -> {friend_username}")
+        logging.warning(f"Failed to remove friendship: {currentUser_username} -> {friend_username}")
         return jsonify({'error': 'Failed to remove friend.'}), 500
 
     except Exception as e:
@@ -784,15 +901,18 @@ def remove_friend(user=None):
 @app.route('/friends', methods=['GET'])
 @limiter.limit("10/minute")  # Rate limiting: Max 10 requests per minute
 @token_required
-def get_friends(user=None):
+def get_friends():
     try:
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_id = user['id']
         # Ensure user is online
         if not user["isOnline"]:
             logging.warning(f"Offline user {user['username']} attempted to view friend requests.")
             return jsonify({'error': 'You are offline. Community features are not available.'}), 403
 
         # Find all friend relationships
-        friendships = crud.get_friends(user["id"])
+        friendships = crud.get_friends(currentUser_id)
 
         # Retrieve the user data for all the friends
         friend_list = [
@@ -801,10 +921,10 @@ def get_friends(user=None):
                 'username': friend.username
             }
             for friendship in friendships
-            for friend in [crud.get_user(id=friendship.user1_id if friendship.user1_id != user["id"] else friendship.user2_id)]
+            for friend in [crud.get_user(id=friendship.user1_id if friendship.user1_id != currentUser_id else friendship.user2_id)]
         ]
 
-        logging.info(f"Friend list retrieved for user_id: {user['id']} ({len(friend_list)} friends)")
+        logging.info(f"Friend list retrieved for user_id: {currentUser_id} ({len(friend_list)} friends)")
         return jsonify({'friends': friend_list}), 200
 
     except Exception as e:

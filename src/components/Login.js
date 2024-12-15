@@ -32,7 +32,6 @@ const Login = ({ onLogin }) => {
             if (response.ok) {
                 const data = await response.json();
                 alert(data.message);
-                // console.log("User info is: ", data)
                 onLogin(data.username, data.isOnline);
 
                 navigate('/'); // Redirect to the home page

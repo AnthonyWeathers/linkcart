@@ -25,8 +25,6 @@ function App() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        console.log("second check of user: ", currentUser)
-        console.log("second check of status: ", isOnline)
         const response = await fetch('http://localhost:8000/current-user', {
           method: 'GET',
           credentials: 'include', // Include credentials for session management
@@ -53,6 +51,8 @@ function App() {
   }, []);
   
   useEffect(() => {
+    console.log("Attempted to change isOnline State");
+    console.log("Updated state of isOnline is: ", isOnline);
     const handleConnection = async () => {
       if (isOnline && !socket.connected) {
         try {
@@ -134,7 +134,6 @@ function App() {
   
 
   useEffect(() => {
-    console.log("Updated currentUser:", currentUser);
     // Listen for WebSocket events when a new friend request is received
     socket.on('new_friend_request', (data) => {
       // currentUser is only username
@@ -190,12 +189,8 @@ function App() {
   };
 
   const handleSetCurrentUser = (user, onlineStatus) => {
-    console.log("user is: ", user);
-    console.log("user online status is: ", onlineStatus);
     setCurrentUser(user); // Set the logged-in user
     setIsOnline(onlineStatus); // Set the initial mode
-    // console.log("current user is: ", currentUser);
-    // console.log("current user online status is: ", isOnline)
     // if (onlineStatus && !socket.connected) {
     //   socket.connect();
     // }
