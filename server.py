@@ -399,7 +399,8 @@ def handle_connect(*args, **kwargs):
             # For future features involving updating ui based off
             # a user's online stauts
             socketio.emit('status_update', {
-                "user_id": user_id,
+                # "user_id": user_id,
+                "username": toggled_user.username,
                 "isOnline": True
             }, to='community')
             # }, broadcast=True)  # Notify all clients
@@ -433,7 +434,8 @@ def handle_disconnect(*args, **kwargs):
             # For future features involving updating ui based off
             # a user's online stauts
             socketio.emit('status_update', {
-                "user_id": user_id,
+                # "user_id": user_id,
+                "username": toggled_user.username,
                 "isOnline": False
             }, to='community')
             # }, broadcast=True)
@@ -854,7 +856,7 @@ def get_friend_requests():
             logging.warning(f"Offline user {currentUser_username} attempted to view friend requests.")
             return jsonify({'error': 'You are offline.'}), 403
 
-        user_requests = crud.get_friend_requests(receiver_id=user["id"], status="pending")
+        user_requests = crud.get_friend_requests(receiver_id=user["user_id"], status="pending")
         sender_usernames = [request.sender.username for request in user_requests]
 
         logging.info(f"User {currentUser_username} retrieved their pending friend requests.")
@@ -886,7 +888,7 @@ def remove_friend():
             return jsonify({'error': 'User not found.'}), 404
 
         # Delete the friendship
-        deleted_friendship = crud.delete_friendship(user['id'], friend_user.id)
+        deleted_friendship = crud.delete_friendship(user['user_id'], friend_user.id)
         if deleted_friendship:
             logging.info(f"Friendship removed: {currentUser_username} -> {friend_username}")
             return jsonify({'message': 'Friend removed successfully!'}), 200
@@ -905,7 +907,7 @@ def get_friends():
     try:
         # Access user payload from request.user_payload
         user = request.user_payload
-        currentUser_id = user['id']
+        currentUser_id = user['user_id']
         # Ensure user is online
         if not user["isOnline"]:
             logging.warning(f"Offline user {user['username']} attempted to view friend requests.")

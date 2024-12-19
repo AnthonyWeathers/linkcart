@@ -1,4 +1,5 @@
 import React, { createContext, useState } from "react";
+import socket from './socket';
 
 // Create the context
 export const UserStatusContext = createContext();
@@ -8,7 +9,12 @@ export const UserStatusProvider = ({ children }) => {
     const [isOnline, setIsOnline] = useState(false);
 
     const toggleStatus = () => {
-        setIsOnline((prev) => !prev);
+        // setIsOnline((prev) => !prev);
+        if (!isOnline) {
+            socket.connect(); // Backend handles setting isOnline to true
+        } else {
+            socket.disconnect(); // Backend handles setting isOnline to false
+        }
     };
 
     return (
