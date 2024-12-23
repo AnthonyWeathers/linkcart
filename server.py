@@ -398,11 +398,13 @@ def handle_connect(*args, **kwargs):
 
             # For future features involving updating ui based off
             # a user's online stauts
+            # print(socketio.rooms())
             socketio.emit('status_update', {
                 # "user_id": user_id,
                 "username": toggled_user.username,
                 "isOnline": True
-            }, to='community')
+            })
+            # }, to='community')
             # }, broadcast=True)  # Notify all clients
         else:
             logging.error(f"Failed to toggle online status for user ID {user_id}")
@@ -419,13 +421,14 @@ def handle_disconnect(*args, **kwargs):
     try:
         # Retrieve the user from kwargs
         user = kwargs.get('user')
+        print("current status of userOnline is: ", user["isOnline"])
 
-        logging.debug(f"[Socket.IO] User in handle_connect: {user}")
+        logging.debug(f"[Socket.IO] User in handle_disconnect: {user}")
         if not user:
-            logging.warning("No user provided to handle_connect")
+            logging.warning("No user provided to handle_disconnect")
             disconnect()
             return
-        
+        # print(socketio.rooms())
         user_id = user["user_id"]
         toggled_user = crud.set_user_online_status(user_id, False)  # Explicit toggle
         if toggled_user:
@@ -437,7 +440,8 @@ def handle_disconnect(*args, **kwargs):
                 # "user_id": user_id,
                 "username": toggled_user.username,
                 "isOnline": False
-            }, to='community')
+            })
+            # }, to='community')
             # }, broadcast=True)
         else:
             logging.error("Failed to update online status on disconnect")

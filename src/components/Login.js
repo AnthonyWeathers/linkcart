@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import socket from './socket';
-import { useLocation } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 
 const Login = ({ onLogin }) => {
     const [username, setUsername] = useState('');
@@ -16,6 +14,8 @@ const Login = ({ onLogin }) => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true); // Set loading to true
+        setError(''); // Clear previous errors
+
         try {
             const response = await fetch(`http://localhost:8000/login`, {
                 method: 'POST',
@@ -37,8 +37,8 @@ const Login = ({ onLogin }) => {
                 navigate('/'); // Redirect to the home page
             } else {
                 const data = await response.json();
-                alert(data.error);
-                setError(data.error);
+                // alert(data.error);
+                setError(data.error || 'Login failed. Please try again.');
             }
         } catch (error) {
             console.error('Error logging in:', error);
@@ -60,6 +60,7 @@ const Login = ({ onLogin }) => {
                     placeholder='Enter username' 
                     value={username} 
                     onChange={(e) => setUsername(e.target.value)}
+                    disabled={isLoading}
                 />
                 <input 
                     type='password' 
@@ -68,9 +69,12 @@ const Login = ({ onLogin }) => {
                     placeholder='Enter password' 
                     value={password} 
                     onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
                 />
-                <button type="submit" className="form-button" disabled={isLoading}>Login</button>
-                {isLoading && <p className="loading-text">Loading...</p>}
+                <button type="submit" className="form-button" disabled={isLoading}>
+                    {isLoading ? 'Logging in...' : 'Login'}
+                </button>
+                {/* {isLoading && <p className="loading-text">Loading...</p>} */}
                 {error && <p className="error-text">{error}</p>}
             </form>
             <p className="form-navigation">New here? <Link to="/register" className="form-link">Register here</Link></p>
