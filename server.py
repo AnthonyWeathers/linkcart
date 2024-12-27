@@ -123,43 +123,6 @@ def token_required(f):
 
     return decorated_function
 
-        # REST API
-        # if request.method:
-    #     if request and request.method in ['GET', 'POST', 'PUT', 'DELETE']:
-    #         token = request.cookies.get('jwtToken')
-    #         logging.debug(f"Token from request cookies: {token}")
-
-    #     # Socket.IO
-    #     # elif hasattr(request, 'cookies'):
-    #     elif args and hasattr(args[0], 'cookies'):  # Check for Socket.IO
-    #         # token = request.cookies.get('jwtToken')
-    #         token = args[0].cookies.get('jwtToken')
-    #         logging.debug(f"[Socket.IO] Token from Socket.IO cookies: {token}")
-
-    #     if not token:
-    #         logging.warning("No token provided")
-    #         if not request.method:  # If it's a Socket.IO request
-    #             disconnect()
-    #         return jsonify({"error": "Token is required"}), 401
-        
-    #     user_payload = verify_token(token)
-    #     logging.debug(f"User payload after verification: {user_payload}")
-        
-    #     if not user_payload:
-    #         logging.warning("Invalid or expired token")
-    #         if not request.method:  # If it's a Socket.IO request
-    #             disconnect() # For Socket.IO
-    #         return jsonify({"error": "Invalid or expired token"}), 401
-        
-    #     # Attach user to request (for REST) or kwargs (for Socket.IO)
-    #     # if request.method:
-    #     if request and request.method in ['GET', 'POST', 'PUT', 'DELETE']:
-    #         request.user_payload = user_payload
-    #     else:
-    #         kwargs['user'] = user_payload
-    #     return f(*args, **kwargs)
-    # return decorated_function
-
 @app.route('/refresh', methods=['POST'])
 @token_required
 def refresh_token(user=None):
@@ -274,7 +237,7 @@ def handle_message(*args, **kwargs):
             'username': user['username'],  # Use the user object for the username
             'content': message.content,
             'timestamp': message.timestamp.isoformat()  # Format timestamp as string
-        }, to='/') # / or community
+        }, to='community') # / or community
         # }, broadcast=True)
 
     except Exception as e:
@@ -394,6 +357,7 @@ def handle_connect(*args, **kwargs):
         toggled_user = crud.set_user_online_status(user_id, True)  # Update the database to online
         if toggled_user:
             logging.info(f"User {toggled_user.username} (ID: {user_id})  is now online")
+            # logging.info(f"User cookie online status is: {user["isOnline"]}")
             join_room("community")  # Join the community room
 
             # For future features involving updating ui based off
@@ -433,7 +397,7 @@ def handle_disconnect(*args, **kwargs):
         toggled_user = crud.set_user_online_status(user_id, False)  # Explicit toggle
         if toggled_user:
             logging.info(f"User {toggled_user.username} is now offline")
-
+            # logging.info(f"User cookie online status is: {user["isOnline"]}")
             # For future features involving updating ui based off
             # a user's online stauts
             socketio.emit('status_update', {
@@ -449,6 +413,42 @@ def handle_disconnect(*args, **kwargs):
     except Exception as e:
         logging.exception("Unexpected error in disconnecting socketio")
         return jsonify({"error": "An unexpected error occurred while disconnecting from socketio"}), 500
+    
+@app.route('/sync-status', methods=['GET'])
+@token_required
+def sync_online_status():
+    try:
+        user = request.user_payload
+
+        if not user:
+            logging.warning("Unauthorized access to /sync-status")
+            return jsonify({"error": "Unauthorized"}), 401
+
+        username = user.get("username")
+        toggled_user = crud.get_user(username=username)
+
+        if toggled_user:
+            logging.info(f"User {username} sync status: {toggled_user.isOnline}")
+            # response = jsonify({"isOnline": toggled_user.isOnline})
+            # response.set_cookie('isOnline', str(toggled_user.isOnline), httponly=True)
+            # return response, 200
+
+            # Generate a new token with updated isOnline status
+            new_token = create_jwt(toggled_user)
+
+            response = jsonify({"isOnline": toggled_user.isOnline})
+            response.set_cookie('jwtToken', new_token, httponly=True, samesite='Lax', secure=False)
+            
+            logging.debug(f"Updated jwtToken with isOnline status: {toggled_user.isOnline}")
+            return response, 200
+        else:
+            logging.warning(f"User not found: {username}")
+            return jsonify({"error": "User not found"}), 404
+
+    except Exception as e:
+        logging.exception("Error syncing online status")
+        return jsonify({"error": "Failed to sync online status"}), 500
+
 
 """ Products Endpoints """
 @app.route("/submit-product", methods=["POST"])

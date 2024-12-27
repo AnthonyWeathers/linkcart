@@ -19,7 +19,8 @@ function App() {
 
   //const [isOnline, setIsOnline] = useState(false); // Track online/offline mode
   // Access isOnline and toggleStatus from the UserStatusContext
-  const { isOnline } = useContext(UserStatusContext);
+  const { isOnline, syncStatus } = useContext(UserStatusContext);
+  // const { isOnline } = useContext(UserStatusContext);
 
   // Fetch the current user on component mount
   useEffect(() => {
@@ -50,109 +51,11 @@ function App() {
 
     fetchCurrentUser();
   }, []);
-  
-  // useEffect(() => {
-  //   console.log("Attempted to change isOnline State");
-  //   console.log("Updated state of isOnline is: ", isOnline);
 
-  //   // Handles updating isOnline when connect and disconnect socket endpoints occur and emit
-  //   const handleStatusUpdate = (data) => {
-  //       if (data.user_id === currentUser?.id) {
-  //           setIsOnline(data.isOnline);
-  //       }
-  //   };
-
-  //   const handleConnection = async () => {
-  //     if (isOnline && !socket.connected) {
-  //       try {
-  //         const response = await fetch('http://localhost:8000/current-user', {
-  //           method: 'GET',
-  //           credentials: 'include',
-  //         });
-  //         // const data = await response.json();
-  //         if (response.ok) {
-  //             const userData = await response.json();
-  //             setCurrentUser(userData.user); // Assuming the response includes user data
-  //             setHasNewRequests(userData.hasNewRequests); // Set the initial friend request state from backend
-  //             socket.connect(); // HttpOnly cookie will handle auth automatically
-  //         } else {
-  //             setCurrentUser(null); // Assuming the response includes user data
-  //             console.error('Unable to connect socket due to failed authentication');
-  //         }
-  //       } catch (error) {
-  //           console.error('Error authenticating socket connection:', error);
-  //       }
-  //     } else if (!isOnline && socket.connected) {
-  //       socket.disconnect(); // Disconnect the socket if going offline
-  //     }
-  //   };
-  
-  //   handleConnection();
-  
-  //   // Log socket connection
-  //   socket.on('connect', () => {
-  //     console.log('WebSocket connected', socket.id);
-  //   });
-
-  //   // Update user online status
-  //   socket.on('status_update', handleStatusUpdate);
-
-  //   // Log socket disconnection
-  //   socket.on('disconnect', (reason) => {
-  //     console.log('WebSocket disconnected:', reason);
-  //     if (reason === 'io server disconnect') {
-  //       // Attempt reconnect if disconnected due to token issues
-  //       socket.connect();
-  //     }
-  //   });
-  
-  //   // Cleanup on component unmount
-  //   return () => {
-  //     socket.off('connect');
-  //     socket.off('disconnect');
-  //     socket.off('status_update', handleStatusUpdate);
-  //     if (socket.connected) {
-  //       socket.disconnect(); // Ensure socket is disconnected
-  //     }
-  //     //setIsOnline(false); // Ensure frontend state is consistent
-  //   };
-  // }, [isOnline, currentUser]);
-
-  // Effect 1: Handle socket connection and disconnection based on isOnline
-  // useEffect(() => {
-  //   const handleConnection = async () => {
-  //       try {
-  //           if (isOnline && !socket.connected) {
-  //               const response = await fetch('http://localhost:8000/current-user', {
-  //                   method: 'GET',
-  //                   credentials: 'include',
-  //               });
-
-  //               if (response.ok) {
-  //                   const userData = await response.json();
-  //                   setCurrentUser(userData.user); // Assuming the response includes user data
-  //                   setHasNewRequests(userData.hasNewRequests); // Set the initial friend request state
-  //                   socket.connect(); // Connect socket using auth cookie
-  //               } else {
-  //                   // setCurrentUser(null);
-  //                   console.error('Unable to connect socket due to failed authentication');
-  //               }
-  //           } else if (!isOnline && socket.connected) {
-  //               socket.disconnect(); // Disconnect the socket if going offline
-  //           }
-  //       } catch (error) {
-  //           console.error('Error authenticating socket connection:', error);
-  //       }
-  //   };
-
-  //   handleConnection();
-  // }, [isOnline]); // Only react to isOnline changes
-
-  // Effect 2: Handle socket event listeners
+  // Handle socket event listeners
   useEffect(() => {
     const handleStatusUpdate = (data) => {
         if (data.username === currentUser) {
-            // setIsOnline(data.isOnline);
             console.log("currentUser online status becomes: ", currentUser, isOnline)
         }
     };
@@ -167,39 +70,6 @@ function App() {
         socket.off('status_update', handleStatusUpdate);
     };
   }, [currentUser]);
-
-  // useEffect(() => {
-  //   const handleStatusUpdate = (data) => {
-  //       console.log("Received status update:", data);
-  //       if (data.username === currentUser) {
-  //           console.log("Updating isOnline state to:", data.isOnline);
-  //           setIsOnline(data.isOnline);
-  //       }
-  //   };
-
-  //   const handleConnect = () => {
-  //       console.log('Socket connected:', socket.id);
-  //   };
-
-  //   const handleDisconnect = (reason) => {
-  //       console.log('Socket disconnected:', reason);
-  //       if (reason === 'io server disconnect') {
-  //           socket.connect(); // Auto-reconnect
-  //       }
-  //   };
-
-  //   // Attach listeners once
-  //   socket.on('connect', handleConnect);
-  //   socket.on('status_update', handleStatusUpdate);
-  //   socket.on('disconnect', handleDisconnect);
-
-  //   return () => {
-  //       socket.off('connect', handleConnect);
-  //       socket.off('status_update', handleStatusUpdate);
-  //       socket.off('disconnect', handleDisconnect);
-  //   };
-  // }, [currentUser]); // Depend on currentUser for status filtering
-
 
   useEffect(() => {
     const handleReconnection = () => {
@@ -260,7 +130,7 @@ function App() {
 
   const refreshToken = async () => {
     try {
-      const response = await fetch('/refresh', {
+      const response = await fetch('http://localhost:8000/refresh', {
         method: 'POST',
         credentials: 'include', // Include credentials for session management
         // headers: { 'Content-Type': 'application/json' },
@@ -287,8 +157,16 @@ function App() {
   const handleSetCurrentUser = (user, onlineStatus) => {
     console.log("Logged in user is: ", user)
     setCurrentUser(user); // Set the logged-in user
-    // setIsOnline(onlineStatus); // Set the initial mode
   }
+
+  useEffect(() => {
+    console.log("attempting to sync status on user login")
+    if (currentUser) {
+        syncStatus(); // Sync online status after user logs in
+    }
+  // }, [currentUser, syncStatus]);
+  }, [currentUser]);
+
 
   const logout = async () => {
     try {
@@ -303,7 +181,6 @@ function App() {
         alert(data.message); // Optional: show a message to the user
         setCurrentUser(null); // Clear current user state
         setHasNewRequests(false); // Reset on logout
-        // setIsOnline(false); // sets status to offline for logged out user
 
         if (socket.connected) {
           socket.disconnect();
@@ -426,7 +303,6 @@ function App() {
           </>
         )}
       </div>
-    // </UserStatusProvider>
   );
 }
 
