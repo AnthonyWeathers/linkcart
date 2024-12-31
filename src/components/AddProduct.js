@@ -2,111 +2,83 @@ import React, { useState } from 'react';
 import ProductForm from './ProductForm';
 
 const AddProduct = ({ user }) => {
-  // useEffect, and code interacting with other code of App, is in here before the return
-  const [url, setUrl] = useState('');
-  const [price, setPrice] = useState('');
-  const [productName, setProductName] = useState('');
-  const [category, setCategory] = useState('');
 
   // State to store the submitted data
   const [submittedData, setSubmittedData] = useState(null);
   // State to check if user is editting data on form
-  const [edittingData, setEdittingData] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   if (!user) {
     return <p>Please log in to add a product.</p>;
   }
 
-  // Function to handle form submission
-  const updateFormData = () => {
-    const formData = {
-      url,
-      price,
-      productName,
-      category
-    };
-    if(edittingData) {
-      setEdittingData(false)
-    }
-
-    setSubmittedData(formData);
-  }
-  const handleSubmit = (event) => {
-    event.preventDefault(); // Prevent page reload on form submit
-
-    // Handle the form data here, e.g., sending it to an API or processing it
-    updateFormData()
-
-    // validate if url is of an accepted/supported link (maybe use regex to check if the link is correctly an amazon product link)
-
-    console.log('Form Data:', submittedData);
-  };
-
+  // Clear the form and submitted data
   const clearForm = () => {
-    // Clear the form inputs if desired
-    setUrl('');
-    setPrice('');
-    setProductName('');
-    setCategory('');
-  }
-
-  const clearData = (event) => {
-    event.preventDefault();
-    clearForm();
+    // (event) => {
+    //   event.preventDefault();
     setSubmittedData(null);
+    // setIsEditing(false);
     alert('Data cleared')
   };
-  const confirmData = (event) => {
-    event.preventDefault();
-    clearForm();
-    setSubmittedData(null);
 
-    fetch(`http://localhost:8000/submit-product`, {
-      method: 'POST',
-      credentials: 'include', // Include credentials for session management
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: user.id, url, price, productName, category }),
-      credentials: 'include'
-    })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data.save) {
-          alert(data.message);
-        } else {
-          alert(data.error);
-        }
-      })
-      .catch((error) => {
-        console.error('There was a problem with the fetch operation:', error);
-      });
+  // Handle form submission
+  const handleSubmit = (formData) => {
+    setSubmittedData(formData);
+    setIsEditing(false);
+    console.log('Form Data:', formData);
   };
-  const editData = event => {
+
+  const confirmData = async (event) => {
     event.preventDefault();
-    setEdittingData(true)
+
+    try {
+      const response = await fetch(`http://localhost:8000/submit-product`, {
+        method: 'POST',
+        credentials: 'include', // Include credentials for session management
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          ...submittedData,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      if (data.save) {
+        alert(data.message);
+        clearForm();
+      } else {
+        alert(data.error);
+      }
+    } catch (error) {
+      console.error('There was a problem with the fetch operation:', error);
+    }
   }
+
+  // Enable editing mode
+  const editData = () => {
+    setIsEditing(true);
+  };
+
   return (
     <div className='container'>
-      {(!submittedData || edittingData) && (
-        <ProductForm 
-          url={url}
-          setUrl={setUrl}
-          price={price}
-          setPrice={setPrice}
-          productName={productName}
-          setProductName={setProductName}
-          category={category}
-          setCategory={setCategory}
+      {(!submittedData || isEditing) && (
+        <ProductForm
+          initialData={{
+            url: submittedData?.url || '',
+            price: submittedData?.price || '',
+            productName: submittedData?.productName || '',
+            category: submittedData?.category || '',
+          }}
           handleSubmit={handleSubmit}
         />
       )}
 
       {/* Conditionally render the submitted data */}
-      {submittedData && (
+      {submittedData && !isEditing && (
         <div className="submitted-data">
           <h2>Submitted Data:</h2>
           <p><strong>URL:</strong> {submittedData.url}</p>
@@ -115,7 +87,7 @@ const AddProduct = ({ user }) => {
           {submittedData.category && <p><strong>Category:</strong> {submittedData.category}</p>}
           <div className='data-btns'>
             <button onClick={editData}>Edit</button>
-            <button onClick={clearData}>Clear</button>
+            <button onClick={clearForm}>Clear</button>
             <button onClick={confirmData}>Confirm</button>
           </div>
         </div>

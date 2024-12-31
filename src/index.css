@@ -487,7 +487,7 @@ textarea + br + button {
 }
 
 /* Container for ProductList.js */
-.product-container {
+.products-container {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -523,15 +523,21 @@ textarea + br + button {
   padding-left: 200px
 }
 
+.product-container {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
 .product-item {
   width: calc(50% - 20px);
   display: flex;
   flex-direction: column;
   align-items: flex-start; /* Aligns details to the left */
   padding: 20px;
-  border: 1px solid #ddd;
+  /* border: 1px solid #ddd;
   border-radius: 8px;
-  background-color: #f9f9f9;
+  background-color: #f9f9f9; */
 }
 
 .product-name {
