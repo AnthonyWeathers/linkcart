@@ -507,13 +507,12 @@ def delete():
             logging.warning("User %s failed to provide a product ID for deletion", currentUser_id)
             return jsonify({"error": "Product ID is required"}), 400
 
-        products = crud.get_products(id=productId)
-        if not products:
+        product = crud.get_products(user_id=currentUser_id, id=productId)
+        if not product:
             logging.warning("User %s attempted to delete a nonexistent product", currentUser_id)
             return jsonify({"error": "Product not found"}), 404
         
-        product = products[0]
-        if product.user_id != currentUser_id:
+        if product[0].user_id != currentUser_id:
             logging.warning("User %s attempted to delete an unauthorized product", currentUser_id)
             return jsonify({"error": "Access denied"}), 403
 
@@ -528,6 +527,28 @@ def delete():
         logging.exception("Error deleting product for user %s", currentUser_id)
         return jsonify({"error": "Failed to delete product", "details": str(e)}), 500
 
+# @app.route("/products", methods=["GET"])
+# @token_required
+# @limiter.limit("20/minute")
+# def getProducts():
+#     try:
+#         # Access user payload from request.user_payload
+#         user = request.user_payload
+#         currentUser_id = user['user_id']
+#         logging.info("User %s is fetching their products", currentUser_id)
+#         user_products = crud.get_products(user_id=currentUser_id)
+
+#         # Convert each product object to a dictionary
+#         user_products_data = [product.to_dict() for product in user_products]
+
+#         return jsonify({
+#             "message": "User products fetched successfully",
+#             "products": user_products_data,
+#         })
+#     except Exception as e:
+#         logging.exception("Error fetching products for user %s", currentUser_id)
+#         return jsonify({"error": "Failed to fetch products", "details": str(e)}), 500
+
 @app.route("/products", methods=["GET"])
 @token_required
 @limiter.limit("20/minute")
@@ -537,7 +558,25 @@ def getProducts():
         user = request.user_payload
         currentUser_id = user['user_id']
         logging.info("User %s is fetching their products", currentUser_id)
-        user_products = crud.get_products(user_id=currentUser_id)
+
+        # Query Parameters
+        sort_by = request.args.get('sortBy', default=None, type=str)
+        extra_sort_by = request.args.get('extraSortBy', default=None, type=str)
+        min_price = request.args.get('minPrice', default=None, type=float)
+        max_price = request.args.get('maxPrice', default=None, type=float)
+        category_filter = request.args.get('categoryFilter', default=None, type=str)
+        favorited = request.args.get('favorited', default=None, type=str)
+
+        # Fetch products using filters and sorting
+        user_products = crud.get_products(
+            user_id=currentUser_id,
+            sort_by=sort_by,
+            extra_sort_by=extra_sort_by,
+            min_price=min_price,
+            max_price=max_price,
+            category_filter=category_filter,
+            favorited=(favorited.lower() == 'true') if favorited else None
+        )
 
         # Convert each product object to a dictionary
         user_products_data = [product.to_dict() for product in user_products]
@@ -546,6 +585,7 @@ def getProducts():
             "message": "User products fetched successfully",
             "products": user_products_data,
         })
+
     except Exception as e:
         logging.exception("Error fetching products for user %s", currentUser_id)
         return jsonify({"error": "Failed to fetch products", "details": str(e)}), 500
@@ -566,13 +606,12 @@ def editProduct():
             logging.warning("User %s failed to provide a product ID for editing", currentUser_id)
             return jsonify({"error": "Missing product or required fields"}), 400
 
-        products = crud.get_products(id=product_id)
-        if not products:
+        product = crud.get_products(user_id=currentUser_id, id=product_id)
+        if not product:
             logging.warning("User %s attempted to edit a nonexistent product", currentUser_id)
             return jsonify({"error": "Product not found"}), 404
         
-        product = products[0]
-        if product.user_id != currentUser_id:
+        if product[0].user_id != currentUser_id:
             logging.warning("User %s attempted to edit an unauthorized product", currentUser_id)
             return jsonify({"error": "Access denied"}), 403
 
@@ -612,13 +651,12 @@ def favoriteProduct():
             logging.warning("User %s failed to provide a product ID for favoriting", currentUser_id)
             return jsonify({"error": "Product ID is required"}), 400
         
-        products = crud.get_products(id=productId)
-        if not products:
+        product = crud.get_products(user_id=currentUser_id, id=productId)
+        if not product:
             logging.warning("User %s attempted to favorite a nonexistent product", currentUser_id)
             return jsonify({"error": "Product not found"}), 404
         
-        product = products[0]
-        if product.user_id != currentUser_id:
+        if product[0].user_id != currentUser_id:
             logging.warning("User %s attempted to favorite an unauthorized product", currentUser_id)
             return jsonify({"error": "Access denied"}), 403
         

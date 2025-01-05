@@ -258,7 +258,7 @@ function App() {
                     ? <Profile currentUser={currentUser} handleRequestNotification={handleRequestNotification} /> 
                     : <OfflineMessage />
                   :  (
-                    <div>You are currently not logged in, do so at the login page or register</div>
+                    <div>You are currently not online, go to one of the features accessible offline or switch to online. </div>
                   )
                 } 
               />
@@ -270,7 +270,7 @@ function App() {
                     ? <Community currentUser={currentUser} /> 
                     : <OfflineMessage />
                   :  (
-                    <div>You are currently not logged in, do so at the login page or register</div>
+                    <div>You are currently not online, go to one of the features accessible offline or switch to online. </div>
                   )
                 }
               />
@@ -282,7 +282,7 @@ function App() {
                       ? <Friends currentUser={currentUser} handleRequestNotification={handleRequestNotification} /> 
                       : <OfflineMessage />
                     :  (
-                      <div>You are currently not logged in, do so at the login page or register</div>
+                      <div>You are currently not online, go to one of the features accessible offline or switch to online. </div>
                     )
                 }              
               />

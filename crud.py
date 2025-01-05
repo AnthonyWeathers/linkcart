@@ -1,7 +1,7 @@
 """CRUD operations."""
 
 from model import User, Products, Friends, FriendRequest, CommunityMessage, db
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, asc, desc
 
 # -- User Operations --
 
@@ -61,9 +61,56 @@ def create_product(user_id, url, price, productName, category, favorited=False):
     db.session.commit()
     return product
 
-def get_products(**filters):
+# def get_products(**filters):
     """Fetch products based on dynamic filters."""
-    return Products.query.filter_by(**filters).all()
+    # return Products.query.filter_by(**filters).all()
+def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_price=None, category_filter=None, **extra_filters):
+    """
+    Fetch products based on dynamic filters, sorting, and ranges.
+    
+    Parameters:
+        user_id (int): ID of the user whose products to fetch.
+        sort_by (str): Field to sort by ('price', 'category').
+        extra_sort_by (str): Sort direction ('ascending', 'descending').
+        min_price (float): Minimum price filter.
+        max_price (float): Maximum price filter.
+        category_filter (str): Filter by category.
+        **extra_filters: Any additional exact-match filters.
+    """
+    query = Products.query.filter_by(user_id=user_id, **extra_filters)
+
+    # Handle price range filters
+    if min_price is not None:
+        query = query.filter(Products.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Products.price <= max_price)
+
+    # Handle category filter (e.g., partial match or specific criteria)
+    if category_filter:
+        query = query.filter(Products.category.contains(category_filter))
+
+    # Handle sorting
+    if sort_by == 'price':
+        query = query.order_by(desc(Products.price) if extra_sort_by == 'descending' else asc(Products.price))
+    elif sort_by == 'category':
+        query = query.order_by(desc(Products.category) if extra_sort_by == 'descending' else asc(Products.category))
+    else:
+        query = query.order_by(desc(Products.id))  # Default sort by newest products
+
+    return query.all()
+
+def get_product_by_id(user_id, product_id):
+    """
+    Fetch a single product by ID for a specific user.
+    
+    Parameters:
+        user_id (int): ID of the user.
+        product_id (int): ID of the product.
+    
+    Returns:
+        Product object if found, else None.
+    """
+    return Products.query.filter_by(user_id=user_id, id=product_id).first()
 
 def update_product(product_id, **kwargs):
     """Update a product's details."""

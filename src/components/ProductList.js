@@ -11,6 +11,7 @@ const ProductList = ({ user }) => {
     const [extraSortBy, setExtraSortBy] = useState(''); // State for sort ordering criteria
     const [minPrice, setMinPrice] = useState('');
     const [maxPrice, setMaxPrice] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('');
 
     useEffect(() => {
         fetchProducts();
@@ -134,8 +135,11 @@ const ProductList = ({ user }) => {
             );
         } else if (sortBy === 'category') {
             productsArray.sort((a, b) => {
-                const aCategory = a.category ? a.category.split(',')[0].trim().toLowerCase() : "zzzz"; // First subcategory or placeholder
-                const bCategory = b.category ? b.category.split(',')[0].trim().toLowerCase() : "zzzz";
+                // const aCategory = a.category ? a.category.split(',')[0].trim().toLowerCase() : "zzzz"; // First subcategory or placeholder
+                // const bCategory = b.category ? b.category.split(',')[0].trim().toLowerCase() : "zzzz";
+
+                const aCategory = Array.isArray(a.category) && a.category.length > 0 ? a.category[0].toLowerCase() : "zzzz";
+                const bCategory = Array.isArray(b.category) && b.category.length > 0 ? b.category[0].toLowerCase() : "zzzz";
                 return extraSortBy === 'descending' 
                     ? bCategory.localeCompare(aCategory) 
                     : aCategory.localeCompare(bCategory);
@@ -158,15 +162,26 @@ const ProductList = ({ user }) => {
     };
 
     const handleFilterAndSort = () => {
-        let filteredProducts = savedProducts.filter(product => {
-            // Remove non-numeric characters except decimal point
-            const price = parseFloat(product.price.replace(/[^0-9.]/g, ''));
-            const min = parseFloat(minPrice) || 0;
-            const max = parseFloat(maxPrice) || Infinity;
-    
-            return !isNaN(price) && price >= min && price <= max;
-        });
-    
+        let filteredProducts = savedProducts;
+        
+        // 1️⃣ Filter based on 'sortBy' selection
+        if (sortBy === 'price') {
+            filteredProducts = savedProducts.filter(product => {
+                const price = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
+                const min = parseFloat(minPrice) || 0;
+                const max = parseFloat(maxPrice) || Infinity;
+        
+                return price >= min && price <= max;
+            });
+        } 
+        else if (sortBy === 'category' && categoryFilter) {
+            filteredProducts = savedProducts.filter(product => {
+                const categories = Array.isArray(product.category) ? product.category.map(c => c.toLowerCase()) : [];
+                return categories.includes(categoryFilter.toLowerCase());
+            });
+        }
+
+        // 2️⃣ Apply the further sorting logic
         return handleSort(filteredProducts);
     };
     
@@ -204,32 +219,14 @@ const ProductList = ({ user }) => {
                                         URL: <a href={product.url} target="_blank" rel="noopener noreferrer">{product.url}</a>
                                     </p>
                                     <p className="product-price">Price: {product.price}</p>
-                                    <p className="product-category">Category: {product.category}</p>
+                                    <p className="product-category">
+                                        {/* Categories: {product.category} */}
+                                        Categories: {Array.isArray(product.category) ? product.category.join(', ') : 'No categories'}
+                                    </p>
                                     <button className="product-button" onClick={() => deleteProduct(product)}>Delete</button>
                                     <button className="product-button" onClick={() => editProduct(product)}>Edit</button>
                                 </div>
                             )}
-                            {/* <div className="product-header">
-                                <h2 className="product-name">
-                                    {product.productName}
-                                    <button
-                                        className={`favorite-star ${product.favorited ? 'filled' : 'empty'}`}
-                                        onClick={() => favoriteProduct(product)}
-                                        aria-label={product.favorited ? "Unfavorite" : "Favorite"}
-                                    >
-                                        {product.favorited ? '★' : '☆'}
-                                    </button>
-                                </h2>
-                            </div> */}
-                            {/* Make the URL clickable and open in a new tab */}
-                            {/* setting rel="noopener noreferrer" is for tab-napping prevention purposes*/}
-                            {/* <p className="product-url">
-                                URL: <a href={product.url} target="_blank" rel="noopener noreferrer">{product.url}</a>
-                            </p>
-                            <p className="product-price">Price: {product.price}</p>
-                            <p className="product-category">Category: {product.category}</p>
-                            <button className="product-button" onClick={() => deleteProduct(product)}>Delete</button>
-                            <button className="product-button" onClick={() => editProduct(product)}>Edit</button> */}
 
                             {selectedProduct && edittingData && selectedProduct.productId === product.productId && (
                                 <ProductForm
@@ -260,22 +257,46 @@ const ProductList = ({ user }) => {
 
                 <select className="sort-select" onChange={(e) => setExtraSortBy(e.target.value)} value={extraSortBy}>
                     <option value="">Sort Order...</option>
-                    <option value="descending">Descending</option>
-                    <option value="ascending">Ascending</option>
+                    {sortBy === 'price' ? (
+                        <>
+                            <option value="descending">High to Low</option>
+                            <option value="ascending">Low to High</option>
+                        </>
+                    ) : (
+                        <>
+                            <option value="descending">Newest</option>
+                            <option value="ascending">Oldest</option>
+                        </>
+                    )}
                 </select>
 
-                <input
-                    type="number"
-                    placeholder="Min Price"
-                    value={minPrice}
-                    onChange={(e) => setMinPrice(e.target.value)}
-                />
-                <input
-                    type="number"
-                    placeholder="Max Price"
-                    value={maxPrice}
-                    onChange={(e) => setMaxPrice(e.target.value)}
-                />
+                {/* Category Dropdown - Shown if sorting by category */}
+                {sortBy === 'category' && (
+                    <select className="sort-select" onChange={(e) => setCategoryFilter(e.target.value)} value={categoryFilter}>
+                        <option value="">All Categories</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="books">Books</option>
+                        <option value="fashion">Fashion</option>
+                    </select>
+                )}
+
+                {/* Min/Max Price Inputs - Shown if sorting by price */}
+                {sortBy === 'price' && (
+                    <>
+                        <input
+                            type="number"
+                            placeholder="Min Price"
+                            value={minPrice}
+                            onChange={(e) => setMinPrice(e.target.value)}
+                        />
+                        <input
+                            type="number"
+                            placeholder="Max Price"
+                            value={maxPrice}
+                            onChange={(e) => setMaxPrice(e.target.value)}
+                        />
+                    </>
+                )}
             </div>
 
             <Products products={savedProducts}/>

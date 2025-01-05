@@ -23,6 +23,8 @@ yarn-debug.log*
 yarn-error.log*
 
 current-features-to-test.txt
+ideas.txt
+get-pip.py
 .gitignore
 
 config.sh

@@ -18,10 +18,10 @@ model.connect_to_db(server.app)
 
 with server.app.app_context():
     def create_users():
-        # Create sample users
-        user1 = User(username="alice", password="password123")
-        user2 = User(username="bob", password="securepass")
-        user3 = User(username="charlie", password="charliepass")
+        """Create sample users."""
+        user1 = User(username="alice", password="password123", description="Alice loves gadgets.")
+        user2 = User(username="bob", password="securepass", description="Bob is a tech enthusiast.")
+        user3 = User(username="charlie", password="charliepass", description="Charlie enjoys DIY projects.")
         db.session.add_all([user1, user2, user3])
         db.session.commit()
 
