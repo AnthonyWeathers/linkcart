@@ -1,5 +1,6 @@
 import os
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import JSON # PostgreSQL only
 
 db = SQLAlchemy()
 
@@ -41,7 +42,8 @@ class Products(db.Model):
     url = db.Column(db.String(500) , nullable = False)
     price = db.Column(db.String(50), nullable = False)
     productName = db.Column(db.String(255))
-    category = db.Column(db.String(255))
+    # category = db.Column(db.String(255))
+    category = db.Column(JSON, nullable=False, default=list) # Now supports multiple categories
     favorited = db.Column(db.Boolean , nullable = False, default=False)  # Use db.Boolean with a default value
 
     def to_dict(self):
@@ -52,7 +54,7 @@ class Products(db.Model):
             "url": self.url,
             "price": self.price,
             "productName": self.productName,
-            "category": self.category,
+            "category": self.category, # Will return a JSON array
             "favorited": self.favorited
         }
     

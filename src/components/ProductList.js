@@ -11,181 +11,223 @@ const ProductList = ({ user }) => {
     const [extraSortBy, setExtraSortBy] = useState(''); // State for sort ordering criteria
     const [minPrice, setMinPrice] = useState('');
     const [maxPrice, setMaxPrice] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState([]);
 
     useEffect(() => {
         fetchProducts();
       }, []);
 
-    const fetchProducts = () => {
-        fetch(`http://localhost:8000/products`, {
-            method: 'GET',
-            credentials: 'include'
-        })
-        .then(response => {
-            if(!response.ok) {
-                const data = response.json()
-                alert(data.error)
+    // Fetch Products
+    const fetchProducts = async () => {
+        try {
+            const params = new URLSearchParams();
+            if (sortBy) params.append('sortBy', sortBy);
+            if (extraSortBy) params.append('extraSortBy', extraSortBy);
+            if (minPrice) params.append('minPrice', minPrice);
+            if (maxPrice) params.append('maxPrice', maxPrice);
+            if (categoryFilter.length > 0) {
+                categoryFilter.forEach(cat => params.append('categoryFilter', cat));
             }
-            return response.json()
-        })
-        .then(data => {
-            alert(data.message)
+
+            const response = await fetch(`http://localhost:8000/products?${params.toString()}`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error);
+            }
+
+            const data = await response.json();
             setSavedProducts(data.products);
-        })
-        .catch(error => console.error('Error loading videos:', error));
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            // alert("Failed to fetch the product: ${error.message}")
+        }
     };
 
-    const handleSubmit = (productId, updatedData) => {
-        fetch(`http://localhost:8000/edit-product`, {
-            method: 'PUT',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json' // Set the Content-Type header
-            },
-            body: JSON.stringify({ 
-                id: productId,
-                user_id: user.id,
-                ...updatedData,
-                favorited: selectedProduct.favorited || false
-            })
-        })
-        .then(response => {
-            if(!response.ok){
-                return response.json().then(errorData => { throw new Error(errorData.error); });
+    // Edit Product
+    const handleSubmit = async (productId, updatedData) => {
+        try {
+            const response = await fetch(`http://localhost:8000/edit-product`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    id: productId,
+                    user_id: user.id,
+                    ...updatedData,
+                    favorited: selectedProduct?.favorited || false,
+                    category: Array.isArray(updatedData.category) ? updatedData.category : [updatedData.category] // Ensure it's always an array
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error);
             }
-            return response.json()
-        })
-        .then(data => {
+
+            const data = await response.json();
             alert('Product edited');
             setSavedProducts(prevProducts => 
                 prevProducts.map(product =>
                     product.productId === data.product.productId
-                        ? { ...product, ...data.product } // Replace all fields with updated info
-                        : product // Keep other products unchanged
+                        ? { ...product, ...data.product }
+                        : product
                 )
             );
-            setEdittingData(false) // would hide the form after submitting and successful edit
-        })
-        .catch(error => console.error('Error editing the product:', error));
+            setEdittingData(false);
+        } catch (error) {
+            console.error('Error editing the product:', error);
+            // alert("Failed to edit the product: ${error.message}")
+        }
     };
 
-    const deleteProduct = product => {
-        fetch(`http://localhost:8000/delete-product`, {
-            method: 'DELETE',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json' // Set the Content-Type header
-            },
-            body: JSON.stringify({ id: product.productId })
-        })
-        .then(response => {
+    // Delete Product
+    const deleteProduct = async (product) => {
+        try {
+            const response = await fetch(`http://localhost:8000/delete-product`, {
+                method: 'DELETE',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: product.productId })
+            });
+
             if (!response.ok) {
-                const errorData = response.json();
-                console.error(errorData.error);
+                const errorData = await response.json();
+                throw new Error(errorData.error);
             }
-            return response.json()
-        })
-        .then(data => {
+
+            const data = await response.json();
             alert(data.message);
-            // setSavedProducts(data.products)
             setSavedProducts(prevProducts => 
                 prevProducts.filter(p => p.productId !== product.productId)
             );
-        })
-        .catch(error => console.error('Error deleting product:', error));
+        } catch (error) {
+            console.error('Error deleting product:', error);
+            // alert("Failed to delete the product: ${error.message}")
+        }
     };
+
     const editProduct = product => {
         // shows the form
         setEdittingData(true);
         setSelectedProduct(product);
     };
-    const favoriteProduct = product => {
-        fetch(`http://localhost:8000/favorite-product`, {
-            method: 'PUT',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json' // Set the Content-Type header
-            },
-            body: JSON.stringify({ id: product.productId })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data) {
-                setSavedProducts(prevProducts => 
-                    prevProducts.map(p =>
-                        p.productId === product.productId
-                            ? { ...p, favorited: data.favorited } // Update favorited status of product
-                            : p // Keep other products unchanged
-                    )
-                );
-            } else {
-                alert(data.error)
+
+    // Favorite Product
+    const favoriteProduct = async (product) => {
+        try {
+            const response = await fetch(`http://localhost:8000/favorite-product`, {
+                method: 'PUT',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: product.productId })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error);
             }
-        })
-        .catch(error => console.error('Error favoriting product:', error));
+
+            const data = await response.json();
+            setSavedProducts(prevProducts => 
+                prevProducts.map(p =>
+                    p.productId === product.productId
+                        ? { ...p, favorited: data.favorited }
+                        : p
+                )
+            );
+        } catch (error) {
+            console.error('Error favoriting product:', error);
+            // alert("Failed to favorite product: ${error.message}")
+        }
     }
 
     // Function to apply sorting logic to an array of products
-    const sortProducts = (productsArray, sortBy, extraSortBy) => {
-        if (sortBy === 'price') {
-            productsArray.sort((a, b) => extraSortBy === 'descending' ? 
-                parseFloat(b.price.replace(/[^0-9.]/g, '')) - parseFloat(a.price.replace(/[^0-9.]/g, '')) : 
-                parseFloat(a.price.replace(/[^0-9.]/g, '')) - parseFloat(b.price.replace(/[^0-9.]/g, ''))
-            );
-        } else if (sortBy === 'category') {
-            productsArray.sort((a, b) => {
-                // const aCategory = a.category ? a.category.split(',')[0].trim().toLowerCase() : "zzzz"; // First subcategory or placeholder
-                // const bCategory = b.category ? b.category.split(',')[0].trim().toLowerCase() : "zzzz";
+    // const sortProducts = (productsArray, sortBy, extraSortBy) => {
+    //     if (sortBy === 'price') {
+    //         productsArray.sort((a, b) => extraSortBy === 'descending' ? 
+    //             parseFloat(b.price.replace(/[^0-9.]/g, '')) - parseFloat(a.price.replace(/[^0-9.]/g, '')) : 
+    //             parseFloat(a.price.replace(/[^0-9.]/g, '')) - parseFloat(b.price.replace(/[^0-9.]/g, ''))
+    //         );
+    //     } else if (sortBy === 'category') {
+    //         productsArray.sort((a, b) => {
+    //             // const aCategory = a.category ? a.category.split(',')[0].trim().toLowerCase() : "zzzz"; // First subcategory or placeholder
+    //             // const bCategory = b.category ? b.category.split(',')[0].trim().toLowerCase() : "zzzz";
 
-                const aCategory = Array.isArray(a.category) && a.category.length > 0 ? a.category[0].toLowerCase() : "zzzz";
-                const bCategory = Array.isArray(b.category) && b.category.length > 0 ? b.category[0].toLowerCase() : "zzzz";
-                return extraSortBy === 'descending' 
-                    ? bCategory.localeCompare(aCategory) 
-                    : aCategory.localeCompare(bCategory);
-            });
-        }
-        return productsArray;
-    };
+    //             const aCategory = Array.isArray(a.category) && a.category.length > 0 ? a.category[0].toLowerCase() : "zzzz";
+    //             const bCategory = Array.isArray(b.category) && b.category.length > 0 ? b.category[0].toLowerCase() : "zzzz";
+    //             return extraSortBy === 'descending' 
+    //                 ? bCategory.localeCompare(aCategory) 
+    //                 : aCategory.localeCompare(bCategory);
+    //         });
+    //     }
+    //     return productsArray;
+    // };
 
     // Main sorting handler function
-    const handleSort = (products) => {
-        const favoritedProducts = products.filter(product => product.favorited);
-        const nonFavoritedProducts = products.filter(product => !product.favorited);
+    // const handleSort = (products) => {
+    //     const favoritedProducts = products.filter(product => product.favorited);
+    //     const nonFavoritedProducts = products.filter(product => !product.favorited);
 
-        // Sort the favorited and non-favorited products using the extracted function
-        const sortedFavoritedProducts = sortProducts(favoritedProducts, sortBy, extraSortBy);
-        const sortedNonFavoritedProducts = sortProducts(nonFavoritedProducts, sortBy, extraSortBy);
+    //     // Sort the favorited and non-favorited products using the extracted function
+    //     const sortedFavoritedProducts = sortProducts(favoritedProducts, sortBy, extraSortBy);
+    //     const sortedNonFavoritedProducts = sortProducts(nonFavoritedProducts, sortBy, extraSortBy);
 
-        // Re-merge the sorted arrays
-        return [...sortedFavoritedProducts, ...sortedNonFavoritedProducts];
+    //     // Re-merge the sorted arrays
+    //     return [...sortedFavoritedProducts, ...sortedNonFavoritedProducts];
+    // };
+
+    // const handleFilterAndSort = () => {
+    //     let filteredProducts = savedProducts;
+        
+    //     // 1️ Filter based on 'sortBy' selection
+    //     if (sortBy === 'price') {
+    //         filteredProducts = savedProducts.filter(product => {
+    //             const price = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
+    //             const min = parseFloat(minPrice) || 0;
+    //             const max = parseFloat(maxPrice) || Infinity;
+        
+    //             return price >= min && price <= max;
+    //         });
+    //     } 
+    //     else if (sortBy === 'category' && categoryFilter) {
+    //         filteredProducts = savedProducts.filter(product => {
+    //             const categories = Array.isArray(product.category) ? product.category.map(c => c.toLowerCase()) : [];
+    //             return categories.includes(categoryFilter.toLowerCase());
+    //         });
+    //     }
+
+    //     // 2️ Apply the further sorting logic
+    //     return handleSort(filteredProducts);
+    // };
+    
+    // Handle Sort Apply
+    const applySorting = () => {
+        fetchProducts();
     };
 
-    const handleFilterAndSort = () => {
-        let filteredProducts = savedProducts;
-        
-        // 1️⃣ Filter based on 'sortBy' selection
-        if (sortBy === 'price') {
-            filteredProducts = savedProducts.filter(product => {
-                const price = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
-                const min = parseFloat(minPrice) || 0;
-                const max = parseFloat(maxPrice) || Infinity;
-        
-                return price >= min && price <= max;
-            });
-        } 
-        else if (sortBy === 'category' && categoryFilter) {
-            filteredProducts = savedProducts.filter(product => {
-                const categories = Array.isArray(product.category) ? product.category.map(c => c.toLowerCase()) : [];
-                return categories.includes(categoryFilter.toLowerCase());
-            });
+    useEffect(() => {
+        // Reset dependent filters when main sorting changes
+        if (sortBy !== 'price') {
+            setMinPrice('');
+            setMaxPrice('');
         }
-
-        // 2️⃣ Apply the further sorting logic
-        return handleSort(filteredProducts);
-    };
-    
-    
+        if (sortBy !== 'category') {
+            setCategoryFilter([]); // Clear category filter when sorting is not by category
+        }
+        if (sortBy === 'favorited') {
+            setExtraSortBy(''); // Reset extraSortBy if favorited
+        }
+    }, [sortBy]);
     
 
     const Products = ({ products }) => {
@@ -249,30 +291,38 @@ const ProductList = ({ user }) => {
         <div className="products-container">
             {/* Dropdown for sorting */}
             <div className="sort-dropdowns">
+                {/* <select className="sort-select" onChange={(e) => setSortBy(e.target.value)} value={sortBy}> */}
                 <select className="sort-select" onChange={(e) => setSortBy(e.target.value)} value={sortBy}>
                     <option value="">Sort by...</option>
                     <option value="price">Price</option>
                     <option value="category">Category</option>
+                    <option value="favorited">Favorited</option>
                 </select>
 
-                <select className="sort-select" onChange={(e) => setExtraSortBy(e.target.value)} value={extraSortBy}>
-                    <option value="">Sort Order...</option>
-                    {sortBy === 'price' ? (
-                        <>
-                            <option value="descending">High to Low</option>
-                            <option value="ascending">Low to High</option>
-                        </>
-                    ) : (
-                        <>
-                            <option value="descending">Newest</option>
-                            <option value="ascending">Oldest</option>
-                        </>
-                    )}
-                </select>
+                {sortBy !== 'favorited' && (
+                    <select className="sort-select" onChange={(e) => setExtraSortBy(e.target.value)} value={extraSortBy}>
+                        <option value="">Sort Order...</option>
+                        {sortBy === 'price' ? (
+                            <>
+                                <option value="descending">High to Low</option>
+                                <option value="ascending">Low to High</option>
+                            </>
+                        ) : (
+                            <>
+                                <option value="descending">Newest</option>
+                                <option value="ascending">Oldest</option>
+                            </>
+                        )}
+                    </select>
+                )}
 
                 {/* Category Dropdown - Shown if sorting by category */}
                 {sortBy === 'category' && (
-                    <select className="sort-select" onChange={(e) => setCategoryFilter(e.target.value)} value={categoryFilter}>
+                    <select className="sort-select" 
+                        multiple 
+                        onChange={(e) => setCategoryFilter([...e.target.selectedOptions].map(option => option.value))} 
+                        value={categoryFilter}
+                    >
                         <option value="">All Categories</option>
                         <option value="electronics">Electronics</option>
                         <option value="books">Books</option>
@@ -299,6 +349,24 @@ const ProductList = ({ user }) => {
                 )}
             </div>
 
+            {/* Apply Sorting Button */}
+            <button 
+                className="apply-sort-button" 
+                onClick={applySorting}
+                style={{
+                    marginTop: '10px',
+                    padding: '8px 16px',
+                    backgroundColor: '#4CAF50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                }}
+            >
+                Apply Sorting
+            </button>
+
+            {/* Products Display */}
             <Products products={savedProducts}/>
         </div>
     )

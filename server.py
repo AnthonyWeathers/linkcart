@@ -466,7 +466,7 @@ def save():
         url = request.json.get("url")
         price = request.json.get("price")
         productName = request.json.get("productName")
-        category = request.json.get("category")
+        category = request.json.get("category", [])
 
         # For if want all 4 fields to be filled
         # Validate required fields
@@ -507,12 +507,12 @@ def delete():
             logging.warning("User %s failed to provide a product ID for deletion", currentUser_id)
             return jsonify({"error": "Product ID is required"}), 400
 
-        product = crud.get_products(user_id=currentUser_id, id=productId)
+        product = crud.get_product_by_id(user_id=currentUser_id, id=productId)
         if not product:
             logging.warning("User %s attempted to delete a nonexistent product", currentUser_id)
             return jsonify({"error": "Product not found"}), 404
         
-        if product[0].user_id != currentUser_id:
+        if product.user_id != currentUser_id:
             logging.warning("User %s attempted to delete an unauthorized product", currentUser_id)
             return jsonify({"error": "Access denied"}), 403
 
@@ -565,7 +565,9 @@ def getProducts():
         min_price = request.args.get('minPrice', default=None, type=float)
         max_price = request.args.get('maxPrice', default=None, type=float)
         category_filter = request.args.get('categoryFilter', default=None, type=str)
-        favorited = request.args.get('favorited', default=None, type=str)
+        
+        # Only pass 'favorited' if sortBy is explicitly 'favorited'
+        favorited = True if sort_by == 'favorited' else None
 
         # Fetch products using filters and sorting
         user_products = crud.get_products(
@@ -575,7 +577,7 @@ def getProducts():
             min_price=min_price,
             max_price=max_price,
             category_filter=category_filter,
-            favorited=(favorited.lower() == 'true') if favorited else None
+            favorited=favorited
         )
 
         # Convert each product object to a dictionary
@@ -606,12 +608,12 @@ def editProduct():
             logging.warning("User %s failed to provide a product ID for editing", currentUser_id)
             return jsonify({"error": "Missing product or required fields"}), 400
 
-        product = crud.get_products(user_id=currentUser_id, id=product_id)
+        product = crud.get_product_by_id(user_id=currentUser_id, id=product_id)
         if not product:
             logging.warning("User %s attempted to edit a nonexistent product", currentUser_id)
             return jsonify({"error": "Product not found"}), 404
         
-        if product[0].user_id != currentUser_id:
+        if product.user_id != currentUser_id:
             logging.warning("User %s attempted to edit an unauthorized product", currentUser_id)
             return jsonify({"error": "Access denied"}), 403
 
@@ -651,12 +653,12 @@ def favoriteProduct():
             logging.warning("User %s failed to provide a product ID for favoriting", currentUser_id)
             return jsonify({"error": "Product ID is required"}), 400
         
-        product = crud.get_products(user_id=currentUser_id, id=productId)
+        product = crud.get_product_by_id(user_id=currentUser_id, id=productId)
         if not product:
             logging.warning("User %s attempted to favorite a nonexistent product", currentUser_id)
             return jsonify({"error": "Product not found"}), 404
         
-        if product[0].user_id != currentUser_id:
+        if product.user_id != currentUser_id:
             logging.warning("User %s attempted to favorite an unauthorized product", currentUser_id)
             return jsonify({"error": "Access denied"}), 403
         

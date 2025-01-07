@@ -31,7 +31,9 @@ export const UserStatusProvider = ({ children }) => {
                     console.log('Socket disconnected after syncing status');
                 }
             } else {
-                console.error('Failed to sync status from backend');
+                const errorData = await response.json();
+                throw new Error(errorData.error|| 'Login failed. Please try again.');
+                // console.error('Failed to sync status from backend');
             }
         } catch (error) {
             console.error('Error syncing status:', error);

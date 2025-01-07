@@ -25,20 +25,21 @@ const Register = ({ onRegister }) => {
                 }),
             });
 
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error|| 'Login failed. Please try again.');
+            }
+
             const data = await response.json(); // Wait for response JSON
 
-            if (response.ok) { // Check if response was successful
-                alert(data.message);
-                onRegister(data.user, data.isOnline); // Call the onRegister function with user data
+            alert(data.message);
+            onRegister(data.user, data.isOnline); // Call the onRegister function with user data
 
-                navigate('/'); // Redirect to the Add Product route
-            } else {
-                alert(data.error);
-                setError(data.error); // Set error state to display the error message
-            }
+            navigate('/'); // Redirect to the Add Product route
+
         } catch (error) {
             console.error('Error registering new user:', error);
-            setError('An error occurred while registering. Please try again.'); // Set a general error message
+            setError(error.message || 'An error occurred while registering. Please try again.'); // Set a general error message
         } finally {
             setIsLoading(false); // Set loading to false once fetch is complete
         }

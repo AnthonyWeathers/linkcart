@@ -33,12 +33,13 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                     setIsPending(userData.sentRequest) // If current user has sent a pending friend request to other user
                     setReceivedRequest(userData.receivedRequest) // If current user had received a friend request from user of profile they're viewing
                 } else {
-                    const userData = await response.json();
-                    alert(userData.error)
+                    const errorData = await response.json();
+                    throw new Error(errorData.error|| 'Failed to fetch user profile.');
                 }
                 
             } catch (error) {
                 console.error("Error fetching user profile:", error);
+                alert(error.message)
             }
         };
 
@@ -73,11 +74,12 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
             setUser((prev) => ({ ...prev, description: data.description })); // Update user description locally
             setIsEditing(false); // Exit editing mode
         } else {
-            const data = await response.json();
-            console.error(data.error);
+            const errorData = await response.json();
+            throw new Error(errorData.error|| 'Failed to edit description, try again later.');
         }
         } catch (error) {
-        console.error('Error updating description:', error);
+            console.error('Error updating description:', error);
+            alert(error.message)
         }
     };
 
@@ -126,11 +128,12 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
             alert(result.message);
             setIsPending(true)
           } else {
-            const result = await response.json();
-            alert(result.error);
+            const errorData = await response.json();
+            throw new Error(errorData.error|| 'Failed to send friend request, try again later.');
           }
         } catch (error) {
           console.error('Error adding friend:', error);
+          alert(error.message)
         }
     };
 
@@ -150,11 +153,12 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                 setReceivedRequest(false);
                 handleRequestNotification();
             } else {
-                const result = await response.json();
-                alert(result.error);
+                const errorData = await response.json();
+                throw new Error(errorData.error|| 'Failed to accept friend request, try again later.');
             }
         } catch (error) {
             console.error('Error accepting friend:', error);
+            alert(error.message)
         }
     };
     
@@ -173,11 +177,12 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                 setReceivedRequest(false);
                 handleRequestNotification();
             } else {
-                const result = await response.json();
-                alert(result.error);
+                const errorData = await response.json();
+                throw new Error(errorData.error|| 'Failed to decline friend request, try again later.');
             }
         } catch (error) {
             console.error('Error declining friend request:', error);
+            alert(error.message)
         }
     };    
 
@@ -195,11 +200,12 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                 alert(result.message || 'Friend removed successfully!');
                 setIsFriend(false); // Update to reflect unfriend status
             } else {
-                const result = await response.json();
-                alert(result.error);
+                const errorData = await response.json();
+                throw new Error(errorData.error|| 'Failed to remove friend, try again later.');
             }
         } catch (error) {
             console.error('Error removing friend:', error);
+            alert(error.message)
         }
     };
 

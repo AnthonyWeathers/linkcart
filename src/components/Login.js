@@ -29,20 +29,20 @@ const Login = ({ onLogin }) => {
                 }),
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                alert(data.message);
-                onLogin(data.username, data.isOnline);
-
-                navigate('/'); // Redirect to the home page
-            } else {
-                const data = await response.json();
-                // alert(data.error);
-                setError(data.error || 'Login failed. Please try again.');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error|| 'Login failed. Please try again.');
             }
+
+            const data = await response.json();
+            alert(data.message);
+            onLogin(data.username, data.isOnline);
+
+            navigate('/'); // Redirect to the home page
+
         } catch (error) {
             console.error('Error logging in:', error);
-            setError('An error occurred while logging in. Please try again.');
+            setError(error.message);
         } finally {
             setIsLoading(false); // Reset loading state
         }

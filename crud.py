@@ -47,14 +47,14 @@ def set_user_online_status(user_id, new_status):
 
 # -- Product Operations --
 
-def create_product(user_id, url, price, productName, category, favorited=False):
+def create_product(user_id, url, price, productName, categories, favorited=False):
     """Create a new product for a user."""
     product = Products(
         user_id=user_id,
         url=url,
         price=price,
         productName=productName,
-        category=category,
+        category=categories, # Should be passed as a list
         favorited=favorited
     )
     db.session.add(product)
@@ -64,7 +64,7 @@ def create_product(user_id, url, price, productName, category, favorited=False):
 # def get_products(**filters):
     """Fetch products based on dynamic filters."""
     # return Products.query.filter_by(**filters).all()
-def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_price=None, category_filter=None, **extra_filters):
+def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_price=None, category_filter=None, favorited=None, **extra_filters):
     """
     Fetch products based on dynamic filters, sorting, and ranges.
     
@@ -90,7 +90,10 @@ def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_
         query = query.filter(Products.category.contains(category_filter))
 
     # Handle sorting
-    if sort_by == 'price':
+    if sort_by == 'favorited':
+        # Sort by favorited status first, then by ID (or any default sort)
+        query = query.order_by(desc(Products.favorited), desc(Products.id))
+    elif sort_by == 'price':
         query = query.order_by(desc(Products.price) if extra_sort_by == 'descending' else asc(Products.price))
     elif sort_by == 'category':
         query = query.order_by(desc(Products.category) if extra_sort_by == 'descending' else asc(Products.category))
