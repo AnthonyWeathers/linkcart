@@ -1,7 +1,8 @@
 """CRUD operations."""
 
 from model import User, Products, Friends, FriendRequest, CommunityMessage, db
-from sqlalchemy import or_, and_, asc, desc
+from sqlalchemy import or_, and_, asc, desc, cast
+from sqlalchemy.dialects.postgresql import JSONB
 
 # -- User Operations --
 
@@ -86,8 +87,20 @@ def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_
         query = query.filter(Products.price <= max_price)
 
     # Handle category filter (e.g., partial match or specific criteria)
+    # if category_filter:
+    #     query = query.filter(Products.category.contains(category_filter))
+    
     if category_filter:
-        query = query.filter(Products.category.contains(category_filter))
+        if isinstance(category_filter, str):  # If a single category is passed
+            category_filter = [category_filter]  # Convert to list
+        # query = query.filter(Products.category.contains(category_filter))
+        """Below is for retrieving products that match one of the categories selected for filtering"""
+        query = query.filter(or_(*(Products.category.contains([cat]) for cat in category_filter)))
+        query = query.filter(
+            or_(
+                *(cast(Products.category, JSONB).contains([cat]) for cat in category_filter)
+            )
+        )
 
     # Handle sorting
     if sort_by == 'favorited':

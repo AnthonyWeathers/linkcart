@@ -13,9 +13,20 @@ const ProductList = ({ user }) => {
     const [maxPrice, setMaxPrice] = useState('');
     const [categoryFilter, setCategoryFilter] = useState([]);
 
-    useEffect(() => {
-        fetchProducts();
-      }, []);
+    // State to store available categories
+    const [categories] = useState([
+        'Electronics',
+        'Books',
+        'Fashion',
+        'Home',
+        'Toys',
+        'Sports',
+        'Gadgets',
+        'Accessories',
+        'Kitchen',
+        'Office',
+        'Tools'
+    ]);
 
     // Fetch Products
     const fetchProducts = async () => {
@@ -120,6 +131,11 @@ const ProductList = ({ user }) => {
         setSelectedProduct(product);
     };
 
+    const handleCancel = () => {
+        setEdittingData(false);
+        setSelectedProduct(null);
+    }
+
     // Favorite Product
     const favoriteProduct = async (product) => {
         try {
@@ -150,65 +166,6 @@ const ProductList = ({ user }) => {
             // alert("Failed to favorite product: ${error.message}")
         }
     }
-
-    // Function to apply sorting logic to an array of products
-    // const sortProducts = (productsArray, sortBy, extraSortBy) => {
-    //     if (sortBy === 'price') {
-    //         productsArray.sort((a, b) => extraSortBy === 'descending' ? 
-    //             parseFloat(b.price.replace(/[^0-9.]/g, '')) - parseFloat(a.price.replace(/[^0-9.]/g, '')) : 
-    //             parseFloat(a.price.replace(/[^0-9.]/g, '')) - parseFloat(b.price.replace(/[^0-9.]/g, ''))
-    //         );
-    //     } else if (sortBy === 'category') {
-    //         productsArray.sort((a, b) => {
-    //             // const aCategory = a.category ? a.category.split(',')[0].trim().toLowerCase() : "zzzz"; // First subcategory or placeholder
-    //             // const bCategory = b.category ? b.category.split(',')[0].trim().toLowerCase() : "zzzz";
-
-    //             const aCategory = Array.isArray(a.category) && a.category.length > 0 ? a.category[0].toLowerCase() : "zzzz";
-    //             const bCategory = Array.isArray(b.category) && b.category.length > 0 ? b.category[0].toLowerCase() : "zzzz";
-    //             return extraSortBy === 'descending' 
-    //                 ? bCategory.localeCompare(aCategory) 
-    //                 : aCategory.localeCompare(bCategory);
-    //         });
-    //     }
-    //     return productsArray;
-    // };
-
-    // Main sorting handler function
-    // const handleSort = (products) => {
-    //     const favoritedProducts = products.filter(product => product.favorited);
-    //     const nonFavoritedProducts = products.filter(product => !product.favorited);
-
-    //     // Sort the favorited and non-favorited products using the extracted function
-    //     const sortedFavoritedProducts = sortProducts(favoritedProducts, sortBy, extraSortBy);
-    //     const sortedNonFavoritedProducts = sortProducts(nonFavoritedProducts, sortBy, extraSortBy);
-
-    //     // Re-merge the sorted arrays
-    //     return [...sortedFavoritedProducts, ...sortedNonFavoritedProducts];
-    // };
-
-    // const handleFilterAndSort = () => {
-    //     let filteredProducts = savedProducts;
-        
-    //     // 1️ Filter based on 'sortBy' selection
-    //     if (sortBy === 'price') {
-    //         filteredProducts = savedProducts.filter(product => {
-    //             const price = parseFloat(product.price.replace(/[^0-9.]/g, '')) || 0;
-    //             const min = parseFloat(minPrice) || 0;
-    //             const max = parseFloat(maxPrice) || Infinity;
-        
-    //             return price >= min && price <= max;
-    //         });
-    //     } 
-    //     else if (sortBy === 'category' && categoryFilter) {
-    //         filteredProducts = savedProducts.filter(product => {
-    //             const categories = Array.isArray(product.category) ? product.category.map(c => c.toLowerCase()) : [];
-    //             return categories.includes(categoryFilter.toLowerCase());
-    //         });
-    //     }
-
-    //     // 2️ Apply the further sorting logic
-    //     return handleSort(filteredProducts);
-    // };
     
     // Handle Sort Apply
     const applySorting = () => {
@@ -228,20 +185,72 @@ const ProductList = ({ user }) => {
             setExtraSortBy(''); // Reset extraSortBy if favorited
         }
     }, [sortBy]);
+
+    useEffect(() => {
+        fetchProducts();
+    }, []);
     
 
     const Products = ({ products }) => {
         // const sortedProducts = handleSort(products);
-        const filteredAndSortedProducts = handleFilterAndSort();
+        // const filteredAndSortedProducts = handleFilterAndSort();
 
         return (
             <div className="product-list">
-                {filteredAndSortedProducts
+                {/* {filteredAndSortedProducts */}
+                {products
                     .filter(product => product !== '') // Exclude empty spots
                     .map(product => ( // add a line here to show the favorited status of each product, start as just a line, later maybe a star
                         // <div key={product.productId} className="product-item">
                         <div key={product.productId} className='product-container'>
-                            {!(selectedProduct && edittingData && selectedProduct.productId === product.productId) && (
+                            {/* {!(selectedProduct && edittingData && selectedProduct.productId === product.productId) && (
+                                <div className="product-item">
+                                    <div className="product-header">
+                                        <h2 className="product-name">
+                                            {product.productName}
+                                            <button
+                                                className={`favorite-star ${product.favorited ? 'filled' : 'empty'}`}
+                                                onClick={() => favoriteProduct(product)}
+                                                aria-label={product.favorited ? "Unfavorite" : "Favorite"}
+                                            >
+                                                {product.favorited ? '★' : '☆'}
+                                            </button>
+                                        </h2>
+                                    </div> */}
+                                    {/* Make the URL clickable and open in a new tab */}
+                                    {/* setting rel="noopener noreferrer" is for tab-napping prevention purposes*/}
+                                    {/* <p className="product-url">
+                                        URL: <a href={product.url} target="_blank" rel="noopener noreferrer">{product.url}</a>
+                                    </p>
+                                    <p className="product-price">Price: {product.price}</p>
+                                    <p className="product-category">
+                                        Categories: {Array.isArray(product.category) ? product.category.join(', ') : 'No categories'}
+                                    </p>
+                                    <button className="product-button" onClick={() => deleteProduct(product)}>Delete</button>
+                                    <button className="product-button" onClick={() => editProduct(product)}>Edit</button>
+                                </div>
+                            )}
+
+                            {selectedProduct && edittingData && selectedProduct.productId === product.productId && (
+                                <ProductForm
+                                    initialData={{
+                                        url: selectedProduct.url,
+                                        price: selectedProduct.price,
+                                        productName: selectedProduct.productName,
+                                        category: Array.isArray(selectedProduct?.category)
+                                            ? selectedProduct.category
+                                            : selectedProduct?.category
+                                            ? [selectedProduct.category]
+                                            : [],
+                                    }}
+                                    handleSubmit={(updatedData) => handleSubmit(selectedProduct.productId, updatedData)}
+                                    categories={categories} // Pass categories here
+                                    showCancelButton={true}
+                                    handleCancel={handleCancel} // Pass the custom cancel function
+                                />
+                            )} */}
+
+                            {!(selectedProduct && edittingData && selectedProduct.productId === product.productId) ? (
                                 <div className="product-item">
                                     <div className="product-header">
                                         <h2 className="product-name">
@@ -262,24 +271,30 @@ const ProductList = ({ user }) => {
                                     </p>
                                     <p className="product-price">Price: {product.price}</p>
                                     <p className="product-category">
-                                        {/* Categories: {product.category} */}
                                         Categories: {Array.isArray(product.category) ? product.category.join(', ') : 'No categories'}
                                     </p>
                                     <button className="product-button" onClick={() => deleteProduct(product)}>Delete</button>
                                     <button className="product-button" onClick={() => editProduct(product)}>Edit</button>
                                 </div>
-                            )}
-
-                            {selectedProduct && edittingData && selectedProduct.productId === product.productId && (
-                                <ProductForm
-                                    initialData={{
-                                        url: selectedProduct.url,
-                                        price: selectedProduct.price,
-                                        productName: selectedProduct.productName,
-                                        category: selectedProduct.category
-                                    }}
-                                    handleSubmit={(updatedData) => handleSubmit(selectedProduct.productId, updatedData)}
-                                />
+                            ) : (
+                                <div className="product-item">
+                                    <ProductForm
+                                        initialData={{
+                                            url: selectedProduct.url,
+                                            price: selectedProduct.price,
+                                            productName: selectedProduct.productName,
+                                            category: Array.isArray(selectedProduct?.category)
+                                                ? selectedProduct.category
+                                                : selectedProduct?.category
+                                                ? [selectedProduct.category]
+                                                : [],
+                                        }}
+                                        handleSubmit={(updatedData) => handleSubmit(selectedProduct.productId, updatedData)}
+                                        categories={categories} // Pass categories here
+                                        showCancelButton={true}
+                                        handleCancel={handleCancel} // Pass the custom cancel function
+                                    />
+                                </div>
                             )}
                         </div>
                 ))}
@@ -324,9 +339,17 @@ const ProductList = ({ user }) => {
                         value={categoryFilter}
                     >
                         <option value="">All Categories</option>
-                        <option value="electronics">Electronics</option>
-                        <option value="books">Books</option>
-                        <option value="fashion">Fashion</option>
+                        <option value='Accessories'>Accessories</option>
+                        <option value="Books">Books</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Fashion">Fashion</option>
+                        <option value='Gadgets'>Gadgets</option>
+                        <option value="Home">Home</option>
+                        <option value="Kitchen">Kitchen</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Tools">Tools</option>
+                        <option value="Toys">Toys</option>
+                        <option value="Office">Office</option>
                     </select>
                 )}
 

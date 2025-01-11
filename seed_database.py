@@ -11,8 +11,8 @@ from model import db, User, Products, CommunityMessage, FriendRequest, Friends
 import server
 
 # Drop and recreate the database
-os.system("dropdb product-central")
-os.system("createdb product-central")
+os.system("dropdb linkcart")
+os.system("createdb linkcart")
 
 model.connect_to_db(server.app)
 
@@ -26,11 +26,22 @@ with server.app.app_context():
         db.session.commit()
 
     def create_products():
-        # Create sample products
-        product1 = Products(user_id=1, url="https://example.com/product1", price="$19.99", productName="Widget A", category="Gadgets", favorited=False)
-        product2 = Products(user_id=2, url="https://example.com/product2", price="$29.99", productName="Widget B", category="Gadgets", favorited=True)
-        product3 = Products(user_id=3, url="https://example.com/product3", price="$39.99", productName="Widget C", category="Tools", favorited=False)
-        db.session.add_all([product1, product2, product3])
+        # Create sample products for user 1
+        product1 = Products(user_id=1, url="https://example.com/product1", price="$19.99", productName="Widget A", category=["Gadgets"], favorited=False)
+        product2 = Products(user_id=1, url="https://example.com/product2", price="$24.99", productName="Widget D", category=["Electronics", "Gadgets"], favorited=True)
+        product3 = Products(user_id=1, url="https://example.com/product3", price="$14.99", productName="Widget E", category=["Accessories"], favorited=False)
+        product4 = Products(user_id=1, url="https://example.com/product4", price="$49.99", productName="Widget F", category=["Home", "Kitchen"], favorited=True)
+        product5 = Products(user_id=1, url="https://example.com/product5", price="$9.99", productName="Widget G", category=["Office"], favorited=False)
+        
+        # Additional products for user 2
+        product6 = Products(user_id=2, url="https://example.com/product6", price="$34.99", productName="Widget H", category=["Gadgets"], favorited=True)
+        product7 = Products(user_id=2, url="https://example.com/product7", price="$64.99", productName="Widget J", category=["Electronics", "Accessories"], favorited=False)
+        
+        # Additional products for user 3
+        product8 = Products(user_id=3, url="https://example.com/product8", price="$54.99", productName="Widget I", category=["Tools"], favorited=False)
+        product9 = Products(user_id=3, url="https://example.com/product9", price="$74.99", productName="Widget K", category=["Tools", "Home"], favorited=True)
+        
+        db.session.add_all([product1, product2, product3, product4, product5, product6, product7, product8, product9])
         db.session.commit()
 
     def create_community_messages():

@@ -8,6 +8,21 @@ const AddProduct = ({ user }) => {
   // State to check if user is editting data on form
   const [isEditing, setIsEditing] = useState(false);
 
+  // State to store available categories
+  const [categories] = useState([
+    'Electronics',
+    'Books',
+    'Fashion',
+    'Home',
+    'Toys',
+    'Sports',
+    'Gadgets',
+    'Accessories',
+    'Kitchen',
+    'Office',
+    'Tools'
+  ]);
+
   if (!user) {
     return <p>Please log in to add a product.</p>;
   }
@@ -23,9 +38,23 @@ const AddProduct = ({ user }) => {
 
   // Handle form submission
   const handleSubmit = (formData) => {
-    setSubmittedData(formData);
+    // Ensure category is always an array
+    const normalizedCategory = Array.isArray(formData.category)
+    ? formData.category
+    : formData.category
+    ? [formData.category]
+    : [];
+
+    setSubmittedData({
+      ...formData,
+      category: normalizedCategory,
+    });
+
     setIsEditing(false);
-    console.log('Form Data:', formData);
+    console.log('Form Data:', {
+      ...formData,
+      category: normalizedCategory,
+    });
   };
 
   const confirmData = async (event) => {
@@ -71,9 +100,14 @@ const AddProduct = ({ user }) => {
             url: submittedData?.url || '',
             price: submittedData?.price || '',
             productName: submittedData?.productName || '',
-            category: submittedData?.category || '',
+            category: Array.isArray(submittedData?.category)
+              ? submittedData.category
+              : submittedData?.category
+              ? [submittedData.category]
+              : [],
           }}
           handleSubmit={handleSubmit}
+          categories={categories} // Pass categories here
         />
       )}
 
@@ -84,7 +118,14 @@ const AddProduct = ({ user }) => {
           <p><strong>URL:</strong> {submittedData.url}</p>
           <p><strong>Price:</strong> {submittedData.price}</p>
           {submittedData.productName && <p><strong>Product Name:</strong> {submittedData.productName}</p>}
-          {submittedData.category && <p><strong>Category:</strong> {submittedData.category}</p>}
+          {submittedData.category && (
+            <p>
+              <strong>Category:</strong>{' '} 
+              {submittedData.category.map((cat, index) => (
+                <span key={index} className="category-tag">{cat}</span>
+              ))}
+            </p>
+          )}
           <div className='data-btns'>
             <button onClick={editData}>Edit</button>
             <button onClick={clearForm}>Clear</button>

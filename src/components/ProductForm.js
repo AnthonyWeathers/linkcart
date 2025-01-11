@@ -1,45 +1,16 @@
-// import React from 'react';
-
-// const ProductForm = ({ url, setUrl, price, setPrice, productName, setProductName, category, setCategory, handleSubmit }) => (
-//   <form className='product-link' onSubmit={handleSubmit}>
-//     <input 
-//       type='url' 
-//       required 
-//       placeholder='Enter url link of a product' 
-//       value={url} 
-//       onChange={(e) => setUrl(e.target.value)}
-//     />
-//     <input 
-//       type='text' 
-//       placeholder='Price of the product' 
-//       value={price} 
-//       onChange={(e) => setPrice(e.target.value)}
-//     />
-//     <input 
-//       type='text' 
-//       placeholder='Product name (optional)' 
-//       value={productName} 
-//       onChange={(e) => setProductName(e.target.value)}
-//     />
-//     <input 
-//       type='text' 
-//       placeholder='Category (optional)' 
-//       value={category} 
-//       onChange={(e) => setCategory(e.target.value)}
-//     />
-//     <button type='submit'>Submit</button>
-//   </form>
-// );
-
-// export default ProductForm;
-
 import React, { useState, useEffect } from 'react';
 
-const ProductForm = ({ initialData, handleSubmit }) => {
+const ProductForm = ({ 
+  initialData, 
+  handleSubmit, 
+  categories, 
+  showCancelButton = false,
+  handleCancel = null, // Default value 
+}) => {
   const [url, setUrl] = useState('');
   const [price, setPrice] = useState('');
   const [productName, setProductName] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState([]);
 
   // Initialize the form with product data
   useEffect(() => {
@@ -47,7 +18,7 @@ const ProductForm = ({ initialData, handleSubmit }) => {
       setUrl(initialData.url || '');
       setPrice(initialData.price || '');
       setProductName(initialData.productName || '');
-      setCategory(initialData.category || '');
+      setCategory(initialData.category || []);
     }
   }, [initialData]);
 
@@ -58,32 +29,68 @@ const ProductForm = ({ initialData, handleSubmit }) => {
 
   return (
     <form className='product-link' onSubmit={handleLocalSubmit}>
-      <input 
-        type='url' 
-        required 
-        placeholder='Enter url link of a product' 
-        value={url} 
-        onChange={(e) => setUrl(e.target.value)}
-      />
-      <input 
-        type='text' 
-        placeholder='Price of the product' 
-        value={price} 
-        onChange={(e) => setPrice(e.target.value)}
-      />
-      <input 
-        type='text' 
-        placeholder='Product name (optional)' 
-        value={productName} 
-        onChange={(e) => setProductName(e.target.value)}
-      />
-      <input 
-        type='text' 
-        placeholder='Category (optional)' 
-        value={category} 
-        onChange={(e) => setCategory(e.target.value)}
-      />
+      <div>
+        <label>Product Name:</label>
+        <input 
+          type='url' 
+          required 
+          placeholder='Enter url link of a product' 
+          value={url} 
+          onChange={(e) => setUrl(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label>Price:</label>
+        <input 
+          type='text' 
+          placeholder='Price of the product' 
+          value={price} 
+          onChange={(e) => setPrice(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label>Product Name:</label>
+        <input 
+          type='text' 
+          placeholder='Product name (optional)' 
+          value={productName} 
+          onChange={(e) => setProductName(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label>Categories:</label>
+        <select
+          multiple
+          value={category}
+          onChange={(e) =>
+            setCategory([...e.target.selectedOptions].map((opt) => opt.value))
+          }
+        >
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <button type='submit'>Submit</button>
+
+      {showCancelButton && (
+        <button
+          type="button"
+          onClick={() => {
+            if (handleCancel) {
+              handleCancel(); // Call the passed-in function
+            }
+          }}
+        >
+          Cancel
+        </button>
+      )}
     </form>
   );
 };

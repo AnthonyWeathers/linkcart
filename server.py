@@ -608,7 +608,7 @@ def editProduct():
             logging.warning("User %s failed to provide a product ID for editing", currentUser_id)
             return jsonify({"error": "Missing product or required fields"}), 400
 
-        product = crud.get_product_by_id(user_id=currentUser_id, id=product_id)
+        product = crud.get_product_by_id(user_id=currentUser_id, product_id=product_id)
         if not product:
             logging.warning("User %s attempted to edit a nonexistent product", currentUser_id)
             return jsonify({"error": "Product not found"}), 404
@@ -653,7 +653,7 @@ def favoriteProduct():
             logging.warning("User %s failed to provide a product ID for favoriting", currentUser_id)
             return jsonify({"error": "Product ID is required"}), 400
         
-        product = crud.get_product_by_id(user_id=currentUser_id, id=productId)
+        product = crud.get_product_by_id(user_id=currentUser_id, product_id=productId)
         if not product:
             logging.warning("User %s attempted to favorite a nonexistent product", currentUser_id)
             return jsonify({"error": "Product not found"}), 404
