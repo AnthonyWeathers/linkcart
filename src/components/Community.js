@@ -15,7 +15,9 @@ const Community = ({ currentUser }) => {
             });
             if(response.ok) {
                 const messages = await response.json();
-                setMessages(messages);
+                // setMessages(messages);
+                // Reverse the order for display (oldest first, newest last)
+                setMessages(messages.reverse());
             }
             else {
                 const messages = await response.json();

@@ -30,7 +30,7 @@ const ProductForm = ({
   return (
     <form className='product-link' onSubmit={handleLocalSubmit}>
       <div>
-        <label>Product Name:</label>
+        <label>Product URL:</label>
         <input 
           type='url' 
           required 

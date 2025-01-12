@@ -239,5 +239,15 @@ def create_community_message(user_id, content):
     return message
 
 def get_community_messages():
-    """Fetch all community messages."""
-    return CommunityMessage.query.order_by(CommunityMessage.timestamp.asc()).all()
+    # """Fetch all community messages."""
+    # return CommunityMessage.query.order_by(CommunityMessage.timestamp.asc()).all()
+    """
+    Fetch the latest community messages up to the specified limit,
+    in descending order (newest first).
+    """
+    return (
+        CommunityMessage.query
+        .order_by(CommunityMessage.timestamp.desc())  # Newest messages first
+        .limit(30) # up to the latest 30 messages from database
+        .all()
+    )

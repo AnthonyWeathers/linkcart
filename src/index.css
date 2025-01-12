@@ -386,14 +386,38 @@ textarea + br + button {
   margin: 80px auto; /* Center-aligns the container on the page */
 }
 
+.add-product-container {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  width: 100%;
+  max-width: 600px;
+  padding: 10px;
+  /* box-sizing: border-box; */
+}
+
+.submitted-data {
+  display: flex;
+  flex-direction: column; /* Aligns text elements vertically */
+  align-items: flex-start; /* Left-aligns text within container */
+  width: 100%;
+  max-width: 600px; /* Limits width for better readability */
+  background-color: #f9f9f9;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  /* margin-top: 20px; */
+}
+
 /* Styling for ProductForm component */
 .product-link {
   display: flex;
   flex-direction: column; /* Stacks form elements vertically */
-  align-items: center;
+  /* align-items: center; */
+  align-items: flex-start;
   gap: 15px; /* Adds space between form elements */
   width: 100%; /* Ensures form spans full width of container */
-  max-width: 400px; /* Limits form width */
+  max-width: calc(100% - 20px); /* Limits form width */
 }
 
 .product-link input,
@@ -415,6 +439,26 @@ textarea + br + button {
 
 .product-link button:hover {
   background-color: #218838;
+}
+
+.product-link div {
+  display: flex; /* Aligns label and input/select horizontally */
+  flex-direction: column; /* Ensures they stack vertically by default */
+  align-items: flex-start; /* Aligns label and input/select to the left */
+  gap: 5px; /* Adds space between label and input/select */
+  width: 95%; /* Ensures child elements span full width */
+}
+
+.product-link select {
+  width: 100%; /* Makes the select element span the full width of the parent */
+  height: 5rem; /* Adjusts height for better usability */
+  font-size: 1rem; /* Increases font size for better readability */
+  padding: 5px; /* Adds padding for a more spacious appearance */
+  box-sizing: border-box; /* Ensures padding doesn't affect width */
+}
+
+.product-link label {
+  font-size: 1rem; /* Optional: Ensures consistent label font size */
 }
 
 /* Submitted data container */
@@ -520,7 +564,7 @@ textarea + br + button {
   grid-template-columns: repeat(2, 1fr); /* Two columns on larger screens */
   gap: 20px;
   width: 100%;
-  padding-left: 200px
+  /* padding-left: 100px */
 }
 
 .product-container {
@@ -530,7 +574,7 @@ textarea + br + button {
 }
 
 .product-item {
-  width: calc(50% - 20px);
+  width: calc(100% - 20px);
   display: flex;
   flex-direction: column;
   align-items: flex-start; /* Aligns details to the left */

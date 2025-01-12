@@ -41,7 +41,7 @@ class Products(db.Model):
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable = False)
     url = db.Column(db.String(500) , nullable = False)
-    price = db.Column(db.String(50), nullable = False)
+    price = db.Column(db.Float, nullable=False)  # Updated to Float
     productName = db.Column(db.String(255))
     category = db.Column(JSONB, nullable=False, default=list) # Now supports multiple categories
     favorited = db.Column(db.Boolean , nullable = False, default=False)  # Use db.Boolean with a default value

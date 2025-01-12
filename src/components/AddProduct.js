@@ -94,45 +94,47 @@ const AddProduct = ({ user }) => {
 
   return (
     <div className='container'>
-      {(!submittedData || isEditing) && (
-        <ProductForm
-          initialData={{
-            url: submittedData?.url || '',
-            price: submittedData?.price || '',
-            productName: submittedData?.productName || '',
-            category: Array.isArray(submittedData?.category)
-              ? submittedData.category
-              : submittedData?.category
-              ? [submittedData.category]
-              : [],
-          }}
-          handleSubmit={handleSubmit}
-          categories={categories} // Pass categories here
-        />
-      )}
-
-      {/* Conditionally render the submitted data */}
-      {submittedData && !isEditing && (
-        <div className="submitted-data">
-          <h2>Submitted Data:</h2>
-          <p><strong>URL:</strong> {submittedData.url}</p>
-          <p><strong>Price:</strong> {submittedData.price}</p>
-          {submittedData.productName && <p><strong>Product Name:</strong> {submittedData.productName}</p>}
-          {submittedData.category && (
-            <p>
-              <strong>Category:</strong>{' '} 
-              {submittedData.category.map((cat, index) => (
-                <span key={index} className="category-tag">{cat}</span>
-              ))}
-            </p>
-          )}
-          <div className='data-btns'>
-            <button onClick={editData}>Edit</button>
-            <button onClick={clearForm}>Clear</button>
-            <button onClick={confirmData}>Confirm</button>
+        {(!submittedData || isEditing) && (
+          <div className='add-product-container'>
+            <ProductForm
+              initialData={{
+                url: submittedData?.url || '',
+                price: submittedData?.price || '',
+                productName: submittedData?.productName || '',
+                category: Array.isArray(submittedData?.category)
+                  ? submittedData.category
+                  : submittedData?.category
+                  ? [submittedData.category]
+                  : [],
+              }}
+              handleSubmit={handleSubmit}
+              categories={categories} // Pass categories here
+            />
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Conditionally render the submitted data */}
+        {submittedData && !isEditing && (
+          <div className="submitted-data">
+            <h2>Submitted Data:</h2>
+            <p><strong>URL:</strong> {submittedData.url}</p>
+            <p><strong>Price:</strong> {submittedData.price}</p>
+            {submittedData.productName && <p><strong>Product Name:</strong> {submittedData.productName}</p>}
+            {submittedData.category && (
+              <p>
+                <strong>Category:</strong>{' '} 
+                {submittedData.category.map((cat, index) => (
+                  <span key={index} className="category-tag">{cat}</span>
+                ))}
+              </p>
+            )}
+            <div className='data-btns'>
+              <button onClick={editData}>Edit</button>
+              <button onClick={clearForm}>Clear</button>
+              <button onClick={confirmData}>Confirm</button>
+            </div>
+          </div>
+        )}
     </div>
   );
 }

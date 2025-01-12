@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, session
 from flask_socketio import SocketIO, join_room, emit, disconnect
 import eventlet
 import jinja2
+import re
 
 from functools import wraps  # For creating decorators
 import logging  # For logging events and errors
@@ -451,6 +452,20 @@ def sync_online_status():
 
 
 """ Products Endpoints """
+def sanitize_price(price_input):
+    """
+    Convert user-provided price input to a float by removing invalid characters.
+    Allows only numbers and decimals.
+    """
+    # Remove any non-numeric characters except the decimal point
+    sanitized = re.sub(r'[^\d.]', '', price_input)
+    try:
+        # Convert sanitized string to float
+        return float(sanitized)
+    except ValueError:
+        # If conversion fails, return None or raise an error
+        return None
+    
 @app.route("/submit-product", methods=["POST"])
 @csrf.exempt  # CSRF protection is typically applied to forms; for JSON requests, use exemptions carefully
 @token_required
@@ -474,7 +489,12 @@ def save():
                 # logger.warning("User %s submitted incomplete product data", user["id"])
                 # return jsonify({"error": "Missing required fields"}), 400
 
-        product = crud.create_product(currentUser_id, url, price, productName, category)
+        cleaned_price = sanitize_price(price)
+
+        if cleaned_price is None:
+            return jsonify({"error": "Invalid price format"}), 400
+
+        product = crud.create_product(currentUser_id, url, cleaned_price, productName, category)
         if product:
             logging.info("User %s successfully saved a product", currentUser_id)
             return jsonify({
@@ -616,11 +636,16 @@ def editProduct():
         if product.user_id != currentUser_id:
             logging.warning("User %s attempted to edit an unauthorized product", currentUser_id)
             return jsonify({"error": "Access denied"}), 403
+        
+        cleaned_price = sanitize_price(request.json.get("price"))
+
+        if cleaned_price is None:
+            return jsonify({"error": "Invalid price format"}), 400
 
         updated_product = crud.update_product(
             product_id, 
             url=request.json.get("url"), 
-            price=request.json.get("price"), 
+            price=cleaned_price, 
             productName=request.json.get("productName"), 
             category=request.json.get("category")
         )
