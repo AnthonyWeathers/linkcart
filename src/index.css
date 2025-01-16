@@ -19,6 +19,13 @@ code {
     monospace;
 }
 
+/* Error message */
+.error-message {
+  color: red;
+  font-weight: bold;
+  margin-bottom: 1em;
+}
+
 /* App.js */
 /* .highlight { */
   /* color: red; /* or another attention-grabbing color */
@@ -622,6 +629,11 @@ textarea + br + button {
 .favorite-star:hover {
   transform: scale(1.2); /* Slight zoom effect for interactivity */
   transition: transform 0.2s ease;
+}
+
+.product-item.favorited { /* Style change for favorited products */
+  border: 2px solid gold;
+  background-color: #fff8dc;
 }
 
 /* Buttons container within product card */

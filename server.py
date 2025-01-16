@@ -200,7 +200,7 @@ def get_public_messages():
         return jsonify([
             {
                 'id': message.id,
-                'username': message.user.username,  # Use the relationship to get the username
+                'username': message.user.username if message.user else "Deleted User",  # Use the relationship to get the username and handles if user is deleted
                 'content': message.content,
                 'timestamp': message.timestamp.isoformat()  # Format timestamp as string
             }
@@ -585,9 +585,26 @@ def getProducts():
         min_price = request.args.get('minPrice', default=None, type=float)
         max_price = request.args.get('maxPrice', default=None, type=float)
         category_filter = request.args.get('categoryFilter', default=None, type=str)
+        page = request.args.get('page', default=1, type=int)  # Default to page 1
+        limit = request.args.get('limit', default=10, type=int)  # Default to 10 products per page
         
+        # Calculate offset
+        offset = (page - 1) * limit
+
         # Only pass 'favorited' if sortBy is explicitly 'favorited'
         favorited = True if sort_by == 'favorited' else None
+
+        # Fetch total product count (no limit or offset)
+        total_products = crud.count_products(
+            user_id=currentUser_id,
+            min_price=min_price,
+            max_price=max_price,
+            category_filter=category_filter,
+            favorited=favorited,
+        )
+
+        # Calculate total pages
+        total_pages = (total_products + limit - 1) // limit  # Round up division
 
         # Fetch products using filters and sorting
         user_products = crud.get_products(
@@ -597,15 +614,20 @@ def getProducts():
             min_price=min_price,
             max_price=max_price,
             category_filter=category_filter,
-            favorited=favorited
+            favorited=favorited,
+            limit=limit,
+            offset=offset
         )
 
         # Convert each product object to a dictionary
         user_products_data = [product.to_dict() for product in user_products]
 
+        # need a total pages value
         return jsonify({
             "message": "User products fetched successfully",
             "products": user_products_data,
+            "page": page,
+            "totalPages": total_pages
         })
 
     except Exception as e:
@@ -799,6 +821,33 @@ def editDescription(username):
     except Exception as e:
         logging.error(f"Error while editing description for {currentUser_username}: {str(e)}")
         return jsonify({'error': 'An error occurred while updating the description'}), 500
+    
+@app.route('/user/delete', methods=['POST'])
+@limiter.limit("2/minute")  # Limit requests to prevent abuse
+@csrf.exempt  # Enforce CSRF protection for added security
+@token_required
+def delete_user():
+    """
+    Deletes the authenticated user's account.
+    """
+    try:
+        # Access user payload from request.user_payload
+        user = request.user_payload
+        currentUser_id = user["user_id"]
+        currentUser_username = user['username']
+        logging.info(f"Authenticated user {currentUser_username} is attempting to delete their account")
+
+        # Perform the user deletion
+        response = crud.delete_user_account(currentUser_id)
+        if not response.get("success"):
+            logging.warning(f"Failed to delete account for {currentUser_username}: {response['message']}")
+            return jsonify(response), 404 if response["message"] == "User not found" else 400
+        logging.info(f"User {currentUser_username} successfully deleted their account.")
+        return jsonify(response), 200
+
+    except Exception as e:
+        app.logger.error(f"Error deleting user {user.username}: {e}")
+        return jsonify({'success': False, 'error': 'Failed to delete user account.'}), 500
 
 """ Friend Request Endpoints """
 @app.route('/make-request', methods=['POST'])

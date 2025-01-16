@@ -13,6 +13,15 @@ const ProductList = ({ user }) => {
     const [maxPrice, setMaxPrice] = useState('');
     const [categoryFilter, setCategoryFilter] = useState([]);
 
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const [totalProducts, setTotalProducts] = useState(0);
+
+    // State for pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
     // State to store available categories
     const [categories] = useState([
         'Electronics',
@@ -29,7 +38,10 @@ const ProductList = ({ user }) => {
     ]);
 
     // Fetch Products
-    const fetchProducts = async () => {
+    // const fetchProducts = async () => {
+    const fetchProducts = async (page = 1) => {
+        setLoading(true);
+        setError(null); // Clear previous errors
         try {
             const params = new URLSearchParams();
             if (sortBy) params.append('sortBy', sortBy);
@@ -39,6 +51,7 @@ const ProductList = ({ user }) => {
             if (categoryFilter.length > 0) {
                 categoryFilter.forEach(cat => params.append('categoryFilter', cat));
             }
+            params.append('page', page);
 
             const response = await fetch(`http://localhost:8000/products?${params.toString()}`, {
                 method: 'GET',
@@ -52,9 +65,13 @@ const ProductList = ({ user }) => {
 
             const data = await response.json();
             setSavedProducts(data.products);
+            setTotalPages(data.totalPages);
+            setCurrentPage(page);
         } catch (error) {
             console.error('Error fetching products:', error);
-            // alert("Failed to fetch the product: ${error.message}")
+            setError(error.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -189,6 +206,17 @@ const ProductList = ({ user }) => {
     useEffect(() => {
         fetchProducts();
     }, []);
+
+    function formatPrice(price) {
+        return `$${price.toFixed(2)}`; // Format as "$4.99"
+    }
+
+    // Pagination controls
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            fetchProducts(newPage);
+        }
+    };
     
 
     const Products = ({ products }) => {
@@ -202,7 +230,7 @@ const ProductList = ({ user }) => {
                     .filter(product => product !== '') // Exclude empty spots
                     .map(product => ( // add a line here to show the favorited status of each product, start as just a line, later maybe a star
                         // <div key={product.productId} className="product-item">
-                        <div key={product.productId} className='product-container'>
+                        <div key={product.productId} className={`product-container product-item ${product.favorited ? 'favorited' : ''}`}>
                             {/* {!(selectedProduct && edittingData && selectedProduct.productId === product.productId) && (
                                 <div className="product-item">
                                     <div className="product-header">
@@ -256,6 +284,7 @@ const ProductList = ({ user }) => {
                                         <h2 className="product-name">
                                             {product.productName}
                                             <button
+                                                title={product.favorited ? "Unfavorite" : "Favorite"}
                                                 className={`favorite-star ${product.favorited ? 'filled' : 'empty'}`}
                                                 onClick={() => favoriteProduct(product)}
                                                 aria-label={product.favorited ? "Unfavorite" : "Favorite"}
@@ -269,7 +298,8 @@ const ProductList = ({ user }) => {
                                     <p className="product-url">
                                         URL: <a href={product.url} target="_blank" rel="noopener noreferrer">{product.url}</a>
                                     </p>
-                                    <p className="product-price">Price: {product.price}</p>
+                                    {/* <p className="product-price">Price: {product.price}</p> */}
+                                    <p className="product-price">Price: {formatPrice(product.price)}</p>
                                     <p className="product-category">
                                         Categories: {Array.isArray(product.category) ? product.category.join(', ') : 'No categories'}
                                     </p>
@@ -389,8 +419,27 @@ const ProductList = ({ user }) => {
                 Apply Sorting
             </button>
 
+            {error && <p className="error-message">{error}</p>}
+
             {/* Products Display */}
-            <Products products={savedProducts}/>
+            {(!error && loading) ? <p>Loading Saved Products...</p> : <Products products={savedProducts} />}
+            {/* <Products products={savedProducts}/> */}
+
+            <div className="pagination-controls">
+                <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                >
+                    Previous
+                </button>
+                <span>Page {currentPage} of {totalPages}</span>
+                <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                >
+                    Next
+                </button>
+            </div>
         </div>
     )
 }

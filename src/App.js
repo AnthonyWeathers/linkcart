@@ -9,6 +9,7 @@ import Community from './components/Community';
 import Friends from './components/Friends';
 import socket from './components/socket';
 import StatusToggle from './components/StatusToggle';
+import UserDeleted from './components/UserDeleted';
 import { UserStatusContext } from "./components/UserStatusContext"; // Import the provider
 
 function App() {
@@ -256,6 +257,17 @@ function App() {
                   isOnline
                   ? currentUser 
                     ? <Profile currentUser={currentUser} handleRequestNotification={handleRequestNotification} /> 
+                    : <OfflineMessage />
+                  :  (
+                    <div>You are currently not online, go to one of the features accessible offline or switch to online. </div>
+                  )
+                } 
+              />
+              <Route path="/user-deleted" component={UserDeleted} 
+                element={
+                  isOnline
+                  ? currentUser 
+                    ? <UserDeleted /> 
                     : <OfflineMessage />
                   :  (
                     <div>You are currently not online, go to one of the features accessible offline or switch to online. </div>

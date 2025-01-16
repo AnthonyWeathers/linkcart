@@ -79,7 +79,8 @@ const Community = ({ currentUser }) => {
                     return (
                         <div key={msg.id} className="message-item">
                             {showUsername && (
-                                <Link to={`/profile/${msg.username}`}>
+                                // <Link to={`/profile/${msg.username}`}>
+                                <Link to={msg.username === "Deleted User" ? "/user-deleted" : `/profile/${msg.username}`}>
                                     <strong>{msg.username}:</strong>
                                 </Link>
                             )}

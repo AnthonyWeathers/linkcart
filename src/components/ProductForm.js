@@ -43,7 +43,7 @@ const ProductForm = ({
       <div>
         <label>Price:</label>
         <input 
-          type='text' 
+          type='number' 
           placeholder='Price of the product' 
           value={price} 
           onChange={(e) => setPrice(e.target.value)}

@@ -1,8 +1,9 @@
 """CRUD operations."""
 
 from model import User, Products, Friends, FriendRequest, CommunityMessage, db
-from sqlalchemy import or_, and_, asc, desc, cast
+from sqlalchemy import or_, and_, asc, desc, cast, func # using func instead of cast
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import joinedload
 
 # -- User Operations --
 
@@ -46,6 +47,45 @@ def set_user_online_status(user_id, new_status):
     db.session.commit()  
     return user
 
+def delete_user_account(user_id):
+    # Get the user to be deleted
+    user = User.query.get(user_id)
+    
+    if not user:
+        return {"success": False, "message": "User not found"}
+    
+    try:
+        # Anonymize community messages
+        CommunityMessage.query.filter_by(user_id=user_id).update({
+            "user_id": None,  # Remove user reference
+            "content": db.func.concat("Deleted User: ", CommunityMessage.content)
+        })
+        
+        # Remove friend requests
+        FriendRequest.query.filter(
+            (FriendRequest.sender_id == user_id) | (FriendRequest.receiver_id == user_id)
+        ).delete(synchronize_session="fetch")
+        
+        # Remove friendships
+        Friends.query.filter(
+            (Friends.user1_id == user_id) | (Friends.user2_id == user_id)
+        ).delete(synchronize_session="fetch")
+        
+        # Remove favorited products
+        user.favorited_products.clear()  # Removes all associations for the user
+        
+        # Delete user's own products
+        Products.query.filter_by(user_id=user_id).delete(synchronize_session="fetch")
+        
+        # Finally, delete the user
+        db.session.delete(user)
+        db.session.commit()
+        
+        return {"success": True, "message": "User account deleted successfully."}
+    except Exception as e:
+        db.session.rollback()  # Rollback transaction in case of failure
+        return {"success": False, "message": "An error occurred while deleting the user account."}
+
 # -- Product Operations --
 
 def create_product(user_id, url, price, productName, categories, favorited=False):
@@ -65,7 +105,8 @@ def create_product(user_id, url, price, productName, categories, favorited=False
 # def get_products(**filters):
     """Fetch products based on dynamic filters."""
     # return Products.query.filter_by(**filters).all()
-def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_price=None, category_filter=None, favorited=None, **extra_filters):
+def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_price=None, category_filter=None, favorited=None, limit=10,
+    offset=0):
     """
     Fetch products based on dynamic filters, sorting, and ranges.
     
@@ -76,9 +117,8 @@ def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_
         min_price (float): Minimum price filter.
         max_price (float): Maximum price filter.
         category_filter (str): Filter by category.
-        **extra_filters: Any additional exact-match filters.
     """
-    query = Products.query.filter_by(user_id=user_id, **extra_filters)
+    query = Products.query.filter_by(user_id=user_id)
 
     # Handle price range filters
     if min_price is not None:
@@ -87,20 +127,23 @@ def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_
         query = query.filter(Products.price <= max_price)
 
     # Handle category filter (e.g., partial match or specific criteria)
-    # if category_filter:
-    #     query = query.filter(Products.category.contains(category_filter))
-    
     if category_filter:
         if isinstance(category_filter, str):  # If a single category is passed
             category_filter = [category_filter]  # Convert to list
-        # query = query.filter(Products.category.contains(category_filter))
         """Below is for retrieving products that match one of the categories selected for filtering"""
-        query = query.filter(or_(*(Products.category.contains([cat]) for cat in category_filter)))
+        # query = query.filter(or_(*(Products.category.contains([cat]) for cat in category_filter)))
         query = query.filter(
             or_(
                 *(cast(Products.category, JSONB).contains([cat]) for cat in category_filter)
             )
         )
+
+        # Use jsonb_array_elements_text to match categories inside the JSONB array
+        # query = query.filter(
+        #     or_(
+        #         *(Products.category.contains([cat]) for cat in category_filter)
+        #     )
+        # )
 
     # Handle sorting
     if sort_by == 'favorited':
@@ -113,7 +156,40 @@ def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_
     else:
         query = query.order_by(desc(Products.id))  # Default sort by newest products
 
+    # Apply pagination
+    query = query.limit(limit).offset(offset)
+
+    print("Final query:", query)
+
     return query.all()
+
+    # try:
+    #     return query.all()
+    # except Exception as e:
+    #     print("Error executing query:", e)
+    #     raise
+
+def count_products(user_id, min_price=None, max_price=None, category_filter=None, favorited=None):
+    query = Products.query.filter_by(user_id=user_id)
+
+    # Apply additional filters
+    if min_price is not None:
+        query = query.filter(Products.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Products.price <= max_price)
+    if category_filter:
+        if isinstance(category_filter, str):  # If a single category is passed
+            category_filter = [category_filter]  # Convert to list
+        """Below is for retrieving products that match one of the categories selected for filtering"""
+        # query = query.filter(or_(*(Products.category.contains([cat]) for cat in category_filter)))
+        query = query.filter(
+            or_(
+                *(cast(Products.category, JSONB).contains([cat]) for cat in category_filter)
+            )
+        )
+
+    # Return the total count of products
+    return query.count()
 
 def get_product_by_id(user_id, product_id):
     """
@@ -247,6 +323,7 @@ def get_community_messages():
     """
     return (
         CommunityMessage.query
+        .options(joinedload(CommunityMessage.user)) # Preload the 'user' relationship
         .order_by(CommunityMessage.timestamp.desc())  # Newest messages first
         .limit(30) # up to the latest 30 messages from database
         .all()

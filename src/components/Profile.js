@@ -209,13 +209,40 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
         }
     };
 
+    const handleDeleteAccount = async () => {
+        const confirmDelete = window.confirm("Are you sure you want to delete your account? This action cannot be undone.");
+        if (!confirmDelete) return;
+
+        try {
+            const response = await fetch('http://localhost:8000/user/delete', {
+                method: 'POST',
+                credentials: 'include', // Include session cookies
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Pass token for authentication
+                }
+            });
+
+            const data = await response.json();
+            if (response.ok && data.success) {
+                alert('Your account has been deleted.');
+                // Redirect to login or homepage
+                history.push('/login');
+            } else {
+                alert(data.error || 'Failed to delete account.');
+            }
+        } catch (error) {
+            console.error('Error deleting account:', error);
+            alert('An error occurred. Please try again later.');
+        }
+    };
+
     const Products = ({ products }) => {
         return (
             <div>
                 {products
                     .filter(product => product !== '') // Exclude empty spots
                     .map(product => (
-                        <div key={product.productId}>
+                        <div key={product.productId} className='product-container'>
                             <h2>{product.productName}</h2>
                             <p>URL: {product.url}</p>
                             <p>Price: {product.price}</p>
