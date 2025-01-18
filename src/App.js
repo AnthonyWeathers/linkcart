@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import AddProduct from './components/AddProduct';
 import ProductList from './components/ProductList';
 import Login from './components/Login';
@@ -195,6 +195,55 @@ function App() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    // const confirmDelete = window.confirm("Are you sure you want to delete your account? This action cannot be undone.");
+    // if (!confirmDelete) return;
+
+    try {
+        const response = await fetch('http://localhost:8000/user/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            alert(data.message);
+
+            setCurrentUser(null); // Triggers redirect due to routing logic in App.js
+            setHasNewRequests(false); // Reset state if applicable
+
+            if (socket.connected) {
+                socket.disconnect();
+            }
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to delete account.');
+        }
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        alert(error.message);
+    }
+  };
+
+  // Helper Component: Ensures User is Logged In
+  const ProtectedRoute = ({ element }) => {
+    return currentUser ? element : <Navigate to="/login" />;
+  };
+
+  // Helper Component: Ensures User is Logged In AND Online
+  const ProtectedOnlineRoute = ({ element }) => {
+    useEffect(() => {
+      if (currentUser && isOnline) {
+        navigate(window.location.pathname); // Refresh current route when switching online
+      }
+    }, [isOnline]); // Runs when `isOnline` changes
+    
+    if (!currentUser) return <Navigate to="/login" />;
+    if (!isOnline) return <div>You are currently not online. Switch to online mode to access this feature.</div>;
+    return element;
+  };
+
   function OfflineMessage() {
     return <div>Please go online to access this feature!</div>;
   }
@@ -245,61 +294,19 @@ function App() {
         ) : (
           <>
             <Routes>
-              <Route path="/" element={currentUser ? <AddProduct user={currentUser} /> : <Navigate to="/login" />} />
-              <Route path="/saved-products" element={currentUser ? <ProductList user={currentUser} /> : <Navigate to="/login" />} />
-              {/* Routes for login and register pages */}
+              {/* Public Routes */}
               <Route path="/login" element={<Login onLogin={handleSetCurrentUser} />} />
               <Route path="/register" element={<Register onRegister={handleSetCurrentUser} />} />
 
-              {/* Routes for online community */}
-              <Route path="/profile/:username" 
-                element={
-                  isOnline
-                  ? currentUser 
-                    ? <Profile currentUser={currentUser} handleRequestNotification={handleRequestNotification} /> 
-                    : <OfflineMessage />
-                  :  (
-                    <div>You are currently not online, go to one of the features accessible offline or switch to online. </div>
-                  )
-                } 
-              />
-              <Route path="/user-deleted" component={UserDeleted} 
-                element={
-                  isOnline
-                  ? currentUser 
-                    ? <UserDeleted /> 
-                    : <OfflineMessage />
-                  :  (
-                    <div>You are currently not online, go to one of the features accessible offline or switch to online. </div>
-                  )
-                } 
-              />
-              <Route
-                path="/community"
-                element={
-                  isOnline
-                  ? currentUser
-                    ? <Community currentUser={currentUser} /> 
-                    : <OfflineMessage />
-                  :  (
-                    <div>You are currently not online, go to one of the features accessible offline or switch to online. </div>
-                  )
-                }
-              />
-              <Route
-                path="/friends"
-                element={
-                  isOnline 
-                    ? currentUser 
-                      ? <Friends currentUser={currentUser} handleRequestNotification={handleRequestNotification} /> 
-                      : <OfflineMessage />
-                    :  (
-                      <div>You are currently not online, go to one of the features accessible offline or switch to online. </div>
-                    )
-                }              
-              />
-              {/* Dynamic route for private messaging between the current user and a friend */}
-              {/* <Route path="/messages/:friendUsername" element={<PrivateMessages currentUser={currentUser} />} /> */}
+              {/* Protected Routes (Requires Login) */}
+              <Route path="/" element={<ProtectedRoute element={<AddProduct user={currentUser} />} />} />
+              <Route path="/saved-products" element={<ProtectedRoute element={<ProductList user={currentUser} />} />} />
+
+              {/* Protected + Online-Only Routes */}
+              <Route path="/profile/:username" element={<ProtectedOnlineRoute element={<Profile currentUser={currentUser} handleRequestNotification={handleRequestNotification} handleDeleteAccount={handleDeleteAccount} />} />} />
+              <Route path="/community" element={<ProtectedOnlineRoute element={<Community currentUser={currentUser} />} />} />
+              <Route path="/friends" element={<ProtectedOnlineRoute element={<Friends currentUser={currentUser} handleRequestNotification={handleRequestNotification} />} />} />
+              <Route path="/user-deleted" element={<ProtectedOnlineRoute element={<UserDeleted />} />} />
             </Routes>
 
             {/* Secondary Navbar */}

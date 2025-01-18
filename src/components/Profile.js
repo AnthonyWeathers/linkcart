@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom'; // Hook to access URL params
 
-const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) => {
+const Profile = ({ currentUser, handleNewRequest, handleRequestNotification, handleDeleteAccount }) => {
     const { username } = useParams(); // Get the username from the URL
     const [favoriteProducts, setFavoriteProducts] = useState([]);
     const [user, setUser] = useState(null);
@@ -209,31 +209,31 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
         }
     };
 
-    const handleDeleteAccount = async () => {
+    const confirmDeleteAccount = async () => {
         const confirmDelete = window.confirm("Are you sure you want to delete your account? This action cannot be undone.");
         if (!confirmDelete) return;
 
-        try {
-            const response = await fetch('http://localhost:8000/user/delete', {
-                method: 'POST',
-                credentials: 'include', // Include session cookies
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Pass token for authentication
-                }
-            });
+        // try {
+        //     const response = await fetch('http://localhost:8000/user/delete', {
+        //         method: 'POST',
+        //         headers: { 'Content-Type': 'application/json' },
+        //         credentials: 'include', // Include session cookies
+        //     });
 
-            const data = await response.json();
-            if (response.ok && data.success) {
-                alert('Your account has been deleted.');
-                // Redirect to login or homepage
-                history.push('/login');
-            } else {
-                alert(data.error || 'Failed to delete account.');
-            }
-        } catch (error) {
-            console.error('Error deleting account:', error);
-            alert('An error occurred. Please try again later.');
-        }
+        //     if (response.ok) {
+        //         const data = await response.json();
+        //         alert(data.message);
+        //         // Redirect to login or homepage
+        //         history.push('/login');
+        //     } else {
+        //         const errorData = await response.json();
+        //         throw new Error(errorData.error || 'Failed to delete account.');
+        //     }
+        // } catch (error) {
+        //     console.error('Error deleting account:', error);
+        //     alert(error.message);
+        // }
+        handleDeleteAccount()
     };
 
     const Products = ({ products }) => {
@@ -278,7 +278,10 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification }) =
                 <h4>Description</h4>
                 {/* Show Edit Description if current user is viewing their own profile */}
                 {currentUser === username && (
-                    <button className='edit-description-btn' onClick={handleEditClick}>Edit Description</button>
+                    <div>
+                        <button className='edit-description-btn' onClick={handleEditClick}>Edit Description</button>
+                        <button className='delete-account-btn' onClick={confirmDeleteAccount}>Delete Account</button>
+                    </div>
                 )}
             </div>
 

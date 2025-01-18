@@ -81,10 +81,10 @@ def delete_user_account(user_id):
         db.session.delete(user)
         db.session.commit()
         
-        return {"success": True, "message": "User account deleted successfully."}
+        return {"message": "User account deleted successfully."}
     except Exception as e:
         db.session.rollback()  # Rollback transaction in case of failure
-        return {"success": False, "message": "An error occurred while deleting the user account."}
+        return {"message": "An error occurred while deleting the user account."}
 
 # -- Product Operations --
 

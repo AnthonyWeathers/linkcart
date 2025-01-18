@@ -847,7 +847,7 @@ def delete_user():
 
     except Exception as e:
         app.logger.error(f"Error deleting user {user.username}: {e}")
-        return jsonify({'success': False, 'error': 'Failed to delete user account.'}), 500
+        return jsonify({'error': 'Failed to delete user account.'}), 500
 
 """ Friend Request Endpoints """
 @app.route('/make-request', methods=['POST'])

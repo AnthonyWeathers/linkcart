@@ -123,6 +123,14 @@ ul {
   width: 100%; /* Ensures the container width fits within the viewport */
 }
 
+.offline-message {
+  text-align: center;
+  font-size: 18px;
+  color: red;
+  margin-top: 50px;
+  padding: 20px;
+}
+
 /* Community Page Styling */
 
 .community-header {
