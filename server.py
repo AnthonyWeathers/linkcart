@@ -839,6 +839,7 @@ def delete_user():
 
         # Perform the user deletion
         response = crud.delete_user_account(currentUser_id)
+        print("The response from crud deleting user is: ", response)
         if not response.get("success"):
             logging.warning(f"Failed to delete account for {currentUser_username}: {response['message']}")
             return jsonify(response), 404 if response["message"] == "User not found" else 400

@@ -55,35 +55,60 @@ def delete_user_account(user_id):
         return {"success": False, "message": "User not found"}
     
     try:
+        # Log the user being deleted
+        print(f"Attempting to delete user: {user_id}")
         # Anonymize community messages
-        CommunityMessage.query.filter_by(user_id=user_id).update({
-            "user_id": None,  # Remove user reference
-            "content": db.func.concat("Deleted User: ", CommunityMessage.content)
+        # CommunityMessage.query.filter_by(user_id=user_id).update({
+        #     "user_id": None,  # Remove user reference
+        #     "content": db.func.concat("Deleted User: ", CommunityMessage.content)
+        #     # "content": db.func.concat("Deleted User: ", db.func.coalesce(CommunityMessage.content, ""))
+        # })
+
+        # Debugging: Check if CommunityMessage update is working
+        updated_messages = CommunityMessage.query.filter_by(user_id=user_id).update({
+            "user_id": None,
+            "content": db.func.concat("Deleted User: ", db.func.coalesce(CommunityMessage.content, ""))
         })
+        print(f"Updated {updated_messages} community messages for user {user_id}")
         
         # Remove friend requests
-        FriendRequest.query.filter(
+        # FriendRequest.query.filter(
+        #     (FriendRequest.sender_id == user_id) | (FriendRequest.receiver_id == user_id)
+        # ).delete(synchronize_session="fetch")
+        # Debugging: Check if friend requests and friendships are removed
+        deleted_friend_requests = FriendRequest.query.filter(
             (FriendRequest.sender_id == user_id) | (FriendRequest.receiver_id == user_id)
         ).delete(synchronize_session="fetch")
+        print(f"Deleted {deleted_friend_requests} friend requests for user {user_id}")
         
         # Remove friendships
-        Friends.query.filter(
+        # Friends.query.filter(
+        #     (Friends.user1_id == user_id) | (Friends.user2_id == user_id)
+        # ).delete(synchronize_session="fetch")
+        # db.session.commit()  # Explicit commit to ensure friendships are deleted before proceeding
+        deleted_friendships = Friends.query.filter(
             (Friends.user1_id == user_id) | (Friends.user2_id == user_id)
         ).delete(synchronize_session="fetch")
+        print(f"Deleted {deleted_friendships} friendships for user {user_id}")
         
         # Remove favorited products
         user.favorited_products.clear()  # Removes all associations for the user
         
         # Delete user's own products
-        Products.query.filter_by(user_id=user_id).delete(synchronize_session="fetch")
+        # Products.query.filter_by(user_id=user_id).delete(synchronize_session="fetch")
+        # Check if products are deleted
+        deleted_products = Products.query.filter_by(user_id=user_id).delete(synchronize_session="fetch")
+        print(f"Deleted {deleted_products} products for user {user_id}")
         
         # Finally, delete the user
         db.session.delete(user)
         db.session.commit()
         
+        print(f"Successfully deleted user: {user_id}")
         return {"message": "User account deleted successfully."}
     except Exception as e:
         db.session.rollback()  # Rollback transaction in case of failure
+        print(f"Error while deleting user {user_id}: {e}")
         return {"message": "An error occurred while deleting the user account."}
 
 # -- Product Operations --

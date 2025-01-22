@@ -17,6 +17,7 @@ function App() {
   const [loading, setLoading] = useState(true); // To handle loading state
   const [hasNewRequests, setHasNewRequests] = useState(false); // Friend Request pending state
   const location = useLocation(); // Hook to get current route path
+  const navigate = useNavigate();
 
   //const [isOnline, setIsOnline] = useState(false); // Track online/offline mode
   // Access isOnline and toggleStatus from the UserStatusContext
@@ -233,11 +234,11 @@ function App() {
 
   // Helper Component: Ensures User is Logged In AND Online
   const ProtectedOnlineRoute = ({ element }) => {
-    useEffect(() => {
-      if (currentUser && isOnline) {
-        navigate(window.location.pathname); // Refresh current route when switching online
-      }
-    }, [isOnline]); // Runs when `isOnline` changes
+    // useEffect(() => {
+    //   if (currentUser && isOnline) {
+    //     navigate(window.location.pathname); // Refresh current route when switching online
+    //   }
+    // }, [isOnline]); // Runs when `isOnline` changes
     
     if (!currentUser) return <Navigate to="/login" />;
     if (!isOnline) return <div>You are currently not online. Switch to online mode to access this feature.</div>;
