@@ -5,16 +5,25 @@ from sqlalchemy import or_, and_, asc, desc, cast, func # using func instead of 
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import joinedload
 
+from werkzeug.security import generate_password_hash, check_password_hash
+
 # -- User Operations --
 
 def create_user(username, password):
     """Create a new user with a hashed password and default description."""
-    from werkzeug.security import generate_password_hash
+    
     hashed_password = generate_password_hash(password)
     user = User(username=username, password=hashed_password, description=User.description.default.arg, isOnline=True)
     db.session.add(user)
     db.session.commit()
     return user
+
+def authenticate_user(username, password):
+    """Verify user credentials."""
+    user = get_user(username=username)
+    if user and check_password_hash(user.password, password):
+        return user  # Authentication successful
+    return None  # Authentication failed
 
 def get_user(**filters):
     """Fetch a single user based on dynamic filters."""

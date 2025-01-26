@@ -253,7 +253,8 @@ def login():
         username = request.json.get("username")
         password = request.json.get("password")
 
-        user = crud.get_user(username=username, password=password)
+        # user = crud.get_user(username=username, password=password)
+        user = crud.authenticate_user(username=username, password=password)
 
         if user:
             # print("Reached getting token part of login")

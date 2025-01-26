@@ -231,52 +231,6 @@ const ProductList = ({ user }) => {
                     .map(product => ( // add a line here to show the favorited status of each product, start as just a line, later maybe a star
                         // <div key={product.productId} className="product-item">
                         <div key={product.productId} className={`product-container product-item ${product.favorited ? 'favorited' : ''}`}>
-                            {/* {!(selectedProduct && edittingData && selectedProduct.productId === product.productId) && (
-                                <div className="product-item">
-                                    <div className="product-header">
-                                        <h2 className="product-name">
-                                            {product.productName}
-                                            <button
-                                                className={`favorite-star ${product.favorited ? 'filled' : 'empty'}`}
-                                                onClick={() => favoriteProduct(product)}
-                                                aria-label={product.favorited ? "Unfavorite" : "Favorite"}
-                                            >
-                                                {product.favorited ? '★' : '☆'}
-                                            </button>
-                                        </h2>
-                                    </div> */}
-                                    {/* Make the URL clickable and open in a new tab */}
-                                    {/* setting rel="noopener noreferrer" is for tab-napping prevention purposes*/}
-                                    {/* <p className="product-url">
-                                        URL: <a href={product.url} target="_blank" rel="noopener noreferrer">{product.url}</a>
-                                    </p>
-                                    <p className="product-price">Price: {product.price}</p>
-                                    <p className="product-category">
-                                        Categories: {Array.isArray(product.category) ? product.category.join(', ') : 'No categories'}
-                                    </p>
-                                    <button className="product-button" onClick={() => deleteProduct(product)}>Delete</button>
-                                    <button className="product-button" onClick={() => editProduct(product)}>Edit</button>
-                                </div>
-                            )}
-
-                            {selectedProduct && edittingData && selectedProduct.productId === product.productId && (
-                                <ProductForm
-                                    initialData={{
-                                        url: selectedProduct.url,
-                                        price: selectedProduct.price,
-                                        productName: selectedProduct.productName,
-                                        category: Array.isArray(selectedProduct?.category)
-                                            ? selectedProduct.category
-                                            : selectedProduct?.category
-                                            ? [selectedProduct.category]
-                                            : [],
-                                    }}
-                                    handleSubmit={(updatedData) => handleSubmit(selectedProduct.productId, updatedData)}
-                                    categories={categories} // Pass categories here
-                                    showCancelButton={true}
-                                    handleCancel={handleCancel} // Pass the custom cancel function
-                                />
-                            )} */}
 
                             {!(selectedProduct && edittingData && selectedProduct.productId === product.productId) ? (
                                 <div className="product-item">
@@ -298,7 +252,6 @@ const ProductList = ({ user }) => {
                                     <p className="product-url">
                                         URL: <a href={product.url} target="_blank" rel="noopener noreferrer">{product.url}</a>
                                     </p>
-                                    {/* <p className="product-price">Price: {product.price}</p> */}
                                     <p className="product-price">Price: {formatPrice(product.price)}</p>
                                     <p className="product-category">
                                         Categories: {Array.isArray(product.category) ? product.category.join(', ') : 'No categories'}
@@ -412,7 +365,7 @@ const ProductList = ({ user }) => {
                     backgroundColor: '#4CAF50',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '4px',
+                    borderRadius: '8px',
                     cursor: 'pointer'
                 }}
             >
