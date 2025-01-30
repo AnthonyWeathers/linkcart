@@ -67,7 +67,7 @@ const Community = ({ currentUser }) => {
     };
 
     return (
-        <div>
+        <div className="community-container">
             <h1 className='community-header'>Community Messages</h1>
 
             {/* Messages display */}

@@ -212,41 +212,24 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification, han
     const confirmDeleteAccount = async () => {
         const confirmDelete = window.confirm("Are you sure you want to delete your account? This action cannot be undone.");
         if (!confirmDelete) return;
-
-        // try {
-        //     const response = await fetch('http://localhost:8000/user/delete', {
-        //         method: 'POST',
-        //         headers: { 'Content-Type': 'application/json' },
-        //         credentials: 'include', // Include session cookies
-        //     });
-
-        //     if (response.ok) {
-        //         const data = await response.json();
-        //         alert(data.message);
-        //         // Redirect to login or homepage
-        //         history.push('/login');
-        //     } else {
-        //         const errorData = await response.json();
-        //         throw new Error(errorData.error || 'Failed to delete account.');
-        //     }
-        // } catch (error) {
-        //     console.error('Error deleting account:', error);
-        //     alert(error.message);
-        // }
         handleDeleteAccount()
     };
 
+    const formatPrice = price => {
+        return `$${price.toFixed(2)}`; // Format as "$4.99"
+    }
+
     const Products = ({ products }) => {
         return (
-            <div>
+            <div className={`favorited-product-container`}>
                 {products
                     .filter(product => product !== '') // Exclude empty spots
                     .map(product => (
-                        <div key={product.productId} className='product-container'>
-                            <h2>{product.productName}</h2>
-                            <p>URL: {product.url}</p>
-                            <p>Price: {product.price}</p>
-                            <p>Category: {product.category}</p>
+                        <div key={product.productId} className="favorited-product-item">
+                            <h2 className="product-name">{product.productName}</h2>
+                            <p className="product-url">URL: <a href={product.url} target="_blank" rel="noopener noreferrer">{product.url}</a></p>
+                            <p className="product-price">Price: {formatPrice(product.price)}</p>
+                            <p className="product-category">Category: {product.category}</p>
                         </div>
                 ))}
             </div>
@@ -273,38 +256,38 @@ const Profile = ({ currentUser, handleNewRequest, handleRequestNotification, han
                 )}
             </div>
 
-            <div>
-            <div className="description-header">
-                <h4>Description</h4>
-                {/* Show Edit Description if current user is viewing their own profile */}
-                {currentUser === username && (
-                    <div>
-                        <button className='edit-description-btn' onClick={handleEditClick}>Edit Description</button>
-                        <button className='delete-account-btn' onClick={confirmDeleteAccount}>Delete Account</button>
-                    </div>
-                )}
+            <div className='description'>
+                <div className="description-header">
+                    <h4>Description</h4>
+                    {/* Show Edit Description if current user is viewing their own profile */}
+                    {currentUser === username && (
+                        <div className='profile-btns'>
+                            <button className='edit-description-btn' onClick={handleEditClick}>Edit Description</button>
+                            <button className='delete-account-btn' onClick={confirmDeleteAccount}>Delete Account</button>
+                        </div>
+                    )}
+                </div>
+
+                    {/* Show the form if user is editing, otherwise show the description */}
+                    {isEditing ? (
+                        <form onSubmit={handleSubmit}>
+                            <textarea
+                                value={newDescription}
+                                onChange={(e) => setNewDescription(e.target.value)}
+                                rows="4"
+                                cols="50"
+                            />
+                            <br />
+                            <button type="submit">Submit</button>
+                            <button type="button" onClick={handleCancel}>Cancel</button>
+                        </form>
+                    ) : (
+                        <p className='description-text'>{user.description || "This is the description/bio of user"}</p>
+                    )}
             </div>
 
-                {/* Show the form if user is editing, otherwise show the description */}
-                {isEditing ? (
-                    <form onSubmit={handleSubmit}>
-                        <textarea
-                            value={newDescription}
-                            onChange={(e) => setNewDescription(e.target.value)}
-                            rows="4"
-                            cols="50"
-                        />
-                        <br />
-                        <button type="submit">Submit</button>
-                        <button type="button" onClick={handleCancel}>Cancel</button>
-                    </form>
-                ) : (
-                    <p className='description'>{user.description || "This is the description/bio of user"}</p>
-                )}
-            </div>
-
-            <div>
-                <h4>Favorited Products</h4>
+            <div className='favorited-products'>
+                <h4 className='favorited-products-header'>Favorited Products</h4>
                 <Products products={favoriteProducts}/>
             </div>
         </div>

@@ -207,7 +207,7 @@ const ProductList = ({ user }) => {
         fetchProducts();
     }, []);
 
-    function formatPrice(price) {
+    const formatPrice = price => {
         return `$${price.toFixed(2)}`; // Format as "$4.99"
     }
 

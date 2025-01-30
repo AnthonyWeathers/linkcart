@@ -109,15 +109,19 @@ ul {
 }
 
 .navbar, .footer-navbar {
+  font-size: 1.05rem;
   height: 50px;
-  line-height: 50px; /* vertically centers content */
+  line-height: 20px; /* vertically centers content */
 }
 
 /* Main container styling to avoid content underlapping navbars */
 .block-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding-top: 90px; /* Adjust to navbar height */
-  padding-bottom: 50px; /* Adjust to footer navbar height */
-  min-height: calc(100vh - 100px); /* Ensures the container fills the viewport height minus the navbars */
+  padding-bottom: 20px; /* Adjust to footer navbar height */
+  min-height: calc(100vh - 40px); /* Ensures the container fills the viewport height minus the navbars */
   /* Make sure the width is not causing overflow */
   box-sizing: border-box; /* Ensure padding and border are included in width/height */
   width: 100%; /* Ensures the container width fits within the viewport */
@@ -132,22 +136,21 @@ ul {
 }
 
 /* Community Page Styling */
-
 .community-header {
   padding-left: 10px;
   margin-top: -30px;
-  margin-bottom: -10px
+  margin-bottom: 10px
 }
 
 /* Ensures messages-container fits between navbars and is scrollable */
 .messages-container {
   flex: 1; /* Makes the container expand within the available space */
-  height: calc(100vh - 270px); /* Adjusts height considering top and bottom navbars */
+  height: calc(100vh - 225px); /* Adjusts height considering top and bottom navbars */
   overflow-y: auto; /* Keeps messages scrollable */
   border: 1px solid #ccc;
   background-color: #a3caf3;
   padding: 10px;
-  margin: 20px 0;
+  /* margin: 20px 0; */
   box-sizing: border-box; /* Ensures padding doesn’t increase the container’s size */
 }
 
@@ -189,7 +192,7 @@ ul {
 /* Adjusts button style for alignment */
 .message-input button {
   padding: 8px 16px;
-  background-color: #007bff;
+  background-color: #3e99fa;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -277,16 +280,34 @@ ul {
   flex-direction: column;
   align-items: center; /* Center-aligns the username and top elements */
   padding: 20px;
-  max-width: 800px; /* Set max width for easier reading */
-  margin: 0 auto; /* Centers profile container on the page */
+  width: 50%;
+  max-width: 70%; /* Set max width for easier reading */
 }
 
 /* Username styling */
 .username {
-  font-size: 1.8em;
+  display: flex;
+  font-size: 2.5em;
   font-weight: bold;
+  margin-top: 0px;
   margin-bottom: 10px;
   text-align: center;
+}
+
+.description {
+  width: 80%;
+  margin-top: -15px;
+  gap: 10px;
+}
+
+.description-header {
+  text-align: center;
+}
+
+.profile-btns {
+  display: flex;
+  justify-content: space-around;
+  padding: 0px;
 }
 
 /* Button styling for friend actions */
@@ -315,21 +336,26 @@ ul {
 
 /* Spacing between sections */
 .profile > div {
-  margin-bottom: 30px; /* Adds space between each main section */
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 25px; /* Adds space between each main section */
 }
 
 /* Description section */
 .profile h4 {
   font-size: 1.5em;
+  margin-top: 0px;
   margin-bottom: 10px;
   display: inline-block; /* Allows heading and button to align horizontally */
 }
 
-.description {
+.description-text {
   font-size: 1em;
   color: #333;
   text-align: left; /* Aligns description text to the left */
   margin-top: 5px;
+  /* border: 1px solid #ccc; */
+  background-color: #ccc;
 }
 
 /* Edit Description button to the right of the header */
@@ -365,6 +391,50 @@ textarea + br + button {
 }
 
 /* Favorite Products section styling */
+.favorited-products {
+  width: 80%;
+}
+
+.favorited-products-header {
+  width: 100%;
+  text-align: center;
+}
+
+.favorited-product-container {
+  /* width: calc(100% - 50px); */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /*align-items: flex-start; /* Aligns details to the left */
+  /* padding: 20px;  */
+  gap: 20px;
+}
+
+.favorited-product-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Aligns details to the left */
+  background-color: #dfdfdf;
+  width: 100%;
+  padding: 10px;
+  /* border: 1px solid black */
+}
+
+/* .product-item h2 {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+}
+
+.product-item p {
+  margin: 5px 0;
+}
+
+width: calc(100% - 50px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Aligns details to the left */
+  /*padding: 20px; */
+
 .products-container {
   display: flex;
   flex-wrap: wrap;
@@ -596,9 +666,6 @@ textarea + br + button {
   flex-direction: column;
   align-items: flex-start; /* Aligns details to the left */
   padding: 20px;
-  /* border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9; */
 }
 
 .product-name {
@@ -768,32 +835,51 @@ textarea + br + button {
     width: calc(50% - 20px); /* Allows for 2 items per row */
   }
 
+  .block-container {
+    padding-top: 0;
+    padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    /* justify-content: space-between; */
+    min-height: 100vh; /* Ensures the container spans the full viewport height */
+  }
+
   .navbar,
   .footer-navbar {
     position: static; /* Allows scrolling when screen width is small */
     height: auto; /* Allow the height to adjust automatically */
     padding: 0px 20px;
+    /* line-height: auto; */
   }
 
   .footer-navbar {
     margin-top: auto; /* Ensures it stays at the bottom even with little content */
   }
 
-  .block-container {
-    padding-top: 0;
-    padding-bottom: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh; /* Ensures the container spans the full viewport height */
+  .form-container {
+    width: 50%;
+    margin: 150px auto auto;
+    padding: 20px;
+    background-color: #ebe0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
 
   .sort-dropdowns {
     flex-direction: column; /* Stacks the sort dropdowns vertically */
     gap: 10px;
+    margin-top: -5px;
   }
 
   .product-list {
-    grid-template-columns: 1fr; /* Switches to single column */
+    /*grid-template-columns: 1fr; /* Switches to single column */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .community-header {
+    margin-top: 0px;
   }
 }
 
