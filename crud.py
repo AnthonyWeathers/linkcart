@@ -12,6 +12,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 def create_user(username, password):
     """Create a new user with a hashed password and default description."""
     
+    # create passkey on user creation, using a hash possibly for better security
     hashed_password = generate_password_hash(password)
     user = User(username=username, password=hashed_password, description=User.description.default.arg, isOnline=True)
     db.session.add(user)
@@ -38,6 +39,13 @@ def update_user(user_id, **kwargs):
         setattr(user, key, value)
     db.session.commit()
     return user
+
+def reset_password(username, new_password, passkey):
+    """Verify user credentials."""
+    user = get_user(username=username)
+    if user and check_password_hash(user.passkey, passkey):
+        return update_user(user.id, password=new_password)
+    return None  # Authentication failed
 
 def delete_user(user_id):
     """Delete a user by ID and commit changes."""
@@ -67,11 +75,6 @@ def delete_user_account(user_id):
         # Log the user being deleted
         print(f"Attempting to delete user: {user_id}")
         # Anonymize community messages
-        # CommunityMessage.query.filter_by(user_id=user_id).update({
-        #     "user_id": None,  # Remove user reference
-        #     "content": db.func.concat("Deleted User: ", CommunityMessage.content)
-        #     # "content": db.func.concat("Deleted User: ", db.func.coalesce(CommunityMessage.content, ""))
-        # })
 
         # Debugging: Check if CommunityMessage update is working
         updated_messages = CommunityMessage.query.filter_by(user_id=user_id).update({
@@ -81,9 +84,7 @@ def delete_user_account(user_id):
         print(f"Updated {updated_messages} community messages for user {user_id}")
         
         # Remove friend requests
-        # FriendRequest.query.filter(
-        #     (FriendRequest.sender_id == user_id) | (FriendRequest.receiver_id == user_id)
-        # ).delete(synchronize_session="fetch")
+ 
         # Debugging: Check if friend requests and friendships are removed
         deleted_friend_requests = FriendRequest.query.filter(
             (FriendRequest.sender_id == user_id) | (FriendRequest.receiver_id == user_id)
@@ -91,10 +92,7 @@ def delete_user_account(user_id):
         print(f"Deleted {deleted_friend_requests} friend requests for user {user_id}")
         
         # Remove friendships
-        # Friends.query.filter(
-        #     (Friends.user1_id == user_id) | (Friends.user2_id == user_id)
-        # ).delete(synchronize_session="fetch")
-        # db.session.commit()  # Explicit commit to ensure friendships are deleted before proceeding
+
         deleted_friendships = Friends.query.filter(
             (Friends.user1_id == user_id) | (Friends.user2_id == user_id)
         ).delete(synchronize_session="fetch")
@@ -104,7 +102,6 @@ def delete_user_account(user_id):
         user.favorited_products.clear()  # Removes all associations for the user
         
         # Delete user's own products
-        # Products.query.filter_by(user_id=user_id).delete(synchronize_session="fetch")
         # Check if products are deleted
         deleted_products = Products.query.filter_by(user_id=user_id).delete(synchronize_session="fetch")
         print(f"Deleted {deleted_products} products for user {user_id}")

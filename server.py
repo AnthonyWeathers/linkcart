@@ -342,6 +342,26 @@ def logout():
     return response
     # return jsonify({"message": "Logged out successfully"})
 
+@app.route("/reset-password", methods=["POST"])
+@csrf.exempt  # Exempt from CSRF as JWT will be used
+def login():
+    try:
+        username = request.json.get("username")
+        new_password = request.json.get("password")
+        passkey = request.json.get("passkey")
+
+        # user = crud.get_user(username=username, password=password)
+        user = crud.reset_password(username=username, new_password=new_password, passkey=passkey)
+
+        if user:
+            return jsonify({"message": "Password reset successfully"})
+        else:
+            return jsonify({"error": "Failed to reset password of user"}), 401
+
+    except Exception as e:
+        logging.exception("Unexpected error in /login")
+        return jsonify({"error": "An unexpected error occurred while attempting to reset password"}), 500
+
 @socketio.on('connect')
 @token_required
 def handle_connect(*args, **kwargs):

@@ -119,9 +119,9 @@ ul {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 90px; /* Adjust to navbar height */
-  padding-bottom: 20px; /* Adjust to footer navbar height */
-  min-height: calc(100vh - 40px); /* Ensures the container fills the viewport height minus the navbars */
+  padding-top: 50px; /* Adjust to navbar height */
+  padding-bottom: 50px; /* Adjust to footer navbar height */
+  min-height: calc(100vh - 100px); /* Ensures the container fills the viewport height minus the navbars */
   /* Make sure the width is not causing overflow */
   box-sizing: border-box; /* Ensure padding and border are included in width/height */
   width: 100%; /* Ensures the container width fits within the viewport */
@@ -136,6 +136,10 @@ ul {
 }
 
 /* Community Page Styling */
+.community-container {
+  margin-top: 40px;
+  width: 100%;
+}
 .community-header {
   padding-left: 10px;
   margin-top: -30px;
@@ -208,28 +212,36 @@ ul {
 
 /* Ensures consistent spacing for both headers and list items */
 .friends-page {
-  padding: 20px; /* Inner padding for spacing within block-container */
+  padding: 0px; /* Inner padding for spacing within block-container */
+  margin-top: 10px;
   display: flex;
+  width: 100%;
   flex-direction: column;
   align-items: flex-start; /* Aligns content to the left */
 }
 
 /* Pending Friend Requests Section */
 .friends-page h2 {
-  margin: 0 0 10px 0; /* Small bottom margin for section headers */
+  margin: 0 0 10px 10px; /* Small bottom margin for section headers */
 }
 
 /* Align friend request items to the left with even spacing */
 .friends-page ul {
   list-style-type: none; /* Removes bullet points from list */
+  width: 100%;
   padding: 0;
-  margin: 0 0 20px 0; /* Adds spacing between sections */
+  margin: 0 0 20px 10px; /* Adds spacing between sections */
 }
 
 .friends-page li {
   display: flex;
   align-items: center; /* Centers button and link in each item */
+  margin-left: -10px; /* Realigns friend usernames so left side border intersects with browser edge */
   margin-bottom: 10px; /* Space between each list item */
+  font-size: 1.5rem;
+  padding: 5px;
+  width: 100%;
+  border: 1px solid black;
 }
 
 .friends-page li a {
@@ -435,12 +447,12 @@ width: calc(100% - 50px);
   align-items: flex-start; /* Aligns details to the left */
   /*padding: 20px; */
 
-.products-container {
+/* .products-container {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center; /* Centers product rows */
-  gap: 20px; /* Space between product items */
-}
+  flex-wrap: wrap; */
+  /*justify-content: center; /* Centers product rows */
+  /*gap: 20px; /* Space between product items */
+/* } */
 
 /* .product-item {
   width: calc(50% - 20px);  */
@@ -469,8 +481,9 @@ width: calc(100% - 50px);
   flex-direction: column;
   justify-content: center; /* Center content vertically */
   align-items: center; /* Centers the form and submitted data sections */
-  max-width: 800px; /* Limits width for better readability */
-  margin: 10px auto; /* Center-aligns the container on the page */
+  width: 75%;
+  max-width: 60%; /* Limits width for better readability */
+  padding-top: 50px;
 }
 
 .add-product-container {
@@ -478,7 +491,7 @@ width: calc(100% - 50px);
   border-radius: 8px;
   background-color: #f9f9f9;
   width: 100%;
-  max-width: 600px;
+  max-width: 70%;
   padding: 10px;
   /* box-sizing: border-box; */
 }
@@ -621,11 +634,13 @@ width: calc(100% - 50px);
 .products-container {
   display: flex;
   flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
   width: 100%;
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  gap: 20px;
 }
 
 /* Sorting dropdowns */
@@ -642,7 +657,6 @@ width: calc(100% - 50px);
   justify-content: center;
   align-items: center;
   gap: 20px; /* Space between the two dropdowns */
-  margin-top: -15px;
 }
 
 /* Products grid */
@@ -749,10 +763,17 @@ width: calc(100% - 50px);
   background-color: #e0a800;
 }
 
+.pagination-controls {
+  display: flex;
+  justify-content: space-around;
+  width: 40%;
+}
+
 /* Login and Register */
 .form-container {
-  max-width: 400px;
-  margin: 50px auto;
+  width: 35%;
+  max-width: 70%;
+  margin: 90px auto 0;
   padding: 20px;
   background-color: #ebe0e0;
   border-radius: 8px;
@@ -863,6 +884,10 @@ width: calc(100% - 50px);
     background-color: #ebe0e0;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .add-product-container {
+    margin-top: 10%;
   }
 
   .sort-dropdowns {
