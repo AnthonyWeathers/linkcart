@@ -4,6 +4,7 @@ import socket from './socket';
 
 const Register = ({ onRegister }) => {
     const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false); // Track loading state
@@ -21,6 +22,7 @@ const Register = ({ onRegister }) => {
                 },
                 body: JSON.stringify({ 
                     username,
+                    email,
                     password,
                 }),
             });
@@ -56,6 +58,14 @@ const Register = ({ onRegister }) => {
                     placeholder='Enter username' 
                     value={username} 
                     onChange={(e) => setUsername(e.target.value)}
+                />
+                <input 
+                    type='text' 
+                    className="form-input"
+                    required 
+                    placeholder='Enter email' 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)}
                 />
                 <input 
                     type='password' 

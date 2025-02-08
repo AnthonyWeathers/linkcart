@@ -3,6 +3,9 @@ from flask_sqlalchemy import SQLAlchemy
 # changed from JSON to JSONB for better querying
 from sqlalchemy.dialects.postgresql import JSONB # PostgreSQL only
 
+from datetime import datetime, timedelta
+import secrets
+
 db = SQLAlchemy()
 
 favorited_products = db.Table(
@@ -17,11 +20,16 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     username = db.Column(db.String(50) , nullable = False)
+    email = db.Column(db.String(120), unique=True, nullable=False) # added for feature of password resetting, but now also needed on registering
     password = db.Column(db.String(250) , nullable = False)
     description = db.Column(db.Text, nullable=True, default="This user has not added a description yet.")
     products = db.relationship("Products", backref = "user", lazy = True)
     favorited_products = db.relationship("Products", secondary=favorited_products, backref="favorited_by_users")
     isOnline = db.Column(db.Boolean, nullable = False, default=True) # tracks if user is in online or offline mode
+
+    # Password reset fields
+    reset_code_hash = db.Column(db.String(255), nullable=True)  # Store hashed reset code
+    reset_code_expiry = db.Column(db.DateTime, nullable=True)   # Expiry time
 
     # Perhaps remove as is not used
     def to_dict(self):

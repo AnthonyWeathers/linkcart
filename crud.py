@@ -6,15 +6,17 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import joinedload
 
 from werkzeug.security import generate_password_hash, check_password_hash
+import secrets
+from datetime import datetime, timedelta, timezone
 
 # -- User Operations --
 
-def create_user(username, password):
+def create_user(username, email, password):
     """Create a new user with a hashed password and default description."""
     
     # create passkey on user creation, using a hash possibly for better security
-    hashed_password = generate_password_hash(password)
-    user = User(username=username, password=hashed_password, description=User.description.default.arg, isOnline=True)
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    user = User(username=username, email=email, password=hashed_password, description=User.description.default.arg, isOnline=True)
     db.session.add(user)
     db.session.commit()
     return user
@@ -30,22 +32,68 @@ def get_user(**filters):
     """Fetch a single user based on dynamic filters."""
     return User.query.filter_by(**filters).first()
 
-def update_user(user_id, **kwargs):
-    """Update user details and commit changes."""
+def update_user_description(user_id, description):
+    """Update user description"""
     user = User.query.get(user_id)
     if not user:
         return None
-    for key, value in kwargs.items():
-        setattr(user, key, value)
+    user.description = description
     db.session.commit()
     return user
 
-def reset_password(username, new_password, passkey):
-    """Verify user credentials."""
-    user = get_user(username=username)
-    if user and check_password_hash(user.passkey, passkey):
-        return update_user(user.id, password=new_password)
-    return None  # Authentication failed
+def generate_reset_code():
+    """Generate a secure, random alphanumeric reset code."""
+    return secrets.token_urlsafe(16)  # 16-byte secure token
+
+def set_reset_code(user_id):
+    """Generate and store a hashed reset code with an expiration timestamp."""
+    user = User.query.get(user_id)
+    if not user:
+        return None
+    
+    reset_code = generate_reset_code()
+    user.reset_code = generate_password_hash(reset_code, method='pbkdf2:sha256')  # Hash for security
+    user.reset_code_expiry = datetime.now(timezone.utc) + timedelta(minutes=15)  # 15 min expiry
+    db.session.commit()
+    return reset_code  # Return plain reset code to be emailed
+
+def validate_reset_code(user_id, provided_code):
+    """Check if the provided reset code is valid and not expired."""
+    user = User.query.get(user_id)
+    if not user or not user.reset_code:
+        return False  # No code stored
+    
+    if datetime.datetime.utcnow() > user.reset_code_expiry:
+        return False  # Code expired
+    
+    return check_password_hash(user.reset_code, provided_code)  # Verify hash
+
+def clear_reset_code(user_id):
+    """Remove the reset code after successful password reset."""
+    user = User.query.get(user_id)
+    if not user:
+        return False
+    user.reset_code = None
+    user.reset_code_expiry = None
+    db.session.commit()
+    return True
+
+def request_new_reset_code(username, email):
+    """Regenerate and send a new reset code if requested."""
+    user = User.query.filter_by(username=username, email=email).first()
+    if not user:
+        return None
+    return set_reset_code(user.id)  # Generate and return a new code
+
+def update_password(user_id, password):
+    """Regenerate and send a new reset code if requested."""
+    user = User.query.get(user_id)
+    if not user:
+        return False
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256') # hashes new password
+    user.password = hashed_password
+    db.session.commit()
+    return True
 
 def delete_user(user_id):
     """Delete a user by ID and commit changes."""

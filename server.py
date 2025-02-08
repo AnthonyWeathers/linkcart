@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, session
 from flask_socketio import SocketIO, join_room, emit, disconnect
+from flask_mailman import Mail, Message
 import eventlet
 import jinja2
 import re
@@ -48,6 +49,16 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True  # Disable access to cookies via Ja
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 app.jinja_env.undefined = jinja2.StrictUndefined # for debugging purposes
+
+# Configure Flask-Mailman
+app.config["MAIL_SERVER"] = "smtp.gmail.com"  # Replace with your email provider's SMTP server
+app.config["MAIL_PORT"] = 587
+app.config["MAIL_USE_TLS"] = True
+app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")  # Set your email in an environment variable
+app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")  # Set your email password or app password in an environment variable
+app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER", "noreply@linkcart.com")
+
+mail = Mail(app)
 
 CORS(app, supports_credentials=True, origins=["http://localhost:3000"])  # Enable CORS for all routes
 # setting origins ensures that the backend connects to the port 3000 that the React server is hosted on, change if using a different
@@ -291,12 +302,13 @@ def login():
 def register():
     try:
         username = request.json.get("username")
+        email = request.json.get("email")
         password = request.json.get("password")
         if crud.get_user(username=username, password=password):
             logging.warning(f"Registration failed: Username {username} already in use.")
             return jsonify({"error": "This username is already in use, please use another."}), 400
         
-        new_user = crud.create_user(username, password)
+        new_user = crud.create_user(username, email, password)
         
         if new_user:
             token = create_jwt(new_user)
@@ -342,24 +354,57 @@ def logout():
     return response
     # return jsonify({"message": "Logged out successfully"})
 
-@app.route("/reset-password", methods=["POST"])
+@app.route("/request-reset-code", methods=["POST"])
 @csrf.exempt  # Exempt from CSRF as JWT will be used
-def login():
+def request_reset_code():
     try:
         username = request.json.get("username")
-        new_password = request.json.get("password")
-        passkey = request.json.get("passkey")
+        email = request.json.get("email")
 
         # user = crud.get_user(username=username, password=password)
-        user = crud.reset_password(username=username, new_password=new_password, passkey=passkey)
+        reset_code = crud.request_new_reset_code(username=username, email=email)
 
-        if user:
-            return jsonify({"message": "Password reset successfully"})
+        if reset_code:
+            # Create email message
+            msg = Message(
+                subject="Password Reset Code",
+                recipients=[email],
+                body=f"Hello {username},\n\nUse this code to reset your password: {reset_code}\n\nThis code is valid for 15 minutes.\n\nIf you did not request a password reset, please ignore this email."
+            )
+            mail.send(msg)
+            return jsonify({"message": "Reset code sent to email"})
         else:
-            return jsonify({"error": "Failed to reset password of user"}), 401
+            return jsonify({"error": "Error in generating reset code, try again"}), 401
 
     except Exception as e:
-        logging.exception("Unexpected error in /login")
+        logging.exception("Unexpected error in /request-reset-code")
+        return jsonify({"error": "An unexpected error occurred while attempting to reset password"}), 500
+    
+@app.route("/reset-password", methods=["POST"])
+@csrf.exempt  # Exempt from CSRF as JWT will be used
+def reset_password():
+    try:
+        username = request.json.get("username")
+        reset_code = request.json.get("resetCode")
+        new_password = request.json.get("password")
+
+        user = crud.get_user(username=username)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        if not crud.validate_reset_code(user.id, reset_code):
+            return jsonify({"error": "Invalid reset code"}), 401
+
+        if not crud.clear_reset_code(user.id):
+            return jsonify({"error": "Failed to clear reset code."}), 500
+
+        if not crud.update_password(user.id, new_password):
+            return jsonify({"error": "Failed to update password."}), 500
+        
+        return jsonify({"message": "Password has been successfully resetted"})
+
+    except Exception as e:
+        logging.exception("Unexpected error in /reset-password")
         return jsonify({"error": "An unexpected error occurred while attempting to reset password"}), 500
 
 @socketio.on('connect')
@@ -835,7 +880,7 @@ def editDescription(username):
             return jsonify({'error': 'Description cannot be empty'}), 400
 
         # Update description
-        updated_user = crud.update_user(user_id=currentUser_id, description=new_description)
+        updated_user = crud.update_user_description(user_id=currentUser_id, description=new_description)
         logging.info(f"User {currentUser_username} successfully updated their description.")
         return jsonify({'message': 'Description updated successfully!', 'description': updated_user.description})
 
