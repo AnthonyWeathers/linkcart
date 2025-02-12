@@ -95,6 +95,13 @@ def update_password(user_id, password):
     db.session.commit()
     return True
 
+def request_username(email):
+    """Regenerate and send a new reset code if requested."""
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return None
+    return user.username  # Return user's username
+
 def delete_user(user_id):
     """Delete a user by ID and commit changes."""
     user = User.query.get(user_id)

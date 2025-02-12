@@ -10,6 +10,8 @@ import Friends from './components/Friends';
 import socket from './components/socket';
 import StatusToggle from './components/StatusToggle';
 import UserDeleted from './components/UserDeleted';
+import ForgotUsername from './components/ForgotUsername';
+import ForgotPassword from './components/ForgotPassword';
 import { UserStatusContext } from "./components/UserStatusContext"; // Import the provider
 
 function App() {
@@ -298,6 +300,8 @@ function App() {
               {/* Public Routes */}
               <Route path="/login" element={<Login onLogin={handleSetCurrentUser} />} />
               <Route path="/register" element={<Register onRegister={handleSetCurrentUser} />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/forgot-username" element={<ForgotUsername />} />
 
               {/* Protected Routes (Requires Login) */}
               <Route path="/" element={<ProtectedRoute element={<AddProduct user={currentUser} />} />} />

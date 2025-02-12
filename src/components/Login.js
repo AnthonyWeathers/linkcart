@@ -51,6 +51,7 @@ const Login = ({ onLogin }) => {
     return (
         <div className="form-container">
             {alertMessage && <div className="alert">{alertMessage}</div>}
+            <p className="form-navigation">New here? <Link to="/register" className="form-link">Register here</Link></p>
             <h2 className="form-title">Login</h2>
             <form onSubmit={handleLogin} className="form">
                 <input 
@@ -62,6 +63,9 @@ const Login = ({ onLogin }) => {
                     onChange={(e) => setUsername(e.target.value)}
                     disabled={isLoading}
                 />
+                <Link to="/forgot-username" className="form-link">
+                    Forgot Username? Click here
+                </Link>
                 <input 
                     type='password' 
                     className="form-input"
@@ -71,13 +75,21 @@ const Login = ({ onLogin }) => {
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoading}
                 />
+                <Link to="/forgot-password" className="form-link">
+                    Forgot Password? Reset it here
+                </Link>
                 <button type="submit" className="form-button" disabled={isLoading}>
                     {isLoading ? 'Logging in...' : 'Login'}
                 </button>
                 {/* {isLoading && <p className="loading-text">Loading...</p>} */}
                 {error && <p className="error-text">{error}</p>}
             </form>
-            <p className="form-navigation">New here? <Link to="/register" className="form-link">Register here</Link></p>
+            {/* <p className="form-navigation">
+                Forgot Password?
+                <Link to="/forgot-password" className="form-link">
+                    Reset it here
+                </Link>
+            </p> */}
         </div>
     );
 };

@@ -386,7 +386,7 @@ def reset_password():
     try:
         username = request.json.get("username")
         reset_code = request.json.get("resetCode")
-        new_password = request.json.get("password")
+        new_password = request.json.get("newPassword")
 
         user = crud.get_user(username=username)
         if not user:
@@ -406,6 +406,31 @@ def reset_password():
     except Exception as e:
         logging.exception("Unexpected error in /reset-password")
         return jsonify({"error": "An unexpected error occurred while attempting to reset password"}), 500
+    
+@app.route("/request-username", methods=["POST"])
+@csrf.exempt  # Exempt from CSRF as JWT will be used
+def request_username():
+    try:
+        email = request.json.get("email")
+
+        # user = crud.get_user(username=username, password=password)
+        username = crud.request_username(email=email)
+
+        if username:
+            # Create email message
+            msg = Message(
+                subject="Username reminder",
+                recipients=[email],
+                body=f"Hello there,\n\nYour username associated with this email on the linkcart app is: {username}\n\nIf you did not request a reminder of your username, please ignore this email."
+            )
+            mail.send(msg)
+            return jsonify({"message": "Username sent to email"})
+        else:
+            return jsonify({"error": "Error in retrieving username"}), 401
+
+    except Exception as e:
+        logging.exception("Unexpected error in /request-username")
+        return jsonify({"error": "An unexpected error occurred while attempting to send username"}), 500
 
 @socketio.on('connect')
 @token_required
@@ -612,28 +637,6 @@ def delete():
     except Exception as e:
         logging.exception("Error deleting product for user %s", currentUser_id)
         return jsonify({"error": "Failed to delete product", "details": str(e)}), 500
-
-# @app.route("/products", methods=["GET"])
-# @token_required
-# @limiter.limit("20/minute")
-# def getProducts():
-#     try:
-#         # Access user payload from request.user_payload
-#         user = request.user_payload
-#         currentUser_id = user['user_id']
-#         logging.info("User %s is fetching their products", currentUser_id)
-#         user_products = crud.get_products(user_id=currentUser_id)
-
-#         # Convert each product object to a dictionary
-#         user_products_data = [product.to_dict() for product in user_products]
-
-#         return jsonify({
-#             "message": "User products fetched successfully",
-#             "products": user_products_data,
-#         })
-#     except Exception as e:
-#         logging.exception("Error fetching products for user %s", currentUser_id)
-#         return jsonify({"error": "Failed to fetch products", "details": str(e)}), 500
 
 @app.route("/products", methods=["GET"])
 @token_required

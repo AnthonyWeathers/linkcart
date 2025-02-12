@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
-const ResetPassword = () => {
+const ForgotPassword = () => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [resetCode, setResetCode] = useState('');
-    const [password, setPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false); // Track loading state
     const [resettingPassword, setResettingPassword] = useState(false)
@@ -60,7 +60,7 @@ const ResetPassword = () => {
                 body: JSON.stringify({ 
                     username, 
                     resetCode, 
-                    password }),
+                    newPassword }),
             });
 
             if (!response.ok) {
@@ -78,6 +78,11 @@ const ResetPassword = () => {
             setIsLoading(false);
         }
     };
+
+    const newCode = () => {
+        setResettingPassword(false); // Go back to first form
+        setError(""); // Clear any previous errors
+    }
 
     return (
         <div className="form-container">
@@ -107,27 +112,34 @@ const ResetPassword = () => {
                 </form>
             ) : (
                 // Form to enter reset code and new password
-                <form onSubmit={resetPassword} className="form">
-                    <input 
-                        type='text' 
-                        className="form-input"
-                        required 
-                        placeholder='Enter reset code' 
-                        value={resetCode}
-                        onChange={(e) => setResetCode(e.target.value)}
-                    />
-                    <input 
-                        type='password' 
-                        className="form-input"
-                        required
-                        placeholder='Enter new password' 
-                        value={password} 
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <button type="submit" className="form-button" disabled={isLoading}>
-                        Confirm
+                <div>
+                    <form onSubmit={resetPassword} className="form">
+                        <input 
+                            type='text' 
+                            className="form-input"
+                            required 
+                            placeholder='Enter reset code' 
+                            value={resetCode}
+                            onChange={(e) => setResetCode(e.target.value)}
+                        />
+                        <input 
+                            type='password' 
+                            className="form-input"
+                            required
+                            placeholder='Enter new password' 
+                            value={newPassword} 
+                            onChange={(e) => setNewPassword(e.target.value)}
+                        />
+                        <button type="submit" className="form-button" disabled={isLoading}>
+                            Confirm
+                        </button>
+                    </form>
+                    
+                    {/* "Resend Reset Code" button, placed outside the form */}
+                    <button className="resend-button" onClick={newCode}>
+                        Didn't get a code? Resend it
                     </button>
-                </form>
+                </div>
             )}
 
             {isLoading && <p className="loading-text">Loading...</p>}
@@ -139,4 +151,4 @@ const ResetPassword = () => {
     );
 }
 
-export default ResetPassword;
+export default ForgotPassword;
