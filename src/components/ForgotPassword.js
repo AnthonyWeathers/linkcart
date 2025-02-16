@@ -137,7 +137,7 @@ const ForgotPassword = () => {
                     
                     {/* "Resend Reset Code" button, placed outside the form */}
                     <button className="resend-button" onClick={newCode}>
-                        Didn't get a code? Resend it
+                        Didn't get a code? Reset form here to double check details.
                     </button>
                 </div>
             )}

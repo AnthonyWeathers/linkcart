@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, session
 from flask_socketio import SocketIO, join_room, emit, disconnect
-from flask_mailman import Mail, Message
+from flask_mailman import Mail
+from flask_mailman.message import Message
 import eventlet
 import jinja2
 import re
@@ -365,13 +366,13 @@ def request_reset_code():
         reset_code = crud.request_new_reset_code(username=username, email=email)
 
         if reset_code:
-            # Create email message
-            msg = Message(
-                subject="Password Reset Code",
-                recipients=[email],
-                body=f"Hello {username},\n\nUse this code to reset your password: {reset_code}\n\nThis code is valid for 15 minutes.\n\nIf you did not request a password reset, please ignore this email."
-            )
-            mail.send(msg)
+            # create email message
+            msg = Message()
+            msg.subject = "Password Reset Code"
+            msg.recipients = [email]
+            msg.body = f"Hello {username},\n\nUse this code to reset your password: {reset_code}\n\nThis code is valid for 15 minutes.\n\nIf you did not request a password reset, please ignore this email."
+            
+            mail.send_mail(msg.subject, msg.body, None, msg.recipients)
             return jsonify({"message": "Reset code sent to email"})
         else:
             return jsonify({"error": "Error in generating reset code, try again"}), 401
@@ -413,17 +414,16 @@ def request_username():
     try:
         email = request.json.get("email")
 
-        # user = crud.get_user(username=username, password=password)
         username = crud.request_username(email=email)
 
         if username:
-            # Create email message
-            msg = Message(
-                subject="Username reminder",
-                recipients=[email],
-                body=f"Hello there,\n\nYour username associated with this email on the linkcart app is: {username}\n\nIf you did not request a reminder of your username, please ignore this email."
-            )
-            mail.send(msg)
+            # create email message
+            msg = Message()
+            msg.subject = "Username reminder"
+            msg.recipients = [email]
+            msg.body = f"Hello there,\n\nYour username associated with this email on the linkcart app is: {username}\n\nIf you did not request a reminder of your username, please ignore this email."
+            
+            mail.send_mail(msg.subject, msg.body, None, msg.recipients)
             return jsonify({"message": "Username sent to email"})
         else:
             return jsonify({"error": "Error in retrieving username"}), 401

@@ -26,22 +26,29 @@ const ForgotUsername = () => {
     
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error|| 'Login failed. Please try again.');
+                throw new Error(errorData.error|| 'Acquiring username failed. Please try again.');
             }
     
             const data = await response.json(); // Wait for response JSON
+
+            setError(false)
     
             alert(data.message);
 
             setRequestedUsername(true);
     
         } catch (error) {
-            console.error('Error sending reset code to email:', error);
-            setError(error.message || 'An error occurred while attempting send reset code. Please try again.'); // Set a general error message
+            console.error('Error sending user username to email:', error);
+            setError(error.message || 'An error occurred while attempting acquire your username. Please try again.'); // Set a general error message
         } finally {
             setIsLoading(false); // Set loading to false once fetch is complete
         }
     };
+
+    const resetForm = () => {
+        setRequestedUsername(false); // Go back to first form
+        setError(""); // Clear any previous errors
+    }
 
     return (
         <div className="form-container">
@@ -63,13 +70,13 @@ const ForgotUsername = () => {
                 </form>
             ) : (
                 // Form to enter reset code and new password
-                <div>
+                <div className="request">
                     <p>
                         Your username has been sent in an email.
                     </p>
                     
                     {/* "Resend Reset Code" button, placed outside the form */}
-                    <button className="resend-button" onClick={newCode}>
+                    <button className="resend-button" onClick={resetForm}>
                         Didn't get the email? Re-enter email.
                     </button>
                 </div>

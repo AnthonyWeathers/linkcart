@@ -517,13 +517,12 @@ width: calc(100% - 50px);
   align-items: flex-start;
   gap: 15px; /* Adds space between form elements */
   width: 100%; /* Ensures form spans full width of container */
-  max-width: calc(100% - 20px); /* Limits form width */
 }
 
 .product-link input,
 .product-link button {
   width: 100%; /* Matches input fields to form width */
-  padding: 10px;
+  padding: 10px 0px 10px 10px;
   font-size: 1em;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -553,7 +552,7 @@ width: calc(100% - 50px);
   width: 100%; /* Makes the select element span the full width of the parent */
   height: 5rem; /* Adjusts height for better usability */
   font-size: 1rem; /* Increases font size for better readability */
-  padding: 5px; /* Adds padding for a more spacious appearance */
+  padding: 5px 100% 5px 5px; /* Adds padding for a more spacious appearance */
   box-sizing: border-box; /* Ensures padding doesn't affect width */
 }
 
@@ -771,7 +770,7 @@ width: calc(100% - 50px);
 
 /* Login and Register */
 .form-container {
-  width: 35%;
+  width: 50%;
   max-width: 70%;
   margin: 90px auto 0;
   padding: 20px;
@@ -790,10 +789,12 @@ width: calc(100% - 50px);
 .form {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 15px;
 }
 
 .form-input {
+  width: 60%;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -842,12 +843,25 @@ width: calc(100% - 50px);
 }
 
 .form-link {
+  width: 80%;
   color: #007BFF;
   text-decoration: none;
 }
 
 .form-link:hover {
   text-decoration: underline;
+}
+
+.request {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.resend-button {
+  font-size: 1rem;
+  padding: 5px;
 }
 
 /* Responsive design: adjusting to screen sizes */
@@ -868,7 +882,7 @@ width: calc(100% - 50px);
   .navbar,
   .footer-navbar {
     position: static; /* Allows scrolling when screen width is small */
-    height: auto; /* Allow the height to adjust automatically */
+    height: 50px; /* Allow the height to adjust automatically */
     padding: 0px 20px;
     /* line-height: auto; */
   }
@@ -878,16 +892,23 @@ width: calc(100% - 50px);
   }
 
   .form-container {
-    width: 50%;
-    margin: 150px auto auto;
+    margin: 80px auto auto;
     padding: 20px;
     background-color: #ebe0e0;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
 
+  .form {
+    width: 100%;
+  }
+
   .add-product-container {
     margin-top: 10%;
+  }
+
+  .container {
+    padding-top: 0px;
   }
 
   .sort-dropdowns {
@@ -905,6 +926,14 @@ width: calc(100% - 50px);
 
   .community-header {
     margin-top: 0px;
+  }
+
+  .community-container {
+    margin-top: 0px;
+  }
+
+  .messages-container {
+    height: calc(100vh - 207px)
   }
 }
 
