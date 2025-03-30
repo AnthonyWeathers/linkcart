@@ -52,7 +52,7 @@ def set_reset_code(user_id):
         return None
     
     reset_code = generate_reset_code()
-    user.reset_code = generate_password_hash(reset_code, method='pbkdf2:sha256')  # Hash for security
+    user.reset_code_hash = generate_password_hash(reset_code, method='pbkdf2:sha256')  # Hash for security
     user.reset_code_expiry = datetime.now(timezone.utc) + timedelta(minutes=15)  # 15 min expiry
     db.session.commit()
     return reset_code  # Return plain reset code to be emailed
@@ -60,20 +60,20 @@ def set_reset_code(user_id):
 def validate_reset_code(user_id, provided_code):
     """Check if the provided reset code is valid and not expired."""
     user = User.query.get(user_id)
-    if not user or not user.reset_code:
+    if not user or not user.reset_code_hash:
         return False  # No code stored
     
-    if datetime.datetime.utcnow() > user.reset_code_expiry:
+    if datetime.now() > user.reset_code_expiry:
         return False  # Code expired
     
-    return check_password_hash(user.reset_code, provided_code)  # Verify hash
+    return check_password_hash(user.reset_code_hash, provided_code)  # Verify hash
 
 def clear_reset_code(user_id):
     """Remove the reset code after successful password reset."""
     user = User.query.get(user_id)
     if not user:
         return False
-    user.reset_code = None
+    user.reset_code_hash = None
     user.reset_code_expiry = None
     db.session.commit()
     return True

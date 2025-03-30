@@ -79,7 +79,7 @@ const Register = ({ onRegister }) => {
                 {isLoading && <p className="loading-text">Loading...</p>}
                 {error && <p className="error-text">{error}</p>}
             </form>
-            <p className="form-navigation">Already have an account? <Link to="/login" className="form-link">Login here</Link></p>
+            <p className="form-navigation"><p>Already have an account?</p> <Link to="/login" className="form-link">Login here</Link></p>
         </div>
     );
 };

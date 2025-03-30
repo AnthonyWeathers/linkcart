@@ -1,297 +1,344 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom'; // Hook to access URL params
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 
-const Profile = ({ currentUser, handleNewRequest, handleRequestNotification, handleDeleteAccount }) => {
-    const { username } = useParams(); // Get the username from the URL
-    const [favoriteProducts, setFavoriteProducts] = useState([]);
-    const [user, setUser] = useState(null);
-    const [isFriend, setIsFriend] = useState(false); // New state for friend status
-    const [isPending, setIsPending] = useState(false) // New state for pending friend request status
-    const [receivedRequest, setReceivedRequest] = useState(false); // New state for received friend request
+const Profile = ({
+  currentUser,
+  handleNewRequest,
+  handleRequestNotification,
+  handleDeleteAccount,
+}) => {
+  const { username } = useParams();
+  const [favoriteProducts, setFavoriteProducts] = useState([]);
+  const [user, setUser] = useState(null);
+  const [isFriend, setIsFriend] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [receivedRequest, setReceivedRequest] = useState(false);
 
-    const [isEditing, setIsEditing] = useState(false); // State for editing mode
-    const [newDescription, setNewDescription] = useState(''); // State for new description
+  const [isEditing, setIsEditing] = useState(false);
+  const [newDescription, setNewDescription] = useState("");
 
-    // Fetch the user profile and favorite products based on the username
-    useEffect(() => {
-        // Simulate a fetch call to get the user's profile
-        const fetchUserProfile = async () => {
-            try {
-                const response = await fetch(`http://localhost:8000/user/${username}`, {
-                    method: 'GET',
-                    headers: {
-                    'Content-Type': 'application/json',
-                    },
-                    credentials: 'include'
-                });
-
-                if(response.ok){
-                    const userData = await response.json();
-                    setUser(userData.user);
-                    setFavoriteProducts(userData.favoriteProducts);
-                    setIsFriend(userData.isFriend); // Set friend status from backend
-                    setIsPending(userData.sentRequest) // If current user has sent a pending friend request to other user
-                    setReceivedRequest(userData.receivedRequest) // If current user had received a friend request from user of profile they're viewing
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error|| 'Failed to fetch user profile.');
-                }
-                
-            } catch (error) {
-                console.error("Error fetching user profile:", error);
-                alert(error.message)
-            }
-        };
-
-        fetchUserProfile();
-    }, [username]); // Re-fetch when the username changes
-
-    if (!user) {
-        return <p>Loading...</p>; // Display a loading state while fetching
-    }
-
-    // Handle edit button click
-    const handleEditClick = () => {
-        setIsEditing(true);
-    };
-
-    // Handle form submit
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-        const response = await fetch(`http://localhost:8000/user/${username}/edit-description`, {
-            method: 'POST',
-            headers: {
-            'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ description: newDescription }),
-            credentials: 'include'
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/user/${username}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
         });
-        
+
         if (response.ok) {
-            const data = await response.json();
-            alert(data.message)
-            setUser((prev) => ({ ...prev, description: data.description })); // Update user description locally
-            setIsEditing(false); // Exit editing mode
+          const userData = await response.json();
+          setUser(userData.user);
+          setFavoriteProducts(userData.favoriteProducts);
+          setIsFriend(userData.isFriend);
+          setIsPending(userData.sentRequest);
+          setReceivedRequest(userData.receivedRequest);
         } else {
-            const errorData = await response.json();
-            throw new Error(errorData.error|| 'Failed to edit description, try again later.');
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to fetch user profile.");
         }
-        } catch (error) {
-            console.error('Error updating description:', error);
-            alert(error.message)
-        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        alert(error.message);
+      }
     };
 
-    // Handle cancel button click
-    const handleCancel = () => {
-        setNewDescription(user.description); // Reset to original description
+    fetchUserProfile();
+  }, [username]);
+
+  if (!user) {
+    return <p>Loading...</p>;
+  }
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(
+        `http://localhost:8000/user/${username}/edit-description`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ description: newDescription }),
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message);
+        setUser((prev) => ({ ...prev, description: data.description }));
         setIsEditing(false);
-    };
-
-    const handleAddFriend = async (friendUsername) => {
-        try {
-          const response = await fetch('http://localhost:8000/add-friend', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ friend_username: friendUsername }),
-            credentials: 'include'
-          });
-          const result = await response.json();
-      
-          if (result.success) {
-            alert('Friend added successfully!');
-            setIsFriend(true);
-          } else {
-            alert(result.message);
-          }
-        } catch (error) {
-          console.error('Error adding friend:', error);
-        }
-    };
-
-    const handleFriendRequest = async (friendUsername) => {
-        try {
-          const response = await fetch('http://localhost:8000/make-request', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ friend_username: friendUsername }),
-            credentials: 'include'
-          });
-      
-          if (response.ok) {
-            const result = await response.json();
-            alert(result.message);
-            setIsPending(true)
-          } else {
-            const errorData = await response.json();
-            throw new Error(errorData.error|| 'Failed to send friend request, try again later.');
-          }
-        } catch (error) {
-          console.error('Error adding friend:', error);
-          alert(error.message)
-        }
-    };
-
-    const handleAcceptFriend = async (friendUsername) => {
-        try {
-            const response = await fetch('http://localhost:8000/accept-friend', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ friend_username: friendUsername }),
-                credentials: 'include'
-            });
-            
-            if (response.ok) {
-                const result = await response.json();
-                alert(result.message);
-                setIsFriend(true);
-                setReceivedRequest(false);
-                handleRequestNotification();
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.error|| 'Failed to accept friend request, try again later.');
-            }
-        } catch (error) {
-            console.error('Error accepting friend:', error);
-            alert(error.message)
-        }
-    };
-    
-    const handleDeclineFriend = async (friendUsername) => {
-        try {
-            const response = await fetch('http://localhost:8000/decline-friend', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ friend_username: friendUsername }),
-                credentials: 'include'
-            });
-            
-            if (response.ok) {
-                const result = await response.json();
-                alert(result.message);
-                setReceivedRequest(false);
-                handleRequestNotification();
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.error|| 'Failed to decline friend request, try again later.');
-            }
-        } catch (error) {
-            console.error('Error declining friend request:', error);
-            alert(error.message)
-        }
-    };    
-
-    const handleRemoveFriend = async (friendUsername) => {
-        try {
-            const response = await fetch('http://localhost:8000/remove-friend', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ friend_username: friendUsername }),
-                credentials: 'include'
-            });
-            
-            if (response.ok) {
-                const result = await response.json();
-                alert(result.message || 'Friend removed successfully!');
-                setIsFriend(false); // Update to reflect unfriend status
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.error|| 'Failed to remove friend, try again later.');
-            }
-        } catch (error) {
-            console.error('Error removing friend:', error);
-            alert(error.message)
-        }
-    };
-
-    const confirmDeleteAccount = async () => {
-        const confirmDelete = window.confirm("Are you sure you want to delete your account? This action cannot be undone.");
-        if (!confirmDelete) return;
-        handleDeleteAccount()
-    };
-
-    const formatPrice = price => {
-        return `$${price.toFixed(2)}`; // Format as "$4.99"
-    }
-
-    const Products = ({ products }) => {
-        return (
-            <div className={`favorited-product-container`}>
-                {products
-                    .filter(product => product !== '') // Exclude empty spots
-                    .map(product => (
-                        <div key={product.productId} className="favorited-product-item">
-                            <h2 className="product-name">{product.productName}</h2>
-                            <p className="product-url">URL: <a href={product.url} target="_blank" rel="noopener noreferrer">{product.url}</a></p>
-                            <p className="product-price">Price: {formatPrice(product.price)}</p>
-                            <p className="product-category">Category: {product.category}</p>
-                        </div>
-                ))}
-            </div>
+      } else {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Failed to edit description, try again later."
         );
-      };
+      }
+    } catch (error) {
+      console.error("Error updating description:", error);
+      alert(error.message);
+    }
+  };
 
-    return (
-        <div className='profile'>
-            <div>
-                <p className='username'>{user.username}</p>
-                {user.username !== currentUser && (
-                    isFriend ? (
-                        <button onClick={() => handleRemoveFriend(user.username)}>Remove as Friend</button>
-                    ) : isPending ? (
-                        <div>Request pending</div>
-                    ) : receivedRequest ? (
-                        <div>
-                            <button className='request-btns' onClick={() => handleAcceptFriend(user.username)}>Accept Request</button>
-                            <button className='request-btns' onClick={() => handleDeclineFriend(user.username)}>Decline Request</button>
-                        </div>
-                    ) : (
-                        <button onClick={() => handleFriendRequest(user.username)}>Send Friend Request</button>
-                    )
-                )}
-            </div>
+  const handleCancel = () => {
+    setNewDescription(user.description);
+    setIsEditing(false);
+  };
 
-            <div className='description'>
-                <div className="description-header">
-                    <h4>Description</h4>
-                    {/* Show Edit Description if current user is viewing their own profile */}
-                    {currentUser === username && (
-                        <div className='profile-btns'>
-                            <button className='edit-description-btn' onClick={handleEditClick}>Edit Description</button>
-                            <button className='delete-account-btn' onClick={confirmDeleteAccount}>Delete Account</button>
-                        </div>
-                    )}
-                </div>
+  const handleAddFriend = async (friendUsername) => {
+    try {
+      const response = await fetch("http://localhost:8000/add-friend", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friend_username: friendUsername }),
+        credentials: "include",
+      });
+      const result = await response.json();
 
-                    {/* Show the form if user is editing, otherwise show the description */}
-                    {isEditing ? (
-                        <form onSubmit={handleSubmit}>
-                            <textarea
-                                value={newDescription}
-                                onChange={(e) => setNewDescription(e.target.value)}
-                                rows="4"
-                                cols="50"
-                            />
-                            <br />
-                            <button type="submit">Submit</button>
-                            <button type="button" onClick={handleCancel}>Cancel</button>
-                        </form>
-                    ) : (
-                        <p className='description-text'>{user.description || "This is the description/bio of user"}</p>
-                    )}
-            </div>
+      if (result.success) {
+        alert("Friend added successfully!");
+        setIsFriend(true);
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error("Error adding friend:", error);
+    }
+  };
 
-            <div className='favorited-products'>
-                <h4 className='favorited-products-header'>Favorited Products</h4>
-                <Products products={favoriteProducts}/>
-            </div>
-        </div>
+  const handleFriendRequest = async (friendUsername) => {
+    try {
+      const response = await fetch("http://localhost:8000/make-request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friend_username: friendUsername }),
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message);
+        setIsPending(true);
+      } else {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Failed to send friend request, try again later."
+        );
+      }
+    } catch (error) {
+      console.error("Error adding friend:", error);
+      alert(error.message);
+    }
+  };
+
+  const handleAcceptFriend = async (friendUsername) => {
+    try {
+      const response = await fetch("http://localhost:8000/accept-friend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ friend_username: friendUsername }),
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message);
+        setIsFriend(true);
+        setReceivedRequest(false);
+        handleRequestNotification();
+      } else {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Failed to accept friend request, try again later."
+        );
+      }
+    } catch (error) {
+      console.error("Error accepting friend:", error);
+      alert(error.message);
+    }
+  };
+
+  const handleDeclineFriend = async (friendUsername) => {
+    try {
+      const response = await fetch("http://localhost:8000/decline-friend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ friend_username: friendUsername }),
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message);
+        setReceivedRequest(false);
+        handleRequestNotification();
+      } else {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error ||
+            "Failed to decline friend request, try again later."
+        );
+      }
+    } catch (error) {
+      console.error("Error declining friend request:", error);
+      alert(error.message);
+    }
+  };
+
+  const handleRemoveFriend = async (friendUsername) => {
+    try {
+      const response = await fetch("http://localhost:8000/remove-friend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ friend_username: friendUsername }),
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message || "Friend removed successfully!");
+        setIsFriend(false);
+      } else {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Failed to remove friend, try again later."
+        );
+      }
+    } catch (error) {
+      console.error("Error removing friend:", error);
+      alert(error.message);
+    }
+  };
+
+  const confirmDeleteAccount = async () => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete your account? This action cannot be undone."
     );
-}
+    if (!confirmDelete) return;
+    handleDeleteAccount();
+  };
+
+  const formatPrice = (price) => {
+    return `$${price.toFixed(2)}`;
+  };
+
+  const Products = ({ products }) => {
+    return (
+      <div className={`favorited-product-container`}>
+        {products
+          .filter((product) => product !== "")
+          .map((product) => (
+            <div key={product.productId} className="favorited-product-item">
+              <h2 className="product-name">{product.productName}</h2>
+              <p className="product-url">
+                URL:{" "}
+                <a href={product.url} target="_blank" rel="noopener noreferrer">
+                  {product.url}
+                </a>
+              </p>
+              <p className="product-price">
+                Price: {formatPrice(product.price)}
+              </p>
+              <p className="product-category">Category: {product.category}</p>
+            </div>
+          ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="profile">
+      <div>
+        <p className="username">{user.username}</p>
+        {user.username !== currentUser &&
+          (isFriend ? (
+            <button onClick={() => handleRemoveFriend(user.username)}>
+              Remove as Friend
+            </button>
+          ) : isPending ? (
+            <div>Request pending</div>
+          ) : receivedRequest ? (
+            <div>
+              <button
+                className="request-btns"
+                onClick={() => handleAcceptFriend(user.username)}
+              >
+                Accept Request
+              </button>
+              <button
+                className="request-btns"
+                onClick={() => handleDeclineFriend(user.username)}
+              >
+                Decline Request
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => handleFriendRequest(user.username)}>
+              Send Friend Request
+            </button>
+          ))}
+      </div>
+
+      <div className="description">
+        <div className="description-header">
+          <h4>Description</h4>
+          {currentUser === username && (
+            <div className="profile-btns">
+              <button
+                className="edit-description-btn"
+                onClick={handleEditClick}
+              >
+                Edit Description
+              </button>
+              <button
+                className="delete-account-btn"
+                onClick={confirmDeleteAccount}
+              >
+                Delete Account
+              </button>
+            </div>
+          )}
+        </div>
+
+        {isEditing ? (
+          <form onSubmit={handleSubmit}>
+            <textarea
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+              rows="4"
+              cols="50"
+            />
+            <br />
+            <button type="submit">Submit</button>
+            <button type="button" onClick={handleCancel}>
+              Cancel
+            </button>
+          </form>
+        ) : (
+          <p className="description-text">
+            {user.description || "This is the description/bio of user"}
+          </p>
+        )}
+      </div>
+
+      <div className="favorited-products">
+        <h4 className="favorited-products-header">Favorited Products</h4>
+        <Products products={favoriteProducts} />
+      </div>
+    </div>
+  );
+};
 
 export default Profile;

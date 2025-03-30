@@ -1,13 +1,14 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body, html {
+body,
+html {
   margin: 0;
   padding: 0;
   overflow-x: hidden; /* Prevents horizontal scrolling */
@@ -15,7 +16,7 @@ body, html {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
 
@@ -28,8 +29,8 @@ code {
 
 /* App.js */
 /* .highlight { */
-  /* color: red; /* or another attention-grabbing color */
-  /* font-weight: bold; */
+/* color: red; /* or another attention-grabbing color */
+/* font-weight: bold; */
 /* } */
 /* General reset for list styling */
 ul {
@@ -90,7 +91,8 @@ ul {
 }
 
 /* Link styling for both navbars */
-.navbar a, .footer-navbar a {
+.navbar a,
+.footer-navbar a {
   color: white;
   text-decoration: none;
   font-weight: bold;
@@ -98,7 +100,8 @@ ul {
   display: inline-block;
 }
 
-.navbar a:hover, .footer-navbar a:hover {
+.navbar a:hover,
+.footer-navbar a:hover {
   background-color: #555;
   border-radius: 4px;
 }
@@ -108,7 +111,8 @@ ul {
   color: yellow;
 }
 
-.navbar, .footer-navbar {
+.navbar,
+.footer-navbar {
   font-size: 1.05rem;
   height: 50px;
   line-height: 20px; /* vertically centers content */
@@ -121,7 +125,9 @@ ul {
   align-items: center;
   padding-top: 50px; /* Adjust to navbar height */
   padding-bottom: 50px; /* Adjust to footer navbar height */
-  min-height: calc(100vh - 100px); /* Ensures the container fills the viewport height minus the navbars */
+  min-height: calc(
+    100vh - 100px
+  ); /* Ensures the container fills the viewport height minus the navbars */
   /* Make sure the width is not causing overflow */
   box-sizing: border-box; /* Ensure padding and border are included in width/height */
   width: 100%; /* Ensures the container width fits within the viewport */
@@ -143,13 +149,15 @@ ul {
 .community-header {
   padding-left: 10px;
   margin-top: -30px;
-  margin-bottom: 10px
+  margin-bottom: 10px;
 }
 
 /* Ensures messages-container fits between navbars and is scrollable */
 .messages-container {
   flex: 1; /* Makes the container expand within the available space */
-  height: calc(100vh - 225px); /* Adjusts height considering top and bottom navbars */
+  height: calc(
+    100vh - 225px
+  ); /* Adjusts height considering top and bottom navbars */
   overflow-y: auto; /* Keeps messages scrollable */
   border: 1px solid #ccc;
   background-color: #a3caf3;
@@ -166,7 +174,7 @@ ul {
 
 .message-item:first-child,
 .message-item + .message-item:not(:first-child) strong {
-    margin-top: 10px; /* Adjust as needed for spacing */
+  margin-top: 10px; /* Adjust as needed for spacing */
 }
 
 .timestamp {
@@ -445,19 +453,19 @@ width: calc(100% - 50px);
   display: flex;
   flex-direction: column;
   align-items: flex-start; /* Aligns details to the left */
-  /*padding: 20px; */
+/*padding: 20px; */
 
 /* .products-container {
   display: flex;
   flex-wrap: wrap; */
-  /*justify-content: center; /* Centers product rows */
-  /*gap: 20px; /* Space between product items */
+/*justify-content: center; /* Centers product rows */
+/*gap: 20px; /* Space between product items */
 /* } */
 
 /* .product-item {
   width: calc(50% - 20px);  */
-  /* Allows for 2 items per row */
-  /* box-sizing: border-box;
+/* Allows for 2 items per row */
+/* box-sizing: border-box;
   padding: 15px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -714,14 +722,15 @@ width: calc(100% - 50px);
   margin-left: 10px; /* Space between star and name */
 }
 .favorite-star.filled {
-  color: #FFD700; /* Gold for filled star */
+  color: #ffd700; /* Gold for filled star */
 }
 .favorite-star:hover {
   transform: scale(1.2); /* Slight zoom effect for interactivity */
   transition: transform 0.2s ease;
 }
 
-.product-item.favorited { /* Style change for favorited products */
+.product-item.favorited {
+  /* Style change for favorited products */
   border: 2px solid gold;
   background-color: #fff8dc;
 }
@@ -772,7 +781,7 @@ width: calc(100% - 50px);
 .form-container {
   width: 50%;
   max-width: 70%;
-  margin: 90px auto 0;
+  margin: 50px auto 0;
   padding: 20px;
   background-color: #ebe0e0;
   border-radius: 8px;
@@ -791,6 +800,7 @@ width: calc(100% - 50px);
   flex-direction: column;
   align-items: center;
   gap: 15px;
+  width: 100%;
 }
 
 .form-input {
@@ -802,14 +812,14 @@ width: calc(100% - 50px);
 }
 
 .form-input:focus {
-  border-color: #007BFF;
+  border-color: #007bff;
   outline: none;
   box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
 
 .form-button {
   padding: 10px;
-  background-color: #007BFF;
+  background-color: #007bff;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -840,11 +850,20 @@ width: calc(100% - 50px);
 .form-navigation {
   text-align: center;
   margin-top: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.form-navigation p {
+  margin: 0px;
 }
 
 .form-link {
-  width: 80%;
-  color: #007BFF;
+  display: flex;
+  justify-content: center;
+  color: #007bff;
   text-decoration: none;
 }
 
@@ -860,8 +879,11 @@ width: calc(100% - 50px);
 }
 
 .resend-button {
+  display: flex;
+  align-items: center;
   font-size: 1rem;
   padding: 5px;
+  margin-top: 10px;
 }
 
 /* Responsive design: adjusting to screen sizes */
@@ -892,7 +914,7 @@ width: calc(100% - 50px);
   }
 
   .form-container {
-    margin: 80px auto auto;
+    margin: 50px auto auto;
     padding: 20px;
     background-color: #ebe0e0;
     border-radius: 8px;
@@ -933,12 +955,13 @@ width: calc(100% - 50px);
   }
 
   .messages-container {
-    height: calc(100vh - 207px)
+    height: calc(100vh - 207px);
   }
 }
 
 @media (max-width: 600px) {
-  .product-link, .submitted-data {
+  .product-link,
+  .submitted-data {
     max-width: 100%; /* Expands form and submitted data to full width on small screens */
   }
 
@@ -948,16 +971,17 @@ width: calc(100% - 50px);
   }
 
   .form-container {
-      margin: 20px auto;
-      padding: 15px;
+    margin: 20px auto;
+    padding: 15px;
   }
 
   .form-title {
-      font-size: 1.25em;
+    font-size: 1.25em;
   }
 
-  .form-input, .form-button {
-      font-size: 0.9em;
+  .form-input,
+  .form-button {
+    font-size: 0.9em;
   }
 }
 
