@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
 const Profile = ({
-  currentUser,
   handleNewRequest,
   handleRequestNotification,
   handleDeleteAccount,
 }) => {
+  const { currentUser } = useContext(UserContext);
   const { username } = useParams();
   const [favoriteProducts, setFavoriteProducts] = useState([]);
   const [user, setUser] = useState(null);

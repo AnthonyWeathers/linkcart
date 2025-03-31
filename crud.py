@@ -32,6 +32,7 @@ def get_user(**filters):
     """Fetch a single user based on dynamic filters."""
     return User.query.filter_by(**filters).first()
 
+
 def update_user_description(user_id, description):
     """Update user description"""
     user = User.query.get(user_id)

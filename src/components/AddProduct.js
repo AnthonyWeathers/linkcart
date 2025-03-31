@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import ProductForm from "./ProductForm";
 
-const AddProduct = ({ user }) => {
+const AddProduct = () => {
   const [submittedData, setSubmittedData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -18,10 +18,6 @@ const AddProduct = ({ user }) => {
     "Office",
     "Tools",
   ]);
-
-  if (!user) {
-    return <p>Please log in to add a product.</p>;
-  }
 
   const clearForm = () => {
     setSubmittedData(null);
@@ -56,7 +52,6 @@ const AddProduct = ({ user }) => {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: user.id,
           ...submittedData,
         }),
       });

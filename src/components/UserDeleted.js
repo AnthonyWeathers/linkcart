@@ -1,5 +1,3 @@
-import React from "react";
-
 const UserDeleted = () => {
   return (
     <div>

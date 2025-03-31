@@ -37,7 +37,6 @@ class User(db.Model):
         return {
             "id": self.id,
             "username": self.username,
-            "password": self.password,
             "description": self.description,
             "favorited_products": [product.id for product in self.favorited_products],
         }

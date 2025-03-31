@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import ProductForm from "./ProductForm";
 
-const ProductList = ({ user }) => {
+const ProductList = () => {
   const [edittingData, setEdittingData] = useState(false);
 
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -83,7 +83,6 @@ const ProductList = ({ user }) => {
         },
         body: JSON.stringify({
           id: productId,
-          user_id: user.id,
           ...updatedData,
           favorited: selectedProduct?.favorited || false,
           category: Array.isArray(updatedData.category)

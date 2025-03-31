@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -20,16 +20,20 @@ import StatusToggle from "./components/StatusToggle";
 import UserDeleted from "./components/UserDeleted";
 import ForgotUsername from "./components/ForgotUsername";
 import ForgotPassword from "./components/ForgotPassword";
+import Logout from "./components/Logout";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedOnlineRoute from "./components/ProtectedOnlineRoute";
 import { UserStatusContext } from "./components/UserStatusContext";
+import { UserContext } from "./components/UserContext";
 
 function App() {
-  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hasNewRequests, setHasNewRequests] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   const { isOnline, syncStatus } = useContext(UserStatusContext);
+  const { currentUser, setCurrentUser } = useContext(UserContext);
 
   // Fetch the current user on component mount
   useEffect(() => {
@@ -165,11 +169,6 @@ function App() {
     setHasNewRequests(false);
   };
 
-  const handleSetCurrentUser = (user, onlineStatus) => {
-    console.log("Logged in user is: ", user);
-    setCurrentUser(user); // Set the logged-in user
-  };
-
   useEffect(() => {
     console.log("attempting to sync status on user login");
     if (currentUser) {
@@ -177,31 +176,6 @@ function App() {
     }
     // }, [currentUser, syncStatus]);
   }, [currentUser]);
-
-  const logout = async () => {
-    try {
-      const response = await fetch("http://localhost:8000/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(data.message);
-        setCurrentUser(null);
-        setHasNewRequests(false);
-
-        if (socket.connected) {
-          socket.disconnect();
-        }
-      } else {
-        const errorData = await response.json();
-        console.error("Error logging out:" || errorData.error);
-      }
-    } catch (error) {
-      console.error("Error during logout:", error);
-    }
-  };
 
   const handleDeleteAccount = async () => {
     // const confirmDelete = window.confirm("Are you sure you want to delete your account? This action cannot be undone.");
@@ -234,29 +208,6 @@ function App() {
     }
   };
 
-  // Helper Component: Ensures User is Logged In
-  const ProtectedRoute = ({ element }) => {
-    return currentUser ? element : <Navigate to="/login" />;
-  };
-
-  // Helper Component: Ensures User is Logged In AND Online
-  const ProtectedOnlineRoute = ({ element }) => {
-    // useEffect(() => {
-    //   if (currentUser && isOnline) {
-    //     navigate(window.location.pathname); // Refresh current route when switching online
-    //   }
-    // }, [isOnline]); // Runs when `isOnline` changes
-
-    if (!currentUser) return <Navigate to="/login" />;
-    if (!isOnline)
-      return (
-        <div>
-          You are currently offline. Switch to online to access this feature!
-        </div>
-      );
-    return element;
-  };
-
   // Check if user is on their own profile
   const isOnOwnProfile = location.pathname === `/profile/${currentUser}`;
 
@@ -265,35 +216,36 @@ function App() {
       <nav className="navbar">
         <ul>
           {/* Hide "Add Product" link if on Add Product page */}
-          {currentUser && location.pathname !== "/" && (
+          {location.pathname !== "/" && (
             <li>
               <Link to="/">Add Product</Link>
             </li>
           )}
 
           {/* Hide "Saved Products" link if on Saved Products page */}
-          {currentUser && location.pathname !== "/saved-products" && (
+          {location.pathname !== "/saved-products" && (
             <li>
               <Link to="/saved-products">Saved Products</Link>
             </li>
           )}
 
           {/* Show "My Profile" if user is not on their own profile */}
-          {currentUser && isOnline && !isOnOwnProfile && (
+          {isOnline && !isOnOwnProfile && (
             <li>
               <Link to={`/profile/${currentUser}`}>My Profile</Link>
             </li>
           )}
 
           {/* Checkbox to toggle online mode */}
-          {currentUser && <StatusToggle currentUser={currentUser} />}
+          {<StatusToggle />}
 
           {/* Logout button */}
-          {currentUser && (
+          {
             <li>
-              <button onClick={logout}>Logout</button>
+              {/* <button onClick={logout}>Logout</button> */}
+              <Logout />
             </li>
-          )}
+          }
         </ul>
       </nav>
 
@@ -303,71 +255,38 @@ function App() {
         <>
           <Routes>
             {/* Public Routes */}
-            <Route
-              path="/login"
-              element={<Login onLogin={handleSetCurrentUser} />}
-            />
-            <Route
-              path="/register"
-              element={<Register onRegister={handleSetCurrentUser} />}
-            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/forgot-username" element={<ForgotUsername />} />
 
-            {/* Protected Routes (Requires Login) */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute element={<AddProduct user={currentUser} />} />
-              }
-            />
-            <Route
-              path="/saved-products"
-              element={
-                <ProtectedRoute element={<ProductList user={currentUser} />} />
-              }
-            />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<AddProduct />} />
+              <Route path="/saved-products" element={<ProductList />} />
 
-            {/* Protected + Online-Only Routes */}
-            <Route
-              path="/profile/:username"
-              element={
-                <ProtectedOnlineRoute
+              {/* Protected + Online-Only Routes */}
+              <Route element={<ProtectedOnlineRoute />}>
+                <Route
+                  path="/profile/:username"
                   element={
                     <Profile
-                      currentUser={currentUser}
                       handleRequestNotification={handleRequestNotification}
                       handleDeleteAccount={handleDeleteAccount}
                     />
                   }
                 />
-              }
-            />
-            <Route
-              path="/community"
-              element={
-                <ProtectedOnlineRoute
-                  element={<Community currentUser={currentUser} />}
-                />
-              }
-            />
-            <Route
-              path="/friends"
-              element={
-                <ProtectedOnlineRoute
+                <Route path="/community" element={<Community />} />
+                <Route
+                  path="/friends"
                   element={
                     <Friends
-                      currentUser={currentUser}
                       handleRequestNotification={handleRequestNotification}
                     />
                   }
                 />
-              }
-            />
-            <Route
-              path="/user-deleted"
-              element={<ProtectedOnlineRoute element={<UserDeleted />} />}
-            />
+                <Route path="/user-deleted" element={<UserDeleted />} />
+              </Route>
+            </Route>
           </Routes>
 
           {/* Secondary Navbar */}

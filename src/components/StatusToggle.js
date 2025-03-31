@@ -1,8 +1,10 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { UserStatusContext } from "./UserStatusContext";
+import { UserContext } from "./UserContext";
 
-function StatusToggle({ currentUser }) {
+function StatusToggle() {
   const { isOnline, toggleStatus } = useContext(UserStatusContext);
+  const { currentUser } = useContext(UserContext);
 
   return (
     <li>

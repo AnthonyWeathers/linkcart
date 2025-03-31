@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { UserContext } from "./UserContext";
 
-const Login = ({ onLogin }) => {
+const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -10,6 +11,7 @@ const Login = ({ onLogin }) => {
 
   const location = useLocation();
   const alertMessage = location.state?.message;
+  const { setCurrentUser } = useContext(UserContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -36,7 +38,7 @@ const Login = ({ onLogin }) => {
 
       const data = await response.json();
       alert(data.message);
-      onLogin(data.username, data.isOnline);
+      setCurrentUser(data.username);
 
       navigate("/");
     } catch (error) {
@@ -50,12 +52,12 @@ const Login = ({ onLogin }) => {
   return (
     <div className="form-container">
       {alertMessage && <div className="alert">{alertMessage}</div>}
-      <p className="form-navigation">
+      <div className="form-navigation">
         <p>New here?</p>{" "}
         <Link to="/register" className="form-link">
           Register here
         </Link>
-      </p>
+      </div>
       <h2 className="form-title">Login</h2>
       <form onSubmit={handleLogin} className="form">
         <input

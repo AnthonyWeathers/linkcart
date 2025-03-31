@@ -6,13 +6,13 @@ import eventlet
 import jinja2
 import re
 
-from functools import wraps  # For creating decorators
-import logging  # For logging events and errors
-from flask_limiter import Limiter  # For rate limiting
-from flask_limiter.util import get_remote_address  # Utility for rate limiter
+from functools import wraps
+import logging
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect, generate_csrf
-import jwt  # For token-based authentication
-from datetime import datetime, timedelta, timezone  # For token expiration
+import jwt
+from datetime import datetime, timedelta, timezone
 
 # probably used if I'm making batches of
 # 5+ saved products per viewing page
@@ -34,29 +34,26 @@ app.secret_key = 'dev' # think of a separate key for jwt
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:3000", ping_timeout=30000, ping_interval=25000)
 #socketio = SocketIO(app, cors_allowed_origins='*')  # Enable CORS if needed
 
-csrf = CSRFProtect(app)  # Enable CSRF protection
+csrf = CSRFProtect(app)
 
-# Rate limiter initialization
 limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
 
-# Logging configuration
 logging.basicConfig(level=logging.DEBUG)
 
-# Ensure session cookies are secure and http-only
 app.config['SESSION_COOKIE_SECURE'] = True  # Only send cookies over HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Disable access to cookies via JavaScript
 
 # Optionally set SameSite to Lax or Strict for better CSRF protection
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-app.jinja_env.undefined = jinja2.StrictUndefined # for debugging purposes
+app.jinja_env.undefined = jinja2.StrictUndefined
 
 # Configure Flask-Mailman
 app.config["MAIL_SERVER"] = "smtp.gmail.com"  # Replace with your email provider's SMTP server
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")  # Set your email in an environment variable
-app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")  # Set your email password or app password in an environment variable
+app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
 app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER", "noreply@linkcart.com")
 
 mail = Mail(app)
@@ -70,17 +67,16 @@ def create_jwt(user):
     payload = {
         "user_id": user.id,
         "username": user.username,
-        "isOnline": user.isOnline,  # Include the mode in the token
-        "exp": datetime.now(timezone.utc) + timedelta(hours=12)  # Token expiry
+        "isOnline": user.isOnline,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=12)
     }
     token = jwt.encode(payload, app.secret_key, algorithm="HS256")
     return token
 
-# JWT token verification helper
 def verify_token(token):
     try:
         payload = jwt.decode(token, app.secret_key, algorithms=["HS256"])
-        return payload  # Return the decoded payload if valid
+        return payload
     except jwt.ExpiredSignatureError:
         logging.warning("Token expired")
         return None
@@ -92,7 +88,6 @@ def token_required(f):
     """Unified token decorator for Flask routes and Socket.IO events."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Check if this is a Flask request or Socket.IO event
         token = None
 
         # Check if it's a Socket.IO connection attempt
@@ -102,7 +97,7 @@ def token_required(f):
 
             if not token:
                 logging.warning("No token provided for Socket.IO connection")
-                disconnect()  # Disconnect if no token
+                disconnect()
                 return jsonify({"error": "Token is required for Socket.IO"}), 401
             
         # For other API requests (non-Socket.IO)
@@ -118,7 +113,6 @@ def token_required(f):
             logging.warning("No token provided")
             return jsonify({"error": "Token is required"}), 401
         
-        # Verify the token
         user_payload = verify_token(token)
         logging.debug(f"User payload after verification: {user_payload}")
 
@@ -141,11 +135,9 @@ def token_required(f):
 def refresh_token(user=None):
     """Refreshes the user's access token."""
     try:
-        # User is injected by the `token_required` decorator
         if not user:
             return jsonify({"error": "Unauthorized"}), 401
         
-        # Generate a new access token using the current user's data
         new_access_token = create_jwt(user)
         response = jsonify({"message": "Token refreshed successfully"})
         response.set_cookie(
@@ -164,15 +156,12 @@ def refresh_token(user=None):
 
 
 @app.route("/current-user", methods=['GET'])
-@csrf.exempt  # Exempt from CSRF to simplify GET request handling
-@limiter.limit("10 per minute")  # Rate limiting for login checks
-@token_required  # Use the unified token decorator
-# def check_user(user=None):
+@csrf.exempt
+@limiter.limit("10 per minute")
+@token_required
 def check_user():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
-        # User is injected by the @token_required decorator
         print("current user is: ", user)
         if not user:
             return jsonify({"error": "Unauthorized"}), 401
@@ -180,7 +169,6 @@ def check_user():
         user_id = user["user_id"]
         username = user["username"]
         
-        # Check for pending friend requests
         pending_request = True if crud.get_friend_requests(receiver_id=user_id) else False
 
         logging.info(f"User check successful for user {username}")
@@ -191,30 +179,28 @@ def check_user():
         return jsonify({"error": "An unexpected error occurred in getting current user"}), 500
 
 @app.route('/messages/community', methods=['GET'])
-@csrf.exempt  # Exempt because it's a safe GET request
-@limiter.limit("15 per minute")  # Rate limiting
-@token_required  # Use the unified token decorator
+@csrf.exempt
+@limiter.limit("15 per minute")
+@token_required
 def get_public_messages():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
-        # User is injected by the @token_required decorator
         if not user:
             return jsonify({"error": "Unauthorized"}), 401
 
-        isOnline = user['isOnline']  # Extract 'isOnline' from the user payload
+        isOnline = user['isOnline']
         if not isOnline:
             logging.warning("User tried accessing community messages while offline")
             return jsonify({'error': 'You are offline. Community features are not available.'}), 403
         
-        messages = crud.get_community_messages()  # Fetch all messages
+        messages = crud.get_community_messages()
         logging.info(f"Fetched {len(messages)} community messages")
         return jsonify([
             {
                 'id': message.id,
-                'username': message.user.username if message.user else "Deleted User",  # Use the relationship to get the username and handles if user is deleted
+                'username': message.user.username if message.user else "Deleted User",
                 'content': message.content,
-                'timestamp': message.timestamp.isoformat()  # Format timestamp as string
+                'timestamp': message.timestamp.isoformat()
             }
             for message in messages
         ])
@@ -223,19 +209,15 @@ def get_public_messages():
         logging.exception("Unexpected error in retrieving community messages")
         return jsonify({"error": "An unexpected error occurred getting community messages"}), 500
 
-# Need to modify this to make use of the keyword token, likely same way as connect
 @socketio.on('message')
-@token_required  # Require token-based authentication
+@token_required
 def handle_message(*args, **kwargs):
     try:
-        # Retrieve the user from kwargs
         user = kwargs.get('user')
-        # The 'user' object is passed in through kwargs from the token_required decorator, which contains the user details
         if not user:
             socketio.emit('message_response', {'success': False, 'error': 'User not authenticated'})
             return
 
-        # Get message content and username from the data payload
         message_content = args[0].get('message')
 
         logging.info(f"Message received from {user['username']}: {message_content}")
@@ -243,15 +225,13 @@ def handle_message(*args, **kwargs):
         message = crud.create_community_message(user['user_id'], message_content)
         logging.info(f"Created new message with ID {message.id}")
 
-        # Emit the message to all connected clients
         socketio.emit('message_response', {
             'success': True,
             'id': message.id,
-            'username': user['username'],  # Use the user object for the username
+            'username': user['username'],
             'content': message.content,
-            'timestamp': message.timestamp.isoformat()  # Format timestamp as string
+            'timestamp': message.timestamp.isoformat()
         }, to='community') # / or community
-        # }, broadcast=True)
 
     except Exception as e:
         logging.exception("Unexpected error in adding new message")
@@ -259,28 +239,22 @@ def handle_message(*args, **kwargs):
 
 """ User Login/Registration related endpoints """
 @app.route("/login", methods=["POST"])
-@csrf.exempt  # Exempt from CSRF as JWT will be used
+@csrf.exempt
 def login():
     try:
         username = request.json.get("username")
         password = request.json.get("password")
 
-        # user = crud.get_user(username=username, password=password)
         user = crud.authenticate_user(username=username, password=password)
 
         if user:
-            # print("Reached getting token part of login")
             token = create_jwt(user)
-            # print("the token is: ", token)
 
-            # Response object
             response = jsonify({
                 "message": "Logged in successfully",
                 "username": user.username,
-                "isOnline": user.isOnline
                 })
 
-            # Set JWT token as HttpOnly cookie
             response.set_cookie(
                 "jwtToken",
                 token,
@@ -289,7 +263,6 @@ def login():
                 secure=False,  # False for local dev; True for production with HTTPS
                 samesite='Lax',  # CSRF protection
             )
-            # print("response is: ", response)
             return response
         else:
             return jsonify({"error": "Invalid credentials"}), 401
@@ -298,8 +271,8 @@ def login():
         logging.exception("Unexpected error in /login")
         return jsonify({"error": "An unexpected error occurred while logging in"}), 500
     
-@app.route("/register", methods=["POST"]) # update register and login frontend to use the returned data
-@csrf.exempt  # Exempt from CSRF as JWT will be used
+@app.route("/register", methods=["POST"])
+@csrf.exempt
 def register():
     try:
         username = request.json.get("username")
@@ -315,20 +288,17 @@ def register():
             token = create_jwt(new_user)
             logging.info(f"User {new_user.username} registered successfully.")
 
-            # Response object
             response = jsonify({
                 "message": "Logged in successfully",
                 "user": new_user.username,
-                "isOnline": new_user.isOnline
             })
-            # Set JWT token as HttpOnly cookie
             response.set_cookie(
                 "jwtToken",
                 token,
                 httponly=True,  # Prevent JavaScript access
                 # secure=True,  # Only allow over HTTPS
                 secure=False,  # False for local dev; True for production with HTTPS
-                samesite='Lax',  # CSRF protection
+                samesite='Lax',
             )
             return response
         else:
@@ -339,9 +309,9 @@ def register():
         return jsonify({"error": "An unexpected error occurred while registing user"}), 500
 
 @app.route("/logout", methods=["POST"])
-@csrf.exempt  # Exempt as there’s no state-changing server-side logic in logout here
+@csrf.exempt
 def logout():
-    session.clear()  # Clear the session data
+    session.clear()
     logging.info("User logged out.")
     response = jsonify({"message": "Logged out successfully"})
     response.set_cookie(
@@ -350,23 +320,20 @@ def logout():
         expires=0, 
         httponly=True, 
         secure=True,
-        samesite='Lax',  # CSRF protection
+        samesite='Lax',
     )
     return response
-    # return jsonify({"message": "Logged out successfully"})
 
 @app.route("/request-reset-code", methods=["POST"])
-@csrf.exempt  # Exempt from CSRF as JWT will be used
+@csrf.exempt
 def request_reset_code():
     try:
         username = request.json.get("username")
         email = request.json.get("email")
 
-        # user = crud.get_user(username=username, password=password)
         reset_code = crud.request_new_reset_code(username=username, email=email)
 
         if reset_code:
-            # create email message
             msg = Message()
             msg.subject = "Password Reset Code"
             msg.recipients = [email]
@@ -382,7 +349,7 @@ def request_reset_code():
         return jsonify({"error": "An unexpected error occurred while attempting to reset password"}), 500
     
 @app.route("/reset-password", methods=["POST"])
-@csrf.exempt  # Exempt from CSRF as JWT will be used
+@csrf.exempt
 def reset_password():
     try:
         username = request.json.get("username")
@@ -409,7 +376,7 @@ def reset_password():
         return jsonify({"error": "An unexpected error occurred while attempting to reset password"}), 500
     
 @app.route("/request-username", methods=["POST"])
-@csrf.exempt  # Exempt from CSRF as JWT will be used
+@csrf.exempt
 def request_username():
     try:
         email = request.json.get("email")
@@ -417,7 +384,6 @@ def request_username():
         username = crud.request_username(email=email)
 
         if username:
-            # create email message
             msg = Message()
             msg.subject = "Username reminder"
             msg.recipients = [email]
@@ -436,7 +402,6 @@ def request_username():
 @token_required
 def handle_connect(*args, **kwargs):
     try:
-        # Retrieve the user from kwargs
         user = kwargs.get('user')
 
         logging.debug(f"[Socket.IO] User in handle_connect: {user}")
@@ -475,7 +440,6 @@ def handle_connect(*args, **kwargs):
 @token_required
 def handle_disconnect(*args, **kwargs):
     try:
-        # Retrieve the user from kwargs
         user = kwargs.get('user')
         print("current status of userOnline is: ", user["isOnline"])
 
@@ -521,11 +485,7 @@ def sync_online_status():
 
         if toggled_user:
             logging.info(f"User {username} sync status: {toggled_user.isOnline}")
-            # response = jsonify({"isOnline": toggled_user.isOnline})
-            # response.set_cookie('isOnline', str(toggled_user.isOnline), httponly=True)
-            # return response, 200
 
-            # Generate a new token with updated isOnline status
             new_token = create_jwt(toggled_user)
 
             response = jsonify({"isOnline": toggled_user.isOnline})
@@ -548,27 +508,22 @@ def sanitize_price(price_input):
     Convert user-provided price input to a float by removing invalid characters.
     Allows only numbers and decimals.
     """
-    # Remove any non-numeric characters except the decimal point
     sanitized = re.sub(r'[^\d.]', '', price_input)
     try:
-        # Convert sanitized string to float
         return float(sanitized)
     except ValueError:
-        # If conversion fails, return None or raise an error
         return None
     
 @app.route("/submit-product", methods=["POST"])
-@csrf.exempt  # CSRF protection is typically applied to forms; for JSON requests, use exemptions carefully
+@csrf.exempt
 @token_required
-@limiter.limit("10/minute")  # Restrict this endpoint to 10 requests per minute per IP
+@limiter.limit("10/minute")
 def save():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_id = user['user_id']
         logging.info("User %s is attempting to save a product", currentUser_id)
         
-        # when user saves/adds a new product
         url = request.json.get("url")
         price = request.json.get("price")
         productName = request.json.get("productName")
@@ -605,10 +560,9 @@ def save():
 @app.route("/delete-product", methods=["DELETE"])
 @csrf.exempt
 @token_required
-@limiter.limit("5/minute")  # Restrict this endpoint to 5 requests per minute
+@limiter.limit("5/minute")
 def delete():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_id = user['user_id']
         logging.info("User %s is attempting to delete a product", currentUser_id)
@@ -643,27 +597,22 @@ def delete():
 @limiter.limit("20/minute")
 def getProducts():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_id = user['user_id']
         logging.info("User %s is fetching their products", currentUser_id)
 
-        # Query Parameters
         sort_by = request.args.get('sortBy', default=None, type=str)
         extra_sort_by = request.args.get('extraSortBy', default=None, type=str)
         min_price = request.args.get('minPrice', default=None, type=float)
         max_price = request.args.get('maxPrice', default=None, type=float)
         category_filter = request.args.get('categoryFilter', default=None, type=str)
-        page = request.args.get('page', default=1, type=int)  # Default to page 1
-        limit = request.args.get('limit', default=10, type=int)  # Default to 10 products per page
+        page = request.args.get('page', default=1, type=int)
+        limit = request.args.get('limit', default=10, type=int)
         
-        # Calculate offset
         offset = (page - 1) * limit
 
-        # Only pass 'favorited' if sortBy is explicitly 'favorited'
         favorited = True if sort_by == 'favorited' else None
 
-        # Fetch total product count (no limit or offset)
         total_products = crud.count_products(
             user_id=currentUser_id,
             min_price=min_price,
@@ -672,10 +621,8 @@ def getProducts():
             favorited=favorited,
         )
 
-        # Calculate total pages
-        total_pages = (total_products + limit - 1) // limit  # Round up division
+        total_pages = (total_products + limit - 1) // limit
 
-        # Fetch products using filters and sorting
         user_products = crud.get_products(
             user_id=currentUser_id,
             sort_by=sort_by,
@@ -688,10 +635,8 @@ def getProducts():
             offset=offset
         )
 
-        # Convert each product object to a dictionary
         user_products_data = [product.to_dict() for product in user_products]
 
-        # need a total pages value
         return jsonify({
             "message": "User products fetched successfully",
             "products": user_products_data,
@@ -709,7 +654,6 @@ def getProducts():
 @limiter.limit("5/minute")
 def editProduct():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_id = user['user_id']
         logging.info("User %s is attempting to edit a product", currentUser_id)
@@ -746,7 +690,6 @@ def editProduct():
                 "product": updated_product.to_dict()
             })
 
-        # If no matching product was found
         logging.error("Failed to edit product %s for user %s", product_id, currentUser_id)
         return jsonify({
             "error": 'Error occurred while updating product'
@@ -761,7 +704,6 @@ def editProduct():
 @limiter.limit("5/minute")
 def favoriteProduct():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_id = user['user_id']
         productId = int(request.json.get("id"))
@@ -794,32 +736,28 @@ def favoriteProduct():
 
 """ Profile Endpoints """
 @app.route('/user/<username>')
-@limiter.limit("10/minute")  # Rate-limiting: 10 requests per minute
-@csrf.exempt  # Enforce CSRF protection
+@limiter.limit("10/minute")
+@csrf.exempt
 @token_required
 def profile(username):
     """Fetch profile details of the given username."""
     # `user` is the authenticated user, injected by @token_required
     # `username` is the user profile being accessed
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_id = user["user_id"]
         currentUser_username = user['username']
         logging.info(f"Authenticated user {currentUser_username} is accessing profile of {username}")
 
-        # Check if authenticated user is online
         if not user["isOnline"]:
             logging.warning(f"User {currentUser_username} attempted to access profiles while offline.")
             return jsonify({'error': 'You are offline. Community features are not available.'}), 403
 
-        # Fetch the target user's data
         target_user = crud.get_user(username=username)
         if not target_user:
             logging.error(f"Profile for username {username} not found.")
             return jsonify({'error': 'User not found'}), 404
 
-        # Determine friend/request status
         is_friend = False
         sent_request = False
         received_request = False
@@ -832,7 +770,6 @@ def profile(username):
             elif crud.get_friend_requests(receiver_id=currentUser_id, sender_id=target_user.id, status='pending'):
                 received_request = True
 
-        # Fetch favorited products
         favorited_products = crud.get_products(user_id=target_user.id, favorited=True)
 
         logging.info(f"User {currentUser_username} successfully fetched profile data for {username}")
@@ -852,37 +789,31 @@ def profile(username):
         return jsonify({'error': 'An error occurred while fetching the profile'}), 500
 
 @app.route('/user/<username>/edit-description', methods=['POST'])
-@limiter.limit("5/minute")  # Rate-limiting: 5 requests per minute
-@csrf.exempt  # Enforce CSRF protection
+@limiter.limit("5/minute")
+@csrf.exempt
 @token_required
 def editDescription(username):
     """Edit the description of the authenticated user's profile."""
-    # `user` is the authenticated user
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_id = user["user_id"]
         currentUser_username = user['username']
         logging.info(f"Authenticated user {currentUser_username} is attempting to edit their profile description.")
 
-        # Ensure the user is online
         if not user["isOnline"]:
             logging.warning(f"User {currentUser_username} attempted to edit description while offline.")
             return jsonify({'error': 'You are offline. Community features are not available.'}), 403
 
-        # Ensure user is editing their own profile
         target_user = crud.get_user(username=username)
         if not target_user or target_user.id != currentUser_id:
             logging.warning(f"User {currentUser_username} tried to edit the description of {username}.")
             return jsonify({'error': 'You can only edit your own description'}), 403
 
-        # Validated the new description
         new_description = request.json.get("description")
         if not new_description:
             logging.warning(f"User {currentUser_username} submitted an empty description.")
             return jsonify({'error': 'Description cannot be empty'}), 400
 
-        # Update description
         updated_user = crud.update_user_description(user_id=currentUser_id, description=new_description)
         logging.info(f"User {currentUser_username} successfully updated their description.")
         return jsonify({'message': 'Description updated successfully!', 'description': updated_user.description})
@@ -892,21 +823,19 @@ def editDescription(username):
         return jsonify({'error': 'An error occurred while updating the description'}), 500
     
 @app.route('/user/delete', methods=['POST'])
-@limiter.limit("2/minute")  # Limit requests to prevent abuse
-@csrf.exempt  # Enforce CSRF protection for added security
+@limiter.limit("2/minute")
+@csrf.exempt
 @token_required
 def delete_user():
     """
     Deletes the authenticated user's account.
     """
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_id = user["user_id"]
         currentUser_username = user['username']
         logging.info(f"Authenticated user {currentUser_username} is attempting to delete their account")
 
-        # Perform the user deletion
         response = crud.delete_user_account(currentUser_id)
         print("The response from crud deleting user is: ", response)
         if not response.get("success"):
@@ -921,11 +850,10 @@ def delete_user():
 
 """ Friend Request Endpoints """
 @app.route('/make-request', methods=['POST'])
-@csrf.exempt  # Optional if you rely solely on token auth
+@csrf.exempt
 @token_required
 def make_request():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_id = user["user_id"]
         currentUser_username = user['username']
@@ -940,17 +868,14 @@ def make_request():
             logging.error(f"User {currentUser_username} tried to request a non-existent user: {receiver_username}")
             return jsonify({'error': 'User not found.'}), 404
         
-        # check if they're already friends
         if crud.check_friendship(currentUser_id, receiver.id):
             logging.info(f"User {currentUser_username} attempted to re-friend {receiver_username}.")
             return jsonify({'error': 'You are already friends.'}), 400
-        # check if a pending request already exists
         if (crud.get_friend_requests(receiver_id=receiver.id, sender_id=currentUser_id, status="pending") or
         crud.get_friend_requests(receiver_id=currentUser_id, sender_id=receiver.id, status="pending")):
             logging.info(f"Duplicate friend request from {currentUser_username} to {receiver_username}.")
             return jsonify({'error': 'A friend request is already pending.'}), 400
         
-        # Add the new friend request
         crud.create_friend_request(currentUser_id, receiver.id)
         logging.info(f"User {currentUser_username} sent a friend request to {receiver_username}.")
 
@@ -967,11 +892,10 @@ def make_request():
 
 @app.route('/accept-friend', methods=['POST'])
 @csrf.exempt
-@limiter.limit("5/minute")  # Accept requests are less frequent
+@limiter.limit("5/minute")
 @token_required
 def accept_friend():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_id = user["user_id"]
         currentUser_username = user["username"]
@@ -1002,11 +926,10 @@ def accept_friend():
 
 @app.route('/decline-friend', methods=['POST'])
 @csrf.exempt
-@limiter.limit("5/minute")  # Decline requests are infrequent
+@limiter.limit("5/minute")
 @token_required
 def decline_friend():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_username = user["username"]
         if not user.get("isOnline"):
@@ -1033,11 +956,10 @@ def decline_friend():
         return jsonify({'error': 'An error occurred.'}), 500
 
 @app.route('/friend-requests', methods=['GET'])
-@limiter.limit("10/minute")  # Can be queried frequently
+@limiter.limit("10/minute")
 @token_required
 def get_friend_requests():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_username = user['username']
         if not user["isOnline"]:
@@ -1055,15 +977,13 @@ def get_friend_requests():
 
 """ Friends endpoints """
 @app.route('/remove-friend', methods=['POST'])
-@csrf.exempt  # CSRF exemption for token-based authentication
-@limiter.limit("5/minute")  # Rate limiting: Max 5 requests per minute
+@csrf.exempt
+@limiter.limit("5/minute")
 @token_required
 def remove_friend():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_username = user['username']
-        # Ensure user is online
         if not user["isOnline"]:
             logging.warning(f"Offline user {currentUser_username} attempted to view friend requests.")
             return jsonify({'error': 'You are offline. Community features are not available.'}), 403
@@ -1075,7 +995,6 @@ def remove_friend():
             logging.error(f"Friend user with {currentUser_username}, was not found.")
             return jsonify({'error': 'User not found.'}), 404
 
-        # Delete the friendship
         deleted_friendship = crud.delete_friendship(user['user_id'], friend_user.id)
         if deleted_friendship:
             logging.info(f"Friendship removed: {currentUser_username} -> {friend_username}")
@@ -1089,22 +1008,18 @@ def remove_friend():
         return jsonify({'error': 'An error occurred while removing the friend.'}), 500
 
 @app.route('/friends', methods=['GET'])
-@limiter.limit("10/minute")  # Rate limiting: Max 10 requests per minute
+@limiter.limit("10/minute")
 @token_required
 def get_friends():
     try:
-        # Access user payload from request.user_payload
         user = request.user_payload
         currentUser_id = user['user_id']
-        # Ensure user is online
         if not user["isOnline"]:
             logging.warning(f"Offline user {user['username']} attempted to view friend requests.")
             return jsonify({'error': 'You are offline. Community features are not available.'}), 403
 
-        # Find all friend relationships
         friendships = crud.get_friends(currentUser_id)
 
-        # Retrieve the user data for all the friends
         friend_list = [
             {
                 'id': friend.id,
