@@ -6,7 +6,7 @@ const Logout = () => {
   const { setCurrentUser } = useContext(UserContext);
   const logout = async () => {
     try {
-      const response = await fetch("http://localhost:8000/logout", {
+      const response = await fetch("http://localhost:8000/auth/logout", {
         method: "POST",
         credentials: "include",
       });

@@ -8,7 +8,7 @@ const Friends = ({ handleRequestNotification }) => {
   useEffect(() => {
     const fetchFriends = async () => {
       try {
-        const response = await fetch("http://localhost:8000/friends", {
+        const response = await fetch("http://localhost:8000/friends/", {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -33,11 +33,14 @@ const Friends = ({ handleRequestNotification }) => {
   useEffect(() => {
     const fetchFriendRequests = async () => {
       try {
-        const response = await fetch("http://localhost:8000/friend-requests", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
+        const response = await fetch(
+          "http://localhost:8000/friends/friend-requests",
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -59,12 +62,15 @@ const Friends = ({ handleRequestNotification }) => {
 
   const handleAcceptFriend = async (requester) => {
     try {
-      const response = await fetch("http://localhost:8000/accept-friend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ friend_username: requester }),
-        credentials: "include",
-      });
+      const response = await fetch(
+        "http://localhost:8000/friends/accept-friend",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ friend_username: requester }),
+          credentials: "include",
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -88,12 +94,15 @@ const Friends = ({ handleRequestNotification }) => {
 
   const handleDeclineFriend = async (requester) => {
     try {
-      const response = await fetch("http://localhost:8000/decline-friend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ friend_username: requester }),
-        credentials: "include",
-      });
+      const response = await fetch(
+        "http://localhost:8000/friends/decline-friend",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ friend_username: requester }),
+          credentials: "include",
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();

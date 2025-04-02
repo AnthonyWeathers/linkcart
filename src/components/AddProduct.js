@@ -47,14 +47,17 @@ const AddProduct = () => {
     event.preventDefault();
 
     try {
-      const response = await fetch(`http://localhost:8000/submit-product`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...submittedData,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/products/submit-product`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...submittedData,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Network response was not ok");

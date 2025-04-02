@@ -49,7 +49,7 @@ const ProductList = () => {
       params.append("page", page);
 
       const response = await fetch(
-        `http://localhost:8000/products?${params.toString()}`,
+        `http://localhost:8000/products/?${params.toString()}`,
         {
           method: "GET",
           credentials: "include",
@@ -75,21 +75,24 @@ const ProductList = () => {
 
   const handleSubmit = async (productId, updatedData) => {
     try {
-      const response = await fetch(`http://localhost:8000/edit-product`, {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: productId,
-          ...updatedData,
-          favorited: selectedProduct?.favorited || false,
-          category: Array.isArray(updatedData.category)
-            ? updatedData.category
-            : [updatedData.category],
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/products/edit-product`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: productId,
+            ...updatedData,
+            favorited: selectedProduct?.favorited || false,
+            category: Array.isArray(updatedData.category)
+              ? updatedData.category
+              : [updatedData.category],
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -113,14 +116,17 @@ const ProductList = () => {
 
   const deleteProduct = async (product) => {
     try {
-      const response = await fetch(`http://localhost:8000/delete-product`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: product.productId }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/products/delete-product`,
+        {
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: product.productId }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -149,14 +155,17 @@ const ProductList = () => {
 
   const favoriteProduct = async (product) => {
     try {
-      const response = await fetch(`http://localhost:8000/favorite-product`, {
-        method: "PUT",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: product.productId }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/products/favorite-product`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: product.productId }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();

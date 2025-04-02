@@ -15,17 +15,20 @@ const ForgotPassword = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/request-reset-code`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          email,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/auth/request-reset-code`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username,
+            email,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -52,18 +55,21 @@ const ForgotPassword = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/reset-password`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username,
-          resetCode,
-          newPassword,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/auth/reset-password`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username,
+            resetCode,
+            newPassword,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();

@@ -39,10 +39,13 @@ function App() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const response = await fetch("http://localhost:8000/current-user", {
-          method: "GET",
-          credentials: "include",
-        });
+        const response = await fetch(
+          "http://localhost:8000/user/current-user",
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
         if (response.ok) {
           const data = await response.json();
           setCurrentUser(data.user);
@@ -78,11 +81,15 @@ function App() {
     socket.on("disconnect", (reason) =>
       console.log("Socket disconnected:", reason)
     );
+    socket.on("manual-disconnect", (reason) => {
+      console.log("Socket manual disconnected: ", reason);
+    });
     socket.on("status_update", handleStatusUpdate);
 
     return () => {
       socket.off("connect");
       socket.off("disconnect");
+      socket.off("manual-disconnect");
       socket.off("status_update", handleStatusUpdate);
     };
   }, [currentUser]);
@@ -105,7 +112,6 @@ function App() {
     socket.on("reconnect_error", handleReconnectError);
 
     return () => {
-      socket.off("disconnect");
       socket.off("reconnect_attempt", handleReconnection);
       socket.off("reconnect", handleReconnect);
       socket.off("reconnect_error", handleReconnectError);
@@ -143,7 +149,7 @@ function App() {
 
   const refreshToken = async () => {
     try {
-      const response = await fetch("http://localhost:8000/refresh", {
+      const response = await fetch("http://localhost:8000/token/refresh", {
         method: "POST",
         credentials: "include",
       });
@@ -172,9 +178,8 @@ function App() {
   useEffect(() => {
     console.log("attempting to sync status on user login");
     if (currentUser) {
-      syncStatus(); // Sync online status after user logs in
+      syncStatus();
     }
-    // }, [currentUser, syncStatus]);
   }, [currentUser]);
 
   const handleDeleteAccount = async () => {
@@ -182,7 +187,7 @@ function App() {
     // if (!confirmDelete) return;
 
     try {
-      const response = await fetch("http://localhost:8000/user/delete", {
+      const response = await fetch("http://localhost:8000/profile/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -214,39 +219,41 @@ function App() {
   return (
     <div className="block-container">
       <nav className="navbar">
-        <ul>
-          {/* Hide "Add Product" link if on Add Product page */}
-          {location.pathname !== "/" && (
-            <li>
-              <Link to="/">Add Product</Link>
-            </li>
-          )}
+        {currentUser && (
+          <ul>
+            {/* Hide "Add Product" link if on Add Product page */}
+            {location.pathname !== "/" && (
+              <li>
+                <Link to="/">Add Product</Link>
+              </li>
+            )}
 
-          {/* Hide "Saved Products" link if on Saved Products page */}
-          {location.pathname !== "/saved-products" && (
-            <li>
-              <Link to="/saved-products">Saved Products</Link>
-            </li>
-          )}
+            {/* Hide "Saved Products" link if on Saved Products page */}
+            {location.pathname !== "/saved-products" && (
+              <li>
+                <Link to="/saved-products">Saved Products</Link>
+              </li>
+            )}
 
-          {/* Show "My Profile" if user is not on their own profile */}
-          {isOnline && !isOnOwnProfile && (
-            <li>
-              <Link to={`/profile/${currentUser}`}>My Profile</Link>
-            </li>
-          )}
+            {/* Show "My Profile" if user is not on their own profile */}
+            {isOnline && !isOnOwnProfile && (
+              <li>
+                <Link to={`/profile/${currentUser}`}>My Profile</Link>
+              </li>
+            )}
 
-          {/* Checkbox to toggle online mode */}
-          {<StatusToggle />}
+            {/* Checkbox to toggle online mode */}
+            {<StatusToggle />}
 
-          {/* Logout button */}
-          {
-            <li>
-              {/* <button onClick={logout}>Logout</button> */}
-              <Logout />
-            </li>
-          }
-        </ul>
+            {/* Logout button */}
+            {
+              <li>
+                {/* <button onClick={logout}>Logout</button> */}
+                <Logout />
+              </li>
+            }
+          </ul>
+        )}
       </nav>
 
       {loading ? (

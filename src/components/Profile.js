@@ -21,13 +21,16 @@ const Profile = ({
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/user/${username}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
+        const response = await fetch(
+          `http://localhost:8000/profile/${username}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          }
+        );
 
         if (response.ok) {
           const userData = await response.json();
@@ -61,7 +64,7 @@ const Profile = ({
     e.preventDefault();
     try {
       const response = await fetch(
-        `http://localhost:8000/user/${username}/edit-description`,
+        `http://localhost:8000/profile/${username}/edit-description`,
         {
           method: "POST",
           headers: {
@@ -94,39 +97,19 @@ const Profile = ({
     setIsEditing(false);
   };
 
-  const handleAddFriend = async (friendUsername) => {
-    try {
-      const response = await fetch("http://localhost:8000/add-friend", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ friend_username: friendUsername }),
-        credentials: "include",
-      });
-      const result = await response.json();
-
-      if (result.success) {
-        alert("Friend added successfully!");
-        setIsFriend(true);
-      } else {
-        alert(result.message);
-      }
-    } catch (error) {
-      console.error("Error adding friend:", error);
-    }
-  };
-
   const handleFriendRequest = async (friendUsername) => {
     try {
-      const response = await fetch("http://localhost:8000/make-request", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ friend_username: friendUsername }),
-        credentials: "include",
-      });
+      const response = await fetch(
+        "http://localhost:8000/friends/make-request",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ friend_username: friendUsername }),
+          credentials: "include",
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -146,12 +129,15 @@ const Profile = ({
 
   const handleAcceptFriend = async (friendUsername) => {
     try {
-      const response = await fetch("http://localhost:8000/accept-friend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ friend_username: friendUsername }),
-        credentials: "include",
-      });
+      const response = await fetch(
+        "http://localhost:8000/friends/accept-friend",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ friend_username: friendUsername }),
+          credentials: "include",
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -173,12 +159,15 @@ const Profile = ({
 
   const handleDeclineFriend = async (friendUsername) => {
     try {
-      const response = await fetch("http://localhost:8000/decline-friend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ friend_username: friendUsername }),
-        credentials: "include",
-      });
+      const response = await fetch(
+        "http://localhost:8000/friends/decline-friend",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ friend_username: friendUsername }),
+          credentials: "include",
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -200,12 +189,15 @@ const Profile = ({
 
   const handleRemoveFriend = async (friendUsername) => {
     try {
-      const response = await fetch("http://localhost:8000/remove-friend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ friend_username: friendUsername }),
-        credentials: "include",
-      });
+      const response = await fetch(
+        "http://localhost:8000/friends/remove-friend",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ friend_username: friendUsername }),
+          credentials: "include",
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();

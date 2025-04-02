@@ -15,7 +15,7 @@ const Register = () => {
     e.preventDefault();
     setIsLoading(true); // Set loading to true
     try {
-      const response = await fetch(`http://localhost:8000/register`, {
+      const response = await fetch(`http://localhost:8000/auth/register`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -30,7 +30,8 @@ const Register = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Login failed. Please try again.");
+        setError(errorData.error || "Login failed. Please try again.");
+        // throw new Error(errorData.error || "Login failed. Please try again.");
       }
 
       const data = await response.json(); // Wait for response JSON

@@ -19,7 +19,7 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await fetch(`http://localhost:8000/login`, {
+      const response = await fetch(`http://localhost:8000/auth/login`, {
         method: "POST",
         credentials: "include",
         headers: {

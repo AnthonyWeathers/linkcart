@@ -12,7 +12,7 @@ export const UserStatusProvider = ({ children }) => {
    */
   const syncStatus = async () => {
     try {
-      const response = await fetch("http://localhost:8000/sync-status", {
+      const response = await fetch("http://localhost:8000/auth/sync-status", {
         method: "GET",
         credentials: "include",
       });
@@ -25,7 +25,8 @@ export const UserStatusProvider = ({ children }) => {
           socket.connect();
           console.log("Socket connected after syncing status:", socket.id);
         } else if (!data.isOnline && socket.connected) {
-          socket.disconnect();
+          // socket.disconnect();
+          socket.emit("manual-disconnect");
           console.log("Socket disconnected after syncing status");
         }
       } else {
@@ -46,10 +47,13 @@ export const UserStatusProvider = ({ children }) => {
         socket.once("connect", async () => {
           console.log("Socket connected:", socket.id);
 
-          const response = await fetch("http://localhost:8000/sync-status", {
-            method: "GET",
-            credentials: "include",
-          });
+          const response = await fetch(
+            "http://localhost:8000/auth/sync-status",
+            {
+              method: "GET",
+              credentials: "include",
+            }
+          );
 
           if (response.ok) {
             const data = await response.json();
@@ -60,9 +64,10 @@ export const UserStatusProvider = ({ children }) => {
           }
         });
       } else {
+        socket.emit("manual-disconnect");
         socket.disconnect();
 
-        const response = await fetch("http://localhost:8000/sync-status", {
+        const response = await fetch("http://localhost:8000/auth/sync-status", {
           method: "GET",
           credentials: "include",
         });
@@ -85,7 +90,6 @@ export const UserStatusProvider = ({ children }) => {
     return () => {
       if (socket.connected) {
         socket.disconnect();
-        console.log("Socket disconnected on context unmount");
       }
     };
   }, []);

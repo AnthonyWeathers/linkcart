@@ -8,7 +8,7 @@ const Community = () => {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch("http://localhost:8000/messages/community", {
+      const response = await fetch("http://localhost:8000/community/messages", {
         method: "GET",
         credentials: "include",
       });
