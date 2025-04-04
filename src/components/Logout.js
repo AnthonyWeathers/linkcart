@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { UserContext } from "./UserContext";
 import socket from "./socket";
+import { toast } from "react-toastify";
 
 const Logout = () => {
   const { setCurrentUser } = useContext(UserContext);
@@ -13,7 +14,8 @@ const Logout = () => {
 
       if (response.ok) {
         const data = await response.json();
-        alert(data.message);
+        toast.success(data.message);
+        // alert(data.message);
         setCurrentUser(null);
         // setHasNewRequests(false);
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const ForgotUsername = () => {
   const [newUsername, setNewUsername] = useState("");
@@ -37,11 +38,11 @@ const ForgotUsername = () => {
 
       setError(false);
 
-      alert(data.message);
+      toast.success(data.message);
+      // alert(data.message);
 
       setRequestedUsername(true);
     } catch (error) {
-      console.error("Error sending user username to email:", error);
       setError(
         error.message ||
           "An error occurred while attempting acquire your username. Please try again."

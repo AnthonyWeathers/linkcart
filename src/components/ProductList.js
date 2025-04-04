@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ProductForm from "./ProductForm";
+import { toast } from "react-toastify";
 
 const ProductList = () => {
   const [edittingData, setEdittingData] = useState(false);
@@ -96,11 +97,13 @@ const ProductList = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error);
+        toast.error(errorData.error);
+        // throw new Error(errorData.error);
       }
 
       const data = await response.json();
-      alert("Product edited");
+      toast("Product edited successfully");
+      // alert("Product edited");
       setSavedProducts((prevProducts) =>
         prevProducts.map((product) =>
           product.productId === data.product.productId
@@ -134,7 +137,8 @@ const ProductList = () => {
       }
 
       const data = await response.json();
-      alert(data.message);
+      toast.success(data.message);
+      // alert(data.message);
       setSavedProducts((prevProducts) =>
         prevProducts.filter((p) => p.productId !== product.productId)
       );

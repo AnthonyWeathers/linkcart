@@ -25,15 +25,29 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ProtectedOnlineRoute from "./components/ProtectedOnlineRoute";
 import { UserStatusContext } from "./components/UserStatusContext";
 import { UserContext } from "./components/UserContext";
+import { FriendRequestContext } from "./components/FriendRequestContext";
+
+import { ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const [loading, setLoading] = useState(true);
-  const [hasNewRequests, setHasNewRequests] = useState(false);
+  // const [hasNewRequests, setHasNewRequests] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const { isOnline, syncStatus } = useContext(UserStatusContext);
   const { currentUser, setCurrentUser } = useContext(UserContext);
+  const { pendingRequest, setPendingRequest } =
+    useContext(FriendRequestContext);
+
+  // Maybe make a hasNewFriendRequest context, so that the Friends tab glows yellow as a new request is received
+
+  // Also amp up friend routes that emits changes, as adding a friend works fine on sender side but receiver
+  // is not indicated until they refresh or change routes, maybe utilize the emits to update the other side of the friend
+  // handling for more immediate-like responsiveness, both for making a pending request, accepting/declining a friend
+  // like how the community shows the new message someone sends for everyone on the page
 
   // Fetch the current user on component mount
   useEffect(() => {
@@ -49,14 +63,17 @@ function App() {
         if (response.ok) {
           const data = await response.json();
           setCurrentUser(data.user);
-          setHasNewRequests(data.hasNewRequests);
+          // setHasNewRequests(data.hasNewRequests);
+          setPendingRequest(data.hasNewRequests);
         } else {
-          const errorData = await response.json();
-          alert(errorData.error || "An unexpected error occurred");
-          setCurrentUser(null);
+          if (location.pathname !== "/login") {
+            const errorData = await response.json();
+            toast.error(errorData.error || "An unexpected error occurred");
+            setCurrentUser(null);
+          }
         }
       } catch (error) {
-        console.error("Error fetching current user:", error);
+        toast.error("Error fetching current user:", error);
       } finally {
         setLoading(false);
       }
@@ -115,23 +132,9 @@ function App() {
       socket.off("reconnect_attempt", handleReconnection);
       socket.off("reconnect", handleReconnect);
       socket.off("reconnect_error", handleReconnectError);
+      socket.off("new-friend-request");
     };
   }, []);
-
-  useEffect(() => {
-    // Listen for WebSocket events when a new friend request is received
-    socket.on("new_friend_request", (data) => {
-      console.log("Receiver user is: ", data.receiver_username);
-      console.log("Sender user is: ", data.sender_username);
-      if (data.receiver_username === currentUser) {
-        setHasNewRequests(true);
-      }
-    });
-
-    return () => {
-      socket.off("new_friend_request");
-    };
-  }, [currentUser]);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -155,7 +158,6 @@ function App() {
       });
 
       if (response.ok) {
-        console.log("Token refreshed successfully");
         return true;
       } else {
         const errorData = await response.json();
@@ -171,12 +173,7 @@ function App() {
     }
   };
 
-  const handleRequestNotification = () => {
-    setHasNewRequests(false);
-  };
-
   useEffect(() => {
-    console.log("attempting to sync status on user login");
     if (currentUser) {
       syncStatus();
     }
@@ -195,10 +192,11 @@ function App() {
 
       if (response.ok) {
         const data = await response.json();
-        alert(data.message);
+        toast.info(data.message);
+        // alert(data.message);
 
         setCurrentUser(null);
-        setHasNewRequests(false);
+        setPendingRequest(false);
 
         if (socket.connected) {
           socket.disconnect();
@@ -276,21 +274,11 @@ function App() {
                 <Route
                   path="/profile/:username"
                   element={
-                    <Profile
-                      handleRequestNotification={handleRequestNotification}
-                      handleDeleteAccount={handleDeleteAccount}
-                    />
+                    <Profile handleDeleteAccount={handleDeleteAccount} />
                   }
                 />
                 <Route path="/community" element={<Community />} />
-                <Route
-                  path="/friends"
-                  element={
-                    <Friends
-                      handleRequestNotification={handleRequestNotification}
-                    />
-                  }
-                />
+                <Route path="/friends" element={<Friends />} />
                 <Route path="/user-deleted" element={<UserDeleted />} />
               </Route>
             </Route>
@@ -304,7 +292,7 @@ function App() {
                 <li>
                   <Link
                     to="/friends"
-                    className={hasNewRequests ? "highlight" : ""}
+                    className={pendingRequest ? "highlight" : ""}
                   >
                     Friends
                   </Link>
@@ -321,6 +309,7 @@ function App() {
           </nav>
         </>
       )}
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }

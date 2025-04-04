@@ -1,12 +1,11 @@
 import { useEffect, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
 import { UserContext } from "./UserContext";
+import { FriendRequestContext } from "./FriendRequestContext";
+import socket from "./socket";
+import { toast } from "react-toastify";
 
-const Profile = ({
-  handleNewRequest,
-  handleRequestNotification,
-  handleDeleteAccount,
-}) => {
+const Profile = ({ handleDeleteAccount }) => {
   const { currentUser } = useContext(UserContext);
   const { username } = useParams();
   const [favoriteProducts, setFavoriteProducts] = useState([]);
@@ -17,6 +16,8 @@ const Profile = ({
 
   const [isEditing, setIsEditing] = useState(false);
   const [newDescription, setNewDescription] = useState("");
+
+  const { setPendingRequest } = useContext(FriendRequestContext);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -50,7 +51,31 @@ const Profile = ({
     };
 
     fetchUserProfile();
-  }, [username]);
+    socket.on("new-friend-request", (data) => {
+      if (data.receiver === currentUser && data.requester === username) {
+        setReceivedRequest(true);
+      }
+    });
+
+    socket.on("new-friend", (data) => {
+      if (data.requester === currentUser && data.receiver === username) {
+        setIsPending(false);
+        setIsFriend(true);
+      }
+    });
+
+    socket.on("declined-friend", (data) => {
+      if (data.requester === currentUser && data.receiver === username) {
+        setIsPending(false);
+      }
+    });
+
+    return () => {
+      socket.off("new-friend-request");
+      socket.off("new-friend");
+      socket.off("declined-friend");
+    };
+  }, [username, currentUser]);
 
   if (!user) {
     return <p>Loading...</p>;
@@ -77,7 +102,8 @@ const Profile = ({
 
       if (response.ok) {
         const data = await response.json();
-        alert(data.message);
+        toast.success(data.message);
+        // alert(data.message);
         setUser((prev) => ({ ...prev, description: data.description }));
         setIsEditing(false);
       } else {
@@ -113,7 +139,8 @@ const Profile = ({
 
       if (response.ok) {
         const result = await response.json();
-        alert(result.message);
+        toast.success(result.message);
+        // alert(result.message);
         setIsPending(true);
       } else {
         const errorData = await response.json();
@@ -141,10 +168,11 @@ const Profile = ({
 
       if (response.ok) {
         const result = await response.json();
-        alert(result.message);
+        toast.success(result.message);
+        // alert(result.message);
         setIsFriend(true);
         setReceivedRequest(false);
-        handleRequestNotification();
+        setPendingRequest(false);
       } else {
         const errorData = await response.json();
         throw new Error(
@@ -171,9 +199,10 @@ const Profile = ({
 
       if (response.ok) {
         const result = await response.json();
-        alert(result.message);
+        toast.success(result.message);
+        // alert(result.message);
         setReceivedRequest(false);
-        handleRequestNotification();
+        setPendingRequest(false);
       } else {
         const errorData = await response.json();
         throw new Error(
@@ -182,7 +211,6 @@ const Profile = ({
         );
       }
     } catch (error) {
-      console.error("Error declining friend request:", error);
       alert(error.message);
     }
   };
@@ -201,7 +229,8 @@ const Profile = ({
 
       if (response.ok) {
         const result = await response.json();
-        alert(result.message || "Friend removed successfully!");
+        toast.success(result.message);
+        // alert(result.message || "Friend removed successfully!");
         setIsFriend(false);
       } else {
         const errorData = await response.json();
@@ -210,7 +239,6 @@ const Profile = ({
         );
       }
     } catch (error) {
-      console.error("Error removing friend:", error);
       alert(error.message);
     }
   };
@@ -314,10 +342,12 @@ const Profile = ({
               cols="50"
             />
             <br />
-            <button type="submit">Submit</button>
-            <button type="button" onClick={handleCancel}>
-              Cancel
-            </button>
+            <div className="edit-description-form-btns">
+              <button type="submit">Submit</button>
+              <button type="button" onClick={handleCancel}>
+                Cancel
+              </button>
+            </div>
           </form>
         ) : (
           <p className="description-text">

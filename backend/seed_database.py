@@ -20,9 +20,9 @@ model.connect_to_db(server.app)
 with server.app.app_context():
     def create_users():
         """Create sample users using the create_user function (which hashes passwords)."""
-        alice = crud.create_user("alice", "password123", "alice@example.com")
-        bob = crud.create_user("bob", "securepass", "bob@example.com")
-        charlie = crud.create_user("charlie", "charliepass", "charlie@example.com")
+        alice = crud.create_user("alice", "alice@example.com", "password123")
+        bob = crud.create_user("bob", "bob@example.com",  "securepass")
+        charlie = crud.create_user("charlie", "charlie@example.com",  "charliepass")
         return alice, bob, charlie  # Return user objects
 
     def create_products(alice_id, bob_id, charlie_id):

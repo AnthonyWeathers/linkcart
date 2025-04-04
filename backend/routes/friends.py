@@ -39,10 +39,11 @@ def make_request():
         logging.info(f"User {currentUser_username} sent a friend request to {receiver_username}.")
 
         # Emit to the room of the receiving user with their username as the room name
-        socketio.emit('new_friend_request', {
-            'sender_username': currentUser_username,
-            'receiver_username': receiver_username
-        }, room=receiver.id)
+        socketio.emit('new-friend-request', {
+            'requester': currentUser_username,
+            'receiver': receiver_username
+        })
+        # }, room=receiver.id)
 
         return jsonify({'message': 'Friend request sent successfully!'})
     except Exception as e:
@@ -77,6 +78,11 @@ def accept_friend():
         crud.create_friendship(currentUser_id, friend.id)
         crud.delete_friend_request(friend_request[0].id)
 
+        socketio.emit('new-friend', {
+            "requester": friend.username,
+            'receiver': currentUser_username
+        })
+
         logging.info(f"User {currentUser_username} accepted a friend request from {friend_username}.")
         return jsonify({'message': 'Friend request accepted successfully!', 'friend': {'id': friend.id, 'username': friend.username}})
     except Exception as e:
@@ -102,12 +108,18 @@ def decline_friend():
             logging.error(f"User {currentUser_username} tried to decline a request from a non-existent user: {other_username}.")
             return jsonify({'error': 'User not found.'}), 404
 
-        friend_request = crud.get_friend_requests(receiver_id=user["id"], sender_id=other_user.id, status="pending")
+        friend_request = crud.get_friend_requests(receiver_id=user["user_id"], sender_id=other_user.id, status="pending")
         if not friend_request:
             logging.info(f"No pending friend request from {other_username} to {currentUser_username}.")
             return jsonify({'error': 'No pending friend request found.'}), 404
 
         crud.delete_friend_request(friend_request[0].id)
+
+        socketio.emit('declined-friend', {
+            "requester": other_username,
+            'receiver': currentUser_username
+        })
+        
         logging.info(f"User {currentUser_username} declined a friend request from {other_username}.")
         return jsonify({'message': 'Friend request declined successfully!'})
     except Exception as e:

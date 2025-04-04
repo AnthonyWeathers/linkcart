@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const ForgotPassword = () => {
   const [username, setUsername] = useState("");
@@ -37,7 +38,8 @@ const ForgotPassword = () => {
 
       const data = await response.json();
 
-      alert(data.message);
+      toast.info(data.message);
+      // alert(data.message);
 
       setResettingPassword(true);
     } catch (error) {
@@ -76,7 +78,8 @@ const ForgotPassword = () => {
         throw new Error(errorData.error || "Failed to reset password.");
       }
 
-      alert("Password reset successful! You can now log in.");
+      toast.success("Password reset successful! You can now log in.");
+      // alert("Password reset successful! You can now log in.");
       navigate("/login");
     } catch (error) {
       console.error("Error resetting password:", error);

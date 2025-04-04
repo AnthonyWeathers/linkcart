@@ -383,6 +383,15 @@ ul {
   margin-left: 20px; /* Adds space between header and button */
 }
 
+.edit-description-form-btns {
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.edit-description-form-btns > button {
+  width: 30%;
+}
+
 /* Description form styling */
 textarea {
   width: 100%;

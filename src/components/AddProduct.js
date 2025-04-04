@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ProductForm from "./ProductForm";
+import { toast } from "react-toastify";
 
 const AddProduct = () => {
   const [submittedData, setSubmittedData] = useState(null);
@@ -21,7 +22,8 @@ const AddProduct = () => {
 
   const clearForm = () => {
     setSubmittedData(null);
-    alert("Data cleared");
+    toast.info("Data cleared");
+    // alert("Data cleared");
   };
 
   const handleSubmit = (formData) => {
@@ -37,10 +39,6 @@ const AddProduct = () => {
     });
 
     setIsEditing(false);
-    console.log("Form Data:", {
-      ...formData,
-      category: normalizedCategory,
-    });
   };
 
   const confirmData = async (event) => {
@@ -65,7 +63,8 @@ const AddProduct = () => {
 
       const data = await response.json();
       if (data.save) {
-        alert(data.message);
+        toast.success(data.message);
+        // alert(data.message);
         clearForm();
       } else {
         alert(data.error);

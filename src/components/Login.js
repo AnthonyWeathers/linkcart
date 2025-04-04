@@ -1,6 +1,7 @@
 import { useState, useContext } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { UserContext } from "./UserContext";
+import { toast } from "react-toastify";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -10,7 +11,6 @@ const Login = () => {
   const navigate = useNavigate();
 
   const location = useLocation();
-  const alertMessage = location.state?.message;
   const { setCurrentUser } = useContext(UserContext);
 
   const handleLogin = async (e) => {
@@ -37,7 +37,8 @@ const Login = () => {
       }
 
       const data = await response.json();
-      alert(data.message);
+      toast.success(data.message);
+      // alert(data.message);
       setCurrentUser(data.username);
 
       navigate("/");
@@ -51,7 +52,6 @@ const Login = () => {
 
   return (
     <div className="form-container">
-      {alertMessage && <div className="alert">{alertMessage}</div>}
       <div className="form-navigation">
         <p>New here?</p>{" "}
         <Link to="/register" className="form-link">

@@ -6,6 +6,7 @@ import reportWebVitals from "./reportWebVitals";
 import { BrowserRouter } from "react-router-dom";
 import { UserStatusProvider } from "./components/UserStatusContext";
 import { UserProvider } from "./components/UserContext";
+import { FriendRequestProvider } from "./components/FriendRequestContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -13,7 +14,9 @@ root.render(
     <BrowserRouter>
       <UserProvider>
         <UserStatusProvider>
-          <App />
+          <FriendRequestProvider>
+            <App />
+          </FriendRequestProvider>
         </UserStatusProvider>
       </UserProvider>
     </BrowserRouter>

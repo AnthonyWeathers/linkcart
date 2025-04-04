@@ -23,11 +23,9 @@ export const UserStatusProvider = ({ children }) => {
 
         if (data.isOnline && !socket.connected) {
           socket.connect();
-          console.log("Socket connected after syncing status:", socket.id);
         } else if (!data.isOnline && socket.connected) {
           // socket.disconnect();
           socket.emit("manual-disconnect");
-          console.log("Socket disconnected after syncing status");
         }
       } else {
         const errorData = await response.json();
@@ -45,8 +43,6 @@ export const UserStatusProvider = ({ children }) => {
         socket.connect();
 
         socket.once("connect", async () => {
-          console.log("Socket connected:", socket.id);
-
           const response = await fetch(
             "http://localhost:8000/auth/sync-status",
             {
@@ -58,7 +54,6 @@ export const UserStatusProvider = ({ children }) => {
           if (response.ok) {
             const data = await response.json();
             setIsOnline(data.isOnline);
-            console.log("Online status synced:", data.isOnline);
           } else {
             console.error("Failed to sync status");
           }
@@ -75,7 +70,6 @@ export const UserStatusProvider = ({ children }) => {
         if (response.ok) {
           const data = await response.json();
           setIsOnline(data.isOnline);
-          console.log("Offline status synced:", data.isOnline);
         } else {
           console.error("Failed to sync status");
         }

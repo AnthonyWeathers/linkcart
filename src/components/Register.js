@@ -1,6 +1,7 @@
 import { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { UserContext } from "./UserContext";
+import { toast } from "react-toastify";
 
 const Register = () => {
   const [username, setUsername] = useState("");
@@ -36,7 +37,8 @@ const Register = () => {
 
       const data = await response.json(); // Wait for response JSON
 
-      alert(data.message);
+      // alert(data.message);
+      toast.success(data.message);
       setCurrentUser(data.username);
 
       navigate("/"); // Redirect to the Add Product route

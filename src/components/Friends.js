@@ -1,9 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { Link } from "react-router-dom";
+import socket from "./socket";
+import { UserContext } from "./UserContext";
+import { FriendRequestContext } from "./FriendRequestContext";
+import { toast } from "react-toastify";
 
-const Friends = ({ handleRequestNotification }) => {
+const Friends = () => {
   const [friends, setFriends] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
+  const { currentUser } = useContext(UserContext);
+  const { setPendingRequest } = useContext(FriendRequestContext);
 
   useEffect(() => {
     const fetchFriends = async () => {
@@ -27,10 +33,6 @@ const Friends = ({ handleRequestNotification }) => {
       }
     };
 
-    fetchFriends();
-  }, []);
-
-  useEffect(() => {
     const fetchFriendRequests = async () => {
       try {
         const response = await fetch(
@@ -57,8 +59,24 @@ const Friends = ({ handleRequestNotification }) => {
       }
     };
 
+    fetchFriends();
     fetchFriendRequests();
   }, []);
+
+  useEffect(() => {
+    socket.on("new-friend", (data) => {
+      if (
+        data.requester === currentUser &&
+        friendRequests.includes(data.receiver)
+      ) {
+        setFriends((prev) => [...prev, data.receiver]);
+      }
+    });
+
+    return () => {
+      socket.off("new-friend");
+    };
+  }, [currentUser, friendRequests]);
 
   const handleAcceptFriend = async (requester) => {
     try {
@@ -74,12 +92,13 @@ const Friends = ({ handleRequestNotification }) => {
 
       if (response.ok) {
         const result = await response.json();
-        alert(result.message);
+        toast.success(result.message);
+        // alert(result.message);
         setFriendRequests((prev) =>
           prev.filter((username) => username !== requester)
         );
         setFriends((prev) => [...prev, result.friend]);
-        handleRequestNotification();
+        setPendingRequest(false);
       } else {
         const errorData = await response.json();
         throw new Error(
@@ -109,8 +128,9 @@ const Friends = ({ handleRequestNotification }) => {
         setFriendRequests((prev) =>
           prev.filter((username) => username !== requester)
         );
-        alert(result.message);
-        handleRequestNotification();
+        toast.success(result.message);
+        // alert(result.message);
+        setPendingRequest(false);
       } else {
         const errorData = await response.json();
         throw new Error(
@@ -119,7 +139,6 @@ const Friends = ({ handleRequestNotification }) => {
         );
       }
     } catch (error) {
-      console.error("Error declining friend request:", error);
       alert(error.message);
     }
   };

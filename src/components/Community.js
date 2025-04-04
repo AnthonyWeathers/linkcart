@@ -30,7 +30,6 @@ const Community = () => {
 
   useEffect(() => {
     socket.on("message_response", (data) => {
-      console.log("Received message from server: ", data);
       if (data.success) {
         setMessages((prevMessages) => [
           ...prevMessages,
