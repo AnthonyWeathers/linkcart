@@ -5,7 +5,6 @@ import crud
 import logging
 
 friends_bp = Blueprint('friends', __name__, url_prefix='/friends')
-# routes are /friends/[]
 
 """ Friend Request Endpoints """
 @friends_bp.route('/make-request', methods=['POST'])
@@ -38,12 +37,10 @@ def make_request():
         crud.create_friend_request(currentUser_id, receiver.id)
         logging.info(f"User {currentUser_username} sent a friend request to {receiver_username}.")
 
-        # Emit to the room of the receiving user with their username as the room name
-        socketio.emit('new-friend-request', {
-            'requester': currentUser_username,
-            'receiver': receiver_username
+        socketio.emit("new-friend-request", {
+            "requester": currentUser_username,
+            "receiver": receiver_username
         })
-        # }, room=receiver.id)
 
         return jsonify({'message': 'Friend request sent successfully!'})
     except Exception as e:
@@ -80,7 +77,8 @@ def accept_friend():
 
         socketio.emit('new-friend', {
             "requester": friend.username,
-            'receiver': currentUser_username
+            'receiver': {"id": currentUser_id, "username": currentUser_username}
+            
         })
 
         logging.info(f"User {currentUser_username} accepted a friend request from {friend_username}.")
@@ -168,6 +166,11 @@ def remove_friend():
 
         deleted_friendship = crud.delete_friendship(user['user_id'], friend_user.id)
         if deleted_friendship:
+            
+            socketio.emit('removed-friend', {
+                'remover': {"id": user['id'], "username": currentUser_username},
+                'removed': friend_username,
+            })
             logging.info(f"Friendship removed: {currentUser_username} -> {friend_username}")
             return jsonify({'message': 'Friend removed successfully!'}), 200
     

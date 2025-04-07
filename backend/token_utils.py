@@ -7,8 +7,6 @@ import jwt
 
 token_bp = Blueprint('token', __name__, url_prefix='/token')
 
-#do /token/refresh for get refreshed token endpoint
-
 def create_jwt(user, app):
     """Generates a JWT token for a user."""
     payload = {
@@ -35,11 +33,10 @@ def token_required(f):
     """Unified token decorator for Flask routes and Socket.IO events."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        from flask import current_app  # Import inside to avoid circular imports
+        from flask import current_app
         
         app = current_app
 
-        # Check if it's a Socket.IO connection attempt
         if request.path.startswith('/socket.io') and request.method == 'GET':
             token = request.cookies.get('jwtToken')
             logging.debug(f"Token from initial Socket.IO connection: {token}")
@@ -49,7 +46,6 @@ def token_required(f):
                 disconnect()
                 return jsonify({"error": "Token is required for Socket.IO"}), 401
             
-        # For other API requests (non-Socket.IO)
         elif request and request.cookies.get('jwtToken') and request.method in ['GET', 'POST', 'PUT', 'DELETE']:
             token = request.cookies.get('jwtToken')
             logging.debug(f"Token from API cookies: {token}")
@@ -69,10 +65,9 @@ def token_required(f):
             logging.warning("Invalid or expired token")
             return jsonify({"error": "Invalid or expired token"}), 401
 
-        # Attach the user payload based on request type
-        if request.path.startswith('/socket.io'):  # For Socket.IO events
+        if request.path.startswith('/socket.io'):
             kwargs['user'] = user_payload
-        else:  # For REST API requests
+        else:
             request.user_payload = user_payload
 
         return f(*args, **kwargs)
@@ -97,7 +92,6 @@ def refresh_token(user=None):
             new_access_token, 
             httponly=True, 
             secure=False,  # False for local dev; True for production with HTTPS
-            # secure=True,
             samesite='Strict') # or Lax
         return response
     

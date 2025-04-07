@@ -6,10 +6,6 @@ export const UserStatusContext = createContext();
 export const UserStatusProvider = ({ children }) => {
   const [isOnline, setIsOnline] = useState(false);
 
-  /*
-   * Sync user's online status with the backend
-   * Can be called on login or to ensure frontend aligns with backend state
-   */
   const syncStatus = async () => {
     try {
       const response = await fetch("http://localhost:8000/auth/sync-status", {
@@ -24,7 +20,6 @@ export const UserStatusProvider = ({ children }) => {
         if (data.isOnline && !socket.connected) {
           socket.connect();
         } else if (!data.isOnline && socket.connected) {
-          // socket.disconnect();
           socket.emit("manual-disconnect");
         }
       } else {
@@ -36,7 +31,6 @@ export const UserStatusProvider = ({ children }) => {
     }
   };
 
-  //Toggle user's online status manually (via checkbox or UI toggle)
   const toggleStatus = async () => {
     try {
       if (!isOnline) {
@@ -79,7 +73,6 @@ export const UserStatusProvider = ({ children }) => {
     }
   };
 
-  //Effect to handle socket cleanup when the component unmounts
   useEffect(() => {
     return () => {
       if (socket.connected) {

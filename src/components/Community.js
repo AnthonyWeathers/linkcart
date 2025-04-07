@@ -26,9 +26,7 @@ const Community = () => {
 
   useEffect(() => {
     fetchMessages();
-  }, []);
 
-  useEffect(() => {
     socket.on("message_response", (data) => {
       if (data.success) {
         setMessages((prevMessages) => [
@@ -64,10 +62,8 @@ const Community = () => {
     <div className="community-container">
       <h1 className="community-header">Community Messages</h1>
 
-      {/* Messages display */}
       <div className="messages-container">
         {messages.map((msg, index) => {
-          // Check if this is the first message or the username has changed
           const showUsername =
             index === 0 || msg.username !== messages[index - 1].username;
 
@@ -95,7 +91,6 @@ const Community = () => {
         })}
       </div>
 
-      {/* Message input form */}
       <form className="message-input" onSubmit={sendMessage}>
         <input
           type="text"

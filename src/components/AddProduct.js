@@ -23,7 +23,6 @@ const AddProduct = () => {
   const clearForm = () => {
     setSubmittedData(null);
     toast.info("Data cleared");
-    // alert("Data cleared");
   };
 
   const handleSubmit = (formData) => {
@@ -64,7 +63,6 @@ const AddProduct = () => {
       const data = await response.json();
       if (data.save) {
         toast.success(data.message);
-        // alert(data.message);
         clearForm();
       } else {
         alert(data.error);
@@ -99,7 +97,6 @@ const AddProduct = () => {
         </div>
       )}
 
-      {/* Conditionally render the submitted data */}
       {submittedData && !isEditing && (
         <div className="submitted-data">
           <h2>Submitted Data:</h2>

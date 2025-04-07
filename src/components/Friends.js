@@ -64,17 +64,33 @@ const Friends = () => {
   }, []);
 
   useEffect(() => {
+    socket.on("new-friend-request", (data) => {
+      console.log("Entered new-friend-request socket handler in profile page");
+      if (data.receiver === currentUser) {
+        setFriendRequests((prev) => {
+          if (!prev.includes(data.requester)) {
+            return [...prev, data.requester];
+          }
+          return prev;
+        });
+        setPendingRequest(true);
+      }
+    });
     socket.on("new-friend", (data) => {
-      if (
-        data.requester === currentUser &&
-        friendRequests.includes(data.receiver)
-      ) {
+      if (data.requester === currentUser) {
         setFriends((prev) => [...prev, data.receiver]);
+      }
+    });
+    socket.on("removed-friend", (data) => {
+      if (data.removed === currentUser) {
+        setFriends((prev) => [...prev, data.remover]);
       }
     });
 
     return () => {
       socket.off("new-friend");
+      socket.off("new-friend-request");
+      socket.off("removed-friend");
     };
   }, [currentUser, friendRequests]);
 
@@ -129,7 +145,6 @@ const Friends = () => {
           prev.filter((username) => username !== requester)
         );
         toast.success(result.message);
-        // alert(result.message);
         setPendingRequest(false);
       } else {
         const errorData = await response.json();

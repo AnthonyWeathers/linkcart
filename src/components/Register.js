@@ -8,19 +8,19 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // Track loading state
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { setCurrentUser } = useContext(UserContext);
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setIsLoading(true); // Set loading to true
+    setIsLoading(true);
     try {
       const response = await fetch(`http://localhost:8000/auth/register`, {
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json", // Set the Content-Type header
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           username,
@@ -32,24 +32,22 @@ const Register = () => {
       if (!response.ok) {
         const errorData = await response.json();
         setError(errorData.error || "Login failed. Please try again.");
-        // throw new Error(errorData.error || "Login failed. Please try again.");
       }
 
-      const data = await response.json(); // Wait for response JSON
+      const data = await response.json();
 
-      // alert(data.message);
       toast.success(data.message);
       setCurrentUser(data.username);
 
-      navigate("/"); // Redirect to the Add Product route
+      navigate("/");
     } catch (error) {
       console.error("Error registering new user:", error);
       setError(
         error.message ||
           "An error occurred while registering. Please try again."
-      ); // Set a general error message
+      );
     } finally {
-      setIsLoading(false); // Set loading to false once fetch is complete
+      setIsLoading(false);
     }
   };
 

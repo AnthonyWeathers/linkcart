@@ -33,23 +33,15 @@ import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const [loading, setLoading] = useState(true);
-  // const [hasNewRequests, setHasNewRequests] = useState(false);
   const location = useLocation();
-  // const navigate = useNavigate();
 
   const { isOnline, syncStatus } = useContext(UserStatusContext);
   const { currentUser, setCurrentUser } = useContext(UserContext);
   const { pendingRequest, setPendingRequest } =
     useContext(FriendRequestContext);
 
-  // Maybe make a hasNewFriendRequest context, so that the Friends tab glows yellow as a new request is received
-
-  // Also amp up friend routes that emits changes, as adding a friend works fine on sender side but receiver
-  // is not indicated until they refresh or change routes, maybe utilize the emits to update the other side of the friend
-  // handling for more immediate-like responsiveness, both for making a pending request, accepting/declining a friend
-  // like how the community shows the new message someone sends for everyone on the page
-
-  // Fetch the current user on component mount
+  // Fetch the current user on component mount, think on this, this runs only once when app is opened, maybe this can be changed
+  // to a function to be called when needed
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -63,7 +55,6 @@ function App() {
         if (response.ok) {
           const data = await response.json();
           setCurrentUser(data.user);
-          // setHasNewRequests(data.hasNewRequests);
           setPendingRequest(data.hasNewRequests);
         } else {
           if (location.pathname !== "/login") {
@@ -82,7 +73,6 @@ function App() {
     fetchCurrentUser();
   }, []);
 
-  // Handle socket event listeners
   useEffect(() => {
     const handleStatusUpdate = (data) => {
       if (data.username === currentUser) {
@@ -112,31 +102,6 @@ function App() {
   }, [currentUser]);
 
   useEffect(() => {
-    const handleReconnection = () => {
-      console.log("Attempting to reconnect...");
-    };
-
-    const handleReconnect = () => {
-      console.log("Reconnected successfully");
-    };
-
-    const handleReconnectError = (error) => {
-      console.error("Reconnection failed:", error);
-    };
-
-    socket.on("reconnect_attempt", handleReconnection);
-    socket.on("reconnect", handleReconnect);
-    socket.on("reconnect_error", handleReconnectError);
-
-    return () => {
-      socket.off("reconnect_attempt", handleReconnection);
-      socket.off("reconnect", handleReconnect);
-      socket.off("reconnect_error", handleReconnectError);
-      socket.off("new-friend-request");
-    };
-  }, []);
-
-  useEffect(() => {
     const interval = setInterval(async () => {
       try {
         await refreshToken();
@@ -145,9 +110,9 @@ function App() {
           "Failed to refresh token. User may need to log in again."
         );
       }
-    }, 15 * 60 * 1000); // 15-minute interval
+    }, 15 * 60 * 1000);
 
-    return () => clearInterval(interval); // Clean up on unmount
+    return () => clearInterval(interval);
   }, []);
 
   const refreshToken = async () => {
@@ -180,9 +145,6 @@ function App() {
   }, [currentUser]);
 
   const handleDeleteAccount = async () => {
-    // const confirmDelete = window.confirm("Are you sure you want to delete your account? This action cannot be undone.");
-    // if (!confirmDelete) return;
-
     try {
       const response = await fetch("http://localhost:8000/profile/delete", {
         method: "POST",
@@ -193,7 +155,6 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         toast.info(data.message);
-        // alert(data.message);
 
         setCurrentUser(null);
         setPendingRequest(false);
@@ -211,7 +172,6 @@ function App() {
     }
   };
 
-  // Check if user is on their own profile
   const isOnOwnProfile = location.pathname === `/profile/${currentUser}`;
 
   return (
@@ -219,34 +179,28 @@ function App() {
       <nav className="navbar">
         {currentUser && (
           <ul>
-            {/* Hide "Add Product" link if on Add Product page */}
             {location.pathname !== "/" && (
               <li>
                 <Link to="/">Add Product</Link>
               </li>
             )}
 
-            {/* Hide "Saved Products" link if on Saved Products page */}
             {location.pathname !== "/saved-products" && (
               <li>
                 <Link to="/saved-products">Saved Products</Link>
               </li>
             )}
 
-            {/* Show "My Profile" if user is not on their own profile */}
             {isOnline && !isOnOwnProfile && (
               <li>
                 <Link to={`/profile/${currentUser}`}>My Profile</Link>
               </li>
             )}
 
-            {/* Checkbox to toggle online mode */}
             {<StatusToggle />}
 
-            {/* Logout button */}
             {
               <li>
-                {/* <button onClick={logout}>Logout</button> */}
                 <Logout />
               </li>
             }
@@ -284,10 +238,8 @@ function App() {
             </Route>
           </Routes>
 
-          {/* Secondary Navbar */}
           <nav className="footer-navbar">
             <ul>
-              {/* Friends page link */}
               {currentUser && isOnline && (
                 <li>
                   <Link
@@ -299,7 +251,6 @@ function App() {
                 </li>
               )}
 
-              {/* Community page link */}
               {currentUser && isOnline && (
                 <li>
                   <Link to="/community">Community</Link>

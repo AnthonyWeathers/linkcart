@@ -5,7 +5,6 @@ import crud
 import logging
 
 community_bp = Blueprint('community', __name__, url_prefix='/community')
-# routes are /community/[]
 
 """ Community Endpoints """
 @community_bp.route('/messages', methods=['GET'])
@@ -61,7 +60,7 @@ def handle_message(*args, **kwargs):
             'username': user['username'],
             'content': message.content,
             'timestamp': message.timestamp.isoformat()
-        }, to='community') # / or community
+        }, to='community')
 
     except Exception as e:
         logging.exception("Unexpected error in adding new message")

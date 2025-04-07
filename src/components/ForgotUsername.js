@@ -39,7 +39,6 @@ const ForgotUsername = () => {
       setError(false);
 
       toast.success(data.message);
-      // alert(data.message);
 
       setRequestedUsername(true);
     } catch (error) {

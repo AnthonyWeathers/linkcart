@@ -16,8 +16,6 @@ const ProductList = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const [totalProducts, setTotalProducts] = useState(0);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -98,12 +96,11 @@ const ProductList = () => {
       if (!response.ok) {
         const errorData = await response.json();
         toast.error(errorData.error);
-        // throw new Error(errorData.error);
+        return;
       }
 
       const data = await response.json();
       toast("Product edited successfully");
-      // alert("Product edited");
       setSavedProducts((prevProducts) =>
         prevProducts.map((product) =>
           product.productId === data.product.productId
@@ -138,7 +135,6 @@ const ProductList = () => {
 
       const data = await response.json();
       toast.success(data.message);
-      // alert(data.message);
       setSavedProducts((prevProducts) =>
         prevProducts.filter((p) => p.productId !== product.productId)
       );
@@ -224,104 +220,99 @@ const ProductList = () => {
     return (
       <div className="product-list">
         {products
-          .filter((product) => product !== "") // Exclude empty spots
-          .map(
-            (
-              product // add a line here to show the favorited status of each product, start as just a line, later maybe a star
-            ) => (
-              <div
-                key={product.productId}
-                className={`product-container product-item ${
-                  product.favorited ? "favorited" : ""
-                }`}
-              >
-                {!(
-                  selectedProduct &&
-                  edittingData &&
-                  selectedProduct.productId === product.productId
-                ) ? (
-                  <div className="product-item">
-                    <div className="product-header">
-                      <h2 className="product-name">
-                        {product.productName}
-                        <button
-                          title={product.favorited ? "Unfavorite" : "Favorite"}
-                          className={`favorite-star ${
-                            product.favorited ? "filled" : "empty"
-                          }`}
-                          onClick={() => favoriteProduct(product)}
-                          aria-label={
-                            product.favorited ? "Unfavorite" : "Favorite"
-                          }
-                        >
-                          {product.favorited ? "★" : "☆"}
-                        </button>
-                      </h2>
-                    </div>
-                    <p className="product-url">
-                      URL:{" "}
-                      <a
-                        href={product.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+          .filter((product) => product !== "")
+          .map((product) => (
+            <div
+              key={product.productId}
+              className={`product-container product-item ${
+                product.favorited ? "favorited" : ""
+              }`}
+            >
+              {!(
+                selectedProduct &&
+                edittingData &&
+                selectedProduct.productId === product.productId
+              ) ? (
+                <div className="product-item">
+                  <div className="product-header">
+                    <h2 className="product-name">
+                      {product.productName}
+                      <button
+                        title={product.favorited ? "Unfavorite" : "Favorite"}
+                        className={`favorite-star ${
+                          product.favorited ? "filled" : "empty"
+                        }`}
+                        onClick={() => favoriteProduct(product)}
+                        aria-label={
+                          product.favorited ? "Unfavorite" : "Favorite"
+                        }
                       >
-                        {product.url}
-                      </a>
-                    </p>
-                    <p className="product-price">
-                      Price: {formatPrice(product.price)}
-                    </p>
-                    <p className="product-category">
-                      Categories:{" "}
-                      {Array.isArray(product.category)
-                        ? product.category.join(", ")
-                        : "No categories"}
-                    </p>
-                    <button
-                      className="product-button"
-                      onClick={() => deleteProduct(product)}
-                    >
-                      Delete
-                    </button>
-                    <button
-                      className="product-button"
-                      onClick={() => editProduct(product)}
-                    >
-                      Edit
-                    </button>
+                        {product.favorited ? "★" : "☆"}
+                      </button>
+                    </h2>
                   </div>
-                ) : (
-                  <div className="product-item">
-                    <ProductForm
-                      initialData={{
-                        url: selectedProduct.url,
-                        price: selectedProduct.price,
-                        productName: selectedProduct.productName,
-                        category: Array.isArray(selectedProduct?.category)
-                          ? selectedProduct.category
-                          : selectedProduct?.category
-                          ? [selectedProduct.category]
-                          : [],
-                      }}
-                      handleSubmit={(updatedData) =>
-                        handleSubmit(selectedProduct.productId, updatedData)
-                      }
-                      categories={categories}
-                      showCancelButton={true}
-                      handleCancel={handleCancel}
-                    />
-                  </div>
-                )}
-              </div>
-            )
-          )}
+                  <p className="product-url">
+                    URL:{" "}
+                    <a
+                      href={product.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {product.url}
+                    </a>
+                  </p>
+                  <p className="product-price">
+                    Price: {formatPrice(product.price)}
+                  </p>
+                  <p className="product-category">
+                    Categories:{" "}
+                    {Array.isArray(product.category)
+                      ? product.category.join(", ")
+                      : "No categories"}
+                  </p>
+                  <button
+                    className="product-button"
+                    onClick={() => deleteProduct(product)}
+                  >
+                    Delete
+                  </button>
+                  <button
+                    className="product-button"
+                    onClick={() => editProduct(product)}
+                  >
+                    Edit
+                  </button>
+                </div>
+              ) : (
+                <div className="product-item">
+                  <ProductForm
+                    initialData={{
+                      url: selectedProduct.url,
+                      price: selectedProduct.price,
+                      productName: selectedProduct.productName,
+                      category: Array.isArray(selectedProduct?.category)
+                        ? selectedProduct.category
+                        : selectedProduct?.category
+                        ? [selectedProduct.category]
+                        : [],
+                    }}
+                    handleSubmit={(updatedData) =>
+                      handleSubmit(selectedProduct.productId, updatedData)
+                    }
+                    categories={categories}
+                    showCancelButton={true}
+                    handleCancel={handleCancel}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
       </div>
     );
   };
 
   return (
     <div className="products-container">
-      {/* Dropdown for sorting */}
       <div className="sort-dropdowns">
         <select
           className="sort-select"
@@ -355,7 +346,6 @@ const ProductList = () => {
           </select>
         )}
 
-        {/* Category Dropdown - Shown if sorting by category */}
         {sortBy === "category" && (
           <select
             className="sort-select"
@@ -382,7 +372,6 @@ const ProductList = () => {
           </select>
         )}
 
-        {/* Min/Max Price Inputs - Shown if sorting by price */}
         {sortBy === "price" && (
           <>
             <input
@@ -401,7 +390,6 @@ const ProductList = () => {
         )}
       </div>
 
-      {/* Apply Sorting Button */}
       <button
         className="apply-sort-button"
         onClick={applySorting}

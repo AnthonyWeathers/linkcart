@@ -7,18 +7,6 @@ import re
 
 products_bp = Blueprint('products', __name__, url_prefix='/products')
 # routes are /products/[]
-
-""" Products Endpoints """
-def sanitize_price(price_input):
-    """
-    Convert user-provided price input to a float by removing invalid characters.
-    Allows only numbers and decimals.
-    """
-    sanitized = re.sub(r'[^\d.]', '', price_input)
-    try:
-        return float(sanitized)
-    except ValueError:
-        return None
     
 @products_bp.route("/submit-product", methods=["POST"])
 @csrf.exempt
@@ -41,12 +29,10 @@ def save():
                 # logger.warning("User %s submitted incomplete product data", user["id"])
                 # return jsonify({"error": "Missing required fields"}), 400
 
-        cleaned_price = sanitize_price(price)
-
-        if cleaned_price is None:
+        if price is None:
             return jsonify({"error": "Invalid price format"}), 400
 
-        product = crud.create_product(currentUser_id, url, cleaned_price, productName, category)
+        product = crud.create_product(currentUser_id, url, price, productName, category)
         if product:
             logging.info("User %s successfully saved a product", currentUser_id)
             return jsonify({
@@ -178,15 +164,15 @@ def editProduct():
             logging.warning("User %s attempted to edit an unauthorized product", currentUser_id)
             return jsonify({"error": "Access denied"}), 403
         
-        cleaned_price = sanitize_price(request.json.get("price"))
+        price = request.json.get("price")
 
-        if cleaned_price is None:
+        if price is None:
             return jsonify({"error": "Invalid price format"}), 400
 
         updated_product = crud.update_product(
             product_id, 
             url=request.json.get("url"), 
-            price=cleaned_price, 
+            price=price, 
             productName=request.json.get("productName"), 
             category=request.json.get("category")
         )

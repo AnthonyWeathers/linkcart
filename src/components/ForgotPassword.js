@@ -39,7 +39,6 @@ const ForgotPassword = () => {
       const data = await response.json();
 
       toast.info(data.message);
-      // alert(data.message);
 
       setResettingPassword(true);
     } catch (error) {
@@ -79,7 +78,6 @@ const ForgotPassword = () => {
       }
 
       toast.success("Password reset successful! You can now log in.");
-      // alert("Password reset successful! You can now log in.");
       navigate("/login");
     } catch (error) {
       console.error("Error resetting password:", error);

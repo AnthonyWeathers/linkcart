@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 
 const ProductForm = ({
   initialData,
@@ -23,7 +24,14 @@ const ProductForm = ({
 
   const handleLocalSubmit = (e) => {
     e.preventDefault();
-    handleSubmit({ url, price, productName, category });
+    const productPrice = parseFloat(price);
+    const isTwoDecimalsOrLess =
+      Math.floor(productPrice * 100) === productPrice * 100;
+    if (!isTwoDecimalsOrLess) {
+      toast.error("Price can only up to two decimal places (eg. 1.04)");
+    } else {
+      handleSubmit({ url, price, productName, category });
+    }
   };
 
   return (

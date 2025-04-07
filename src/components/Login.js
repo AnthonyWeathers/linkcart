@@ -10,7 +10,6 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const location = useLocation();
   const { setCurrentUser } = useContext(UserContext);
 
   const handleLogin = async (e) => {
@@ -38,7 +37,6 @@ const Login = () => {
 
       const data = await response.json();
       toast.success(data.message);
-      // alert(data.message);
       setCurrentUser(data.username);
 
       navigate("/");
@@ -58,6 +56,7 @@ const Login = () => {
           Register here
         </Link>
       </div>
+      {error && <p className="error-text">{error}</p>}
       <h2 className="form-title">Login</h2>
       <form onSubmit={handleLogin} className="form">
         <input
@@ -87,7 +86,6 @@ const Login = () => {
         <button type="submit" className="form-button" disabled={isLoading}>
           {isLoading ? "Logging in..." : "Login"}
         </button>
-        {error && <p className="error-text">{error}</p>}
       </form>
     </div>
   );

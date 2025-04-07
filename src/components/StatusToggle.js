@@ -13,7 +13,7 @@ function StatusToggle() {
           type="checkbox"
           checked={isOnline}
           onChange={toggleStatus}
-          disabled={!currentUser} // Disable if no user is logged in
+          disabled={!currentUser}
         />
         Online
       </label>

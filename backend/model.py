@@ -1,9 +1,8 @@
 import os
 from flask_sqlalchemy import SQLAlchemy
-# changed from JSON to JSONB for better querying
-from sqlalchemy.dialects.postgresql import JSONB # PostgreSQL only
 
-from datetime import datetime, timedelta
+from sqlalchemy.dialects.postgresql import JSONB
+
 import secrets
 
 db = SQLAlchemy()
@@ -25,11 +24,10 @@ class User(db.Model):
     description = db.Column(db.Text, nullable=True, default="This user has not added a description yet.")
     products = db.relationship("Products", backref = "user", lazy = True)
     favorited_products = db.relationship("Products", secondary=favorited_products, backref="favorited_by_users")
-    isOnline = db.Column(db.Boolean, nullable = False, default=True) # tracks if user is in online or offline mode
+    isOnline = db.Column(db.Boolean, nullable = False, default=True)
 
-    # Password reset fields
-    reset_code_hash = db.Column(db.String(255), nullable=True)  # Store hashed reset code
-    reset_code_expiry = db.Column(db.DateTime, nullable=True)   # Expiry time
+    reset_code_hash = db.Column(db.String(255), nullable=True)
+    reset_code_expiry = db.Column(db.DateTime, nullable=True)
 
     # Perhaps remove as is not used
     def to_dict(self):
@@ -48,10 +46,10 @@ class Products(db.Model):
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable = False)
     url = db.Column(db.String(500) , nullable = False)
-    price = db.Column(db.Float, nullable=False)  # Updated to Float
+    price = db.Column(db.Float, nullable=False)
     productName = db.Column(db.String(255))
-    category = db.Column(JSONB, nullable=False, default=list) # Now supports multiple categories
-    favorited = db.Column(db.Boolean , nullable = False, default=False)  # Use db.Boolean with a default value
+    category = db.Column(JSONB, nullable=False, default=list)
+    favorited = db.Column(db.Boolean , nullable = False, default=False)
 
     def to_dict(self):
         """Convert Video object to dictionary."""
@@ -69,12 +67,10 @@ class CommunityMessage(db.Model):
     __tablename__ = "community_messages"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True) # changed user_id nullable to True
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, server_default=db.func.now())
 
-    # enables retrieving all community messages of a user through user.community_messages
-    # enables getting username of a community message (if using variable named message; message.user.username)
     user = db.relationship("User", backref="community_messages")
 
     # Perhaps remove as unused

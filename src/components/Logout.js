@@ -15,9 +15,7 @@ const Logout = () => {
       if (response.ok) {
         const data = await response.json();
         toast.success(data.message);
-        // alert(data.message);
         setCurrentUser(null);
-        // setHasNewRequests(false);
 
         if (socket.connected) {
           socket.disconnect();

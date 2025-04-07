@@ -54,19 +54,26 @@ const Profile = ({ handleDeleteAccount }) => {
     socket.on("new-friend-request", (data) => {
       if (data.receiver === currentUser && data.requester === username) {
         setReceivedRequest(true);
+        setPendingRequest(true);
       }
     });
-
     socket.on("new-friend", (data) => {
-      if (data.requester === currentUser && data.receiver === username) {
+      if (
+        data.requester === currentUser &&
+        data.receiver.username === username
+      ) {
         setIsPending(false);
         setIsFriend(true);
       }
     });
-
     socket.on("declined-friend", (data) => {
       if (data.requester === currentUser && data.receiver === username) {
         setIsPending(false);
+      }
+    });
+    socket.on("removed-friend", (data) => {
+      if (data.removed === currentUser && data.remover === username) {
+        setIsFriend(false);
       }
     });
 
@@ -74,6 +81,7 @@ const Profile = ({ handleDeleteAccount }) => {
       socket.off("new-friend-request");
       socket.off("new-friend");
       socket.off("declined-friend");
+      socket.off("removed-friend");
     };
   }, [username, currentUser]);
 
@@ -103,7 +111,6 @@ const Profile = ({ handleDeleteAccount }) => {
       if (response.ok) {
         const data = await response.json();
         toast.success(data.message);
-        // alert(data.message);
         setUser((prev) => ({ ...prev, description: data.description }));
         setIsEditing(false);
       } else {
@@ -140,7 +147,6 @@ const Profile = ({ handleDeleteAccount }) => {
       if (response.ok) {
         const result = await response.json();
         toast.success(result.message);
-        // alert(result.message);
         setIsPending(true);
       } else {
         const errorData = await response.json();
@@ -169,7 +175,6 @@ const Profile = ({ handleDeleteAccount }) => {
       if (response.ok) {
         const result = await response.json();
         toast.success(result.message);
-        // alert(result.message);
         setIsFriend(true);
         setReceivedRequest(false);
         setPendingRequest(false);
@@ -200,7 +205,6 @@ const Profile = ({ handleDeleteAccount }) => {
       if (response.ok) {
         const result = await response.json();
         toast.success(result.message);
-        // alert(result.message);
         setReceivedRequest(false);
         setPendingRequest(false);
       } else {
@@ -230,7 +234,6 @@ const Profile = ({ handleDeleteAccount }) => {
       if (response.ok) {
         const result = await response.json();
         toast.success(result.message);
-        // alert(result.message || "Friend removed successfully!");
         setIsFriend(false);
       } else {
         const errorData = await response.json();
@@ -282,7 +285,7 @@ const Profile = ({ handleDeleteAccount }) => {
   return (
     <div className="profile">
       <div>
-        <p className="username">{user.username}</p>
+        <h1 className="username">{user.username}</h1>
         {user.username !== currentUser &&
           (isFriend ? (
             <button onClick={() => handleRemoveFriend(user.username)}>
