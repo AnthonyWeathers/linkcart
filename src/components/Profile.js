@@ -288,7 +288,10 @@ const Profile = ({ handleDeleteAccount }) => {
         <h1 className="username">{user.username}</h1>
         {user.username !== currentUser &&
           (isFriend ? (
-            <button onClick={() => handleRemoveFriend(user.username)}>
+            <button
+              className="remove-friend"
+              onClick={() => handleRemoveFriend(user.username)}
+            >
               Remove as Friend
             </button>
           ) : isPending ? (

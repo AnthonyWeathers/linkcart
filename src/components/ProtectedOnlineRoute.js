@@ -9,8 +9,8 @@ const ProtectedOnlineRoute = () => {
   return isOnline ? (
     <Outlet />
   ) : (
-    <div>
-      You are currently offline. Switch to online to access this feature!
+    <div className="offline">
+      You are currently offline. Go online to access this page!
     </div>
   );
 };

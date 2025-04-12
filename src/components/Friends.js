@@ -12,7 +12,54 @@ const Friends = () => {
   const { setPendingRequest } = useContext(FriendRequestContext);
 
   useEffect(() => {
-    const fetchFriends = async () => {
+    // const fetchFriends = async () => {
+    //   try {
+    //     const response = await fetch("http://localhost:8000/friends/", {
+    //       method: "GET",
+    //       headers: { "Content-Type": "application/json" },
+    //       credentials: "include",
+    //     });
+
+    //     if (response.ok) {
+    //       const result = await response.json();
+    //       setFriends(result.friends);
+    //     } else {
+    //       const errorData = await response.json();
+    //       throw new Error(errorData.error || "Failed to retrieve friends.");
+    //     }
+    //   } catch (error) {
+    //     console.error("Error fetching friends:", error);
+    //     alert(error.message);
+    //   }
+    // };
+
+    // const fetchFriendRequests = async () => {
+    //   try {
+    //     const response = await fetch(
+    //       "http://localhost:8000/friends/friend-requests",
+    //       {
+    //         method: "GET",
+    //         headers: { "Content-Type": "application/json" },
+    //         credentials: "include",
+    //       }
+    //     );
+
+    //     if (response.ok) {
+    //       const result = await response.json();
+    //       setFriendRequests(result.sender_usernames);
+    //     } else {
+    //       const errorData = await response.json();
+    //       throw new Error(
+    //         errorData.error || "Failed to retrieve friend requests."
+    //       );
+    //     }
+    //   } catch (error) {
+    //     console.error("Error fetching pending friend requests", error);
+    //     alert(error.message);
+    //   }
+    // };
+
+    const fetchFriendsAndFriendRequests = async () => {
       try {
         const response = await fetch("http://localhost:8000/friends/", {
           method: "GET",
@@ -23,44 +70,25 @@ const Friends = () => {
         if (response.ok) {
           const result = await response.json();
           setFriends(result.friends);
-        } else {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to retrieve friends.");
-        }
-      } catch (error) {
-        console.error("Error fetching friends:", error);
-        alert(error.message);
-      }
-    };
-
-    const fetchFriendRequests = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:8000/friends/friend-requests",
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          }
-        );
-
-        if (response.ok) {
-          const result = await response.json();
-          setFriendRequests(result.sender_usernames);
+          setFriendRequests(result.friend_requests);
         } else {
           const errorData = await response.json();
           throw new Error(
-            errorData.error || "Failed to retrieve friend requests."
+            errorData.error || "Failed to retrieve friends and friend requests."
           );
         }
       } catch (error) {
-        console.error("Error fetching pending friend requests", error);
+        console.error(
+          "Error fetching pending friends and friend requests",
+          error
+        );
         alert(error.message);
       }
     };
 
-    fetchFriends();
-    fetchFriendRequests();
+    // fetchFriends();
+    // fetchFriendRequests();
+    fetchFriendsAndFriendRequests();
   }, []);
 
   useEffect(() => {
@@ -109,7 +137,6 @@ const Friends = () => {
       if (response.ok) {
         const result = await response.json();
         toast.success(result.message);
-        // alert(result.message);
         setFriendRequests((prev) =>
           prev.filter((username) => username !== requester)
         );

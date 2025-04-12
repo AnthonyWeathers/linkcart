@@ -11,8 +11,8 @@ body,
 html {
   margin: 0;
   padding: 0;
-  overflow-x: hidden; /* Prevents horizontal scrolling */
-  height: 100%; /* Ensures they take the full viewport height */
+  overflow-x: hidden;
+  height: 100%;
 }
 
 code {
@@ -27,12 +27,6 @@ code {
   margin-bottom: 1em;
 }
 
-/* App.js */
-/* .highlight { */
-/* color: red; /* or another attention-grabbing color */
-/* font-weight: bold; */
-/* } */
-/* General reset for list styling */
 ul {
   list-style-type: none;
   padding: 0;
@@ -52,7 +46,6 @@ ul {
   z-index: 1000;
 }
 
-/* Ensure links in navbar are evenly spaced and centered */
 .navbar ul {
   display: flex;
   width: 100%;
@@ -65,7 +58,6 @@ ul {
   text-align: center;
 }
 
-/* Styling for the footer navbar */
 .footer-navbar {
   position: fixed;
   bottom: 0;
@@ -77,7 +69,6 @@ ul {
   z-index: 1000;
 }
 
-/* Evenly space links in footer navbar */
 .footer-navbar ul {
   display: flex;
   width: 100%;
@@ -90,11 +81,20 @@ ul {
   text-align: center;
 }
 
-/* Link styling for both navbars */
 .navbar a,
 .footer-navbar a {
   color: white;
   text-decoration: none;
+  font-weight: bold;
+  padding: 10px 15px;
+  display: inline-block;
+}
+
+.navbar button {
+  font-size: 1.05rem;
+  color: white;
+  background: none;
+  border: none;
   font-weight: bold;
   padding: 10px 15px;
   display: inline-block;
@@ -106,7 +106,11 @@ ul {
   border-radius: 4px;
 }
 
-/* Highlighted link style for notifications */
+.navbar button:hover {
+  background-color: #555;
+  border-radius: 4px;
+}
+
 .footer-navbar .highlight {
   color: yellow;
 }
@@ -115,7 +119,7 @@ ul {
 .footer-navbar {
   font-size: 1.05rem;
   height: 50px;
-  line-height: 20px; /* vertically centers content */
+  line-height: 20px;
 }
 
 /* Main container styling to avoid content underlapping navbars */
@@ -123,22 +127,11 @@ ul {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 50px; /* Adjust to navbar height */
-  padding-bottom: 50px; /* Adjust to footer navbar height */
-  min-height: calc(
-    100vh - 100px
-  ); /* Ensures the container fills the viewport height minus the navbars */
-  /* Make sure the width is not causing overflow */
-  box-sizing: border-box; /* Ensure padding and border are included in width/height */
-  width: 100%; /* Ensures the container width fits within the viewport */
-}
-
-.offline-message {
-  text-align: center;
-  font-size: 18px;
-  color: red;
-  margin-top: 50px;
-  padding: 20px;
+  padding-top: 50px;
+  padding-bottom: 50px;
+  min-height: calc(100vh - 100px);
+  box-sizing: border-box;
+  width: 100%;
 }
 
 /* Community Page Styling */
@@ -152,47 +145,41 @@ ul {
   margin-bottom: 10px;
 }
 
-/* Ensures messages-container fits between navbars and is scrollable */
 .messages-container {
-  flex: 1; /* Makes the container expand within the available space */
-  height: calc(
-    100vh - 225px
-  ); /* Adjusts height considering top and bottom navbars */
-  overflow-y: auto; /* Keeps messages scrollable */
+  flex: 1;
+  height: calc(100vh - 225px);
+  overflow-y: auto;
   border: 1px solid #ccc;
   background-color: #a3caf3;
   padding: 10px;
-  /* margin: 20px 0; */
-  box-sizing: border-box; /* Ensures padding doesn’t increase the container’s size */
+  box-sizing: border-box;
 }
 
-/* Each message aligns well and has spacing */
 .message-item {
   margin-bottom: 15px;
-  word-wrap: break-word; /* Ensures long messages wrap within the container */
+  word-wrap: break-word;
 }
 
 .message-item:first-child,
 .message-item + .message-item:not(:first-child) strong {
-  margin-top: 10px; /* Adjust as needed for spacing */
+  margin-top: 10px;
 }
 
 .timestamp {
   font-size: 0.85em;
-  color: #888; /* Light gray for reduced prominence */
-  margin-right: 10px; /* Space it from the username/content */
+  color: #888;
+  margin-right: 10px;
 }
 
-/* Styling for the message input container */
 .message-input {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 5px; /* Adds spacing to avoid overlap with fixed elements */
+  padding: 10px 5px;
   border-top: 1px solid #ccc;
+  word-wrap: break-word; /* Has message wrap back around to next line */
 }
 
-/* Ensures input field takes most space in the row */
 .message-input input {
   flex: 1;
   padding: 8px;
@@ -201,7 +188,6 @@ ul {
   border-radius: 4px;
 }
 
-/* Adjusts button style for alignment */
 .message-input button {
   padding: 8px 16px;
   background-color: #3e99fa;
@@ -218,34 +204,32 @@ ul {
 
 /* Friends Page Styling */
 
-/* Ensures consistent spacing for both headers and list items */
 .friends-page {
-  padding: 0px; /* Inner padding for spacing within block-container */
+  padding: 0px;
   margin-top: 10px;
   display: flex;
   width: 100%;
   flex-direction: column;
-  align-items: flex-start; /* Aligns content to the left */
+  align-items: flex-start;
 }
 
 /* Pending Friend Requests Section */
 .friends-page h2 {
-  margin: 0 0 10px 10px; /* Small bottom margin for section headers */
+  margin: 0 0 10px 10px;
 }
 
-/* Align friend request items to the left with even spacing */
 .friends-page ul {
-  list-style-type: none; /* Removes bullet points from list */
+  list-style-type: none;
   width: 100%;
   padding: 0;
-  margin: 0 0 20px 10px; /* Adds spacing between sections */
+  margin: 0 0 20px 10px;
 }
 
 .friends-page li {
   display: flex;
-  align-items: center; /* Centers button and link in each item */
-  margin-left: -10px; /* Realigns friend usernames so left side border intersects with browser edge */
-  margin-bottom: 10px; /* Space between each list item */
+  align-items: center;
+  margin-left: -10px;
+  margin-bottom: 10px;
   font-size: 1.5rem;
   padding: 5px;
   width: 100%;
@@ -256,12 +240,12 @@ ul {
   color: #007bff;
   text-decoration: none;
   font-weight: bold;
-  margin-right: 10px; /* Space between username and buttons */
+  margin-right: 10px;
 }
 
 .request-btns {
   padding: 5px 10px;
-  margin-right: 5px; /* Space between "Accept" and "Decline" buttons */
+  margin-right: 5px;
   background-color: #007bff;
   color: white;
   border: none;
@@ -276,35 +260,34 @@ ul {
 
 /* My Friends Section */
 .friends-page .my-friends {
-  margin-top: 20px; /* Space between friend requests and friends sections */
+  margin-top: 20px;
 }
 
 .friends-page .friend-item {
-  list-style: none; /* Removes the bullet point */
+  list-style: none;
 }
 
 .friends-page a {
-  text-decoration: none; /* Removes underline */
-  color: #007bff; /* Solid color for the link */
-  display: block; /* Ensures the entire link area is clickable */
+  text-decoration: none;
+  color: #007bff;
+  display: block;
   transition: color 0.3s;
 }
 
 .friends-page a:hover {
-  color: #0056b3; /* Changes color on hover */
+  color: #0056b3;
 }
 
 /* General container for Profile Page */
 .profile {
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center-aligns the username and top elements */
+  align-items: center;
   padding: 20px;
   width: 50%;
-  max-width: 70%; /* Set max width for easier reading */
+  max-width: 70%;
 }
 
-/* Username styling */
 .username {
   display: flex;
   font-size: 2.5em;
@@ -332,7 +315,6 @@ ul {
   gap: 10px;
 }
 
-/* Button styling for friend actions */
 .profile button {
   padding: 8px 16px;
   margin-top: 5px;
@@ -344,11 +326,16 @@ ul {
   transition: background-color 0.3s;
 }
 
+.remove-friend {
+  width: 30%;
+  display: flex;
+  justify-content: center;
+}
+
 .profile button:hover {
   background-color: #0056b3;
 }
 
-/* Aligns friend request message (like "Request Pending") under username */
 .profile .friend-status {
   font-size: 1em;
   color: #666;
@@ -356,12 +343,12 @@ ul {
   text-align: center;
 }
 
-/* Spacing between sections */
 .profile > div {
   display: flex;
   flex-direction: column;
+  align-items: center;
   width: 100%;
-  margin-bottom: 25px; /* Adds space between each main section */
+  margin-bottom: 25px;
 }
 
 /* Description section */
@@ -369,21 +356,20 @@ ul {
   font-size: 1.5em;
   margin-top: 0px;
   margin-bottom: 10px;
-  display: inline-block; /* Allows heading and button to align horizontally */
+  display: inline-block;
 }
 
 .description-text {
   font-size: 1em;
   color: #333;
-  text-align: left; /* Aligns description text to the left */
+  text-align: left;
   margin-top: 5px;
-  /* border: 1px solid #ccc; */
   background-color: #ccc;
 }
 
 /* Edit Description button to the right of the header */
 .edit-description-btn {
-  margin-left: 20px; /* Adds space between header and button */
+  margin-left: 20px;
 }
 
 .edit-description-form-btns {
@@ -463,11 +449,11 @@ textarea + br + button {
 .container {
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Center content vertically */
-  align-items: center; /* Centers the form and submitted data sections */
+  justify-content: center;
+  align-items: center;
   width: 75%;
-  max-width: 60%; /* Limits width for better readability */
-  padding-top: 50px;
+  max-width: 60%;
+  padding-top: 20px;
 }
 
 .add-product-container {
@@ -477,35 +463,32 @@ textarea + br + button {
   width: 100%;
   max-width: 70%;
   padding: 10px;
-  /* box-sizing: border-box; */
 }
 
 .submitted-data {
   display: flex;
-  flex-direction: column; /* Aligns text elements vertically */
-  align-items: flex-start; /* Left-aligns text within container */
+  flex-direction: column;
+  align-items: flex-start;
   width: 100%;
-  max-width: 600px; /* Limits width for better readability */
+  max-width: 600px;
   background-color: #f9f9f9;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  /* margin-top: 20px; */
 }
 
 /* Styling for ProductForm component */
 .product-link {
   display: flex;
-  flex-direction: column; /* Stacks form elements vertically */
-  /* align-items: center; */
+  flex-direction: column;
   align-items: flex-start;
-  gap: 15px; /* Adds space between form elements */
-  width: 100%; /* Ensures form spans full width of container */
+  gap: 15px;
+  width: 100%;
 }
 
 .product-link input,
 .product-link button {
-  width: 100%; /* Matches input fields to form width */
+  width: 100%;
   padding: 10px 0px 10px 10px;
   font-size: 1em;
   border: 1px solid #ddd;
@@ -525,58 +508,57 @@ textarea + br + button {
 }
 
 .product-link div {
-  display: flex; /* Aligns label and input/select horizontally */
-  flex-direction: column; /* Ensures they stack vertically by default */
-  align-items: flex-start; /* Aligns label and input/select to the left */
-  gap: 5px; /* Adds space between label and input/select */
-  width: 95%; /* Ensures child elements span full width */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  width: 95%;
 }
 
 .product-link select {
-  width: 100%; /* Makes the select element span the full width of the parent */
-  height: 5rem; /* Adjusts height for better usability */
-  font-size: 1rem; /* Increases font size for better readability */
-  padding: 5px 100% 5px 5px; /* Adds padding for a more spacious appearance */
-  box-sizing: border-box; /* Ensures padding doesn't affect width */
+  width: 100%;
+  height: 8.5rem;
+  font-size: 1rem;
+  padding: 5px 100% 5px 5px;
+  box-sizing: border-box;
 }
 
 .product-link label {
-  font-size: 1rem; /* Optional: Ensures consistent label font size */
+  font-size: 1rem;
 }
 
 /* Submitted data container */
 .submitted-data {
   display: flex;
-  flex-direction: column; /* Aligns text elements vertically */
-  align-items: flex-start; /* Left-aligns text within container */
+  flex-direction: column;
+  align-items: flex-start;
   width: 100%;
-  max-width: 600px; /* Limits width for better readability */
+  max-width: 600px;
   background-color: #f9f9f9;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  /* margin-top: 20px; */
 }
 
 .submitted-data h2 {
   margin-bottom: 15px;
-  text-align: center; /* Centers header text */
-  width: 100%; /* Ensures header spans full container width */
+  text-align: center;
+  width: 100%;
 }
 
 .submitted-data p {
   font-size: 1em;
-  margin-bottom: 10px; /* Adds space between details */
+  margin-bottom: 10px;
   width: 100%;
-  text-align: left; /* Aligns each line from the left */
+  text-align: left;
 }
 
 /* Buttons container within submitted-data */
 .data-btns {
   display: flex;
-  justify-content: space-between; /* Space between buttons */
+  justify-content: space-between;
   width: 100%;
-  margin-top: 20px; /* Adds space above buttons */
+  margin-top: 20px;
 }
 
 .data-btns button {
@@ -589,24 +571,27 @@ textarea + br + button {
   transition: background-color 0.3s;
 }
 
+/* Edit button */
 .data-btns button:nth-child(1) {
-  background-color: #007bff; /* Edit button color */
-}
-
-.data-btns button:nth-child(2) {
-  background-color: #ffc107; /* Clear button color */
-}
-
-.data-btns button:nth-child(3) {
-  background-color: #28a745; /* Confirm button color */
+  background-color: #007bff;
 }
 
 .data-btns button:hover:nth-child(1) {
   background-color: #0056b3;
 }
 
+/* Clear button */
+.data-btns button:nth-child(2) {
+  background-color: #ffc107;
+}
+
 .data-btns button:hover:nth-child(2) {
   background-color: #e0a800;
+}
+
+/* Confirm button */
+.data-btns button:nth-child(3) {
+  background-color: #28a745;
 }
 
 .data-btns button:hover:nth-child(3) {
@@ -626,29 +611,27 @@ textarea + br + button {
   gap: 20px;
 }
 
-/* Sorting dropdowns */
 .sort-select {
   padding: 10px;
   font-size: 1em;
   border: 1px solid #ddd;
   border-radius: 4px;
-  width: 200px; /* Ensures consistent width for both dropdowns */
+  width: 200px;
 }
 
 .sort-dropdowns {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px; /* Space between the two dropdowns */
+  gap: 20px;
 }
 
 /* Products grid */
 .product-list {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* Two columns on larger screens */
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   width: 100%;
-  /* padding-left: 100px */
 }
 
 .product-container {
@@ -658,15 +641,15 @@ textarea + br + button {
 }
 
 .product-item {
-  width: calc(100% - 50px);
+  width: 80%;
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* Aligns details to the left */
+  align-items: flex-start;
   padding: 20px;
 }
 
 .product-name {
-  text-align: center; /* Centers product name within each card */
+  text-align: center;
   width: 100%;
   font-size: 1.25em;
   margin-bottom: 10px;
@@ -677,7 +660,7 @@ textarea + br + button {
 .product-category,
 .product-favorited {
   margin: 5px 0;
-  word-wrap: break-word; /* Wraps long text to avoid overflow */
+  word-wrap: break-word;
 }
 
 .product-url a {
@@ -686,32 +669,30 @@ textarea + br + button {
 }
 
 .product-url a:hover {
-  text-decoration: underline; /* Highlights link on hover */
+  text-decoration: underline;
 }
 
 .favorite-star {
   font-size: 20px;
-  color: #ccc; /* Grey for empty star */
+  color: #ccc;
   background: none;
   border: none;
   cursor: pointer;
-  margin-left: 10px; /* Space between star and name */
+  margin-left: 10px;
 }
 .favorite-star.filled {
-  color: #ffd700; /* Gold for filled star */
+  color: #ffd700;
 }
 .favorite-star:hover {
-  transform: scale(1.2); /* Slight zoom effect for interactivity */
+  transform: scale(1.2);
   transition: transform 0.2s ease;
 }
 
 .product-item.favorited {
-  /* Style change for favorited products */
   border: 2px solid gold;
   background-color: #fff8dc;
 }
 
-/* Buttons container within product card */
 .product-button {
   padding: 10px 15px;
   font-size: 1em;
@@ -720,37 +701,52 @@ textarea + br + button {
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s;
-  margin-top: 10px; /* Adds space above each button */
+  margin-top: 10px;
 }
 
+/* Delete button */
 .product-button:nth-child(5) {
-  background-color: #dc3545; /* Delete button */
-}
-
-.product-button:nth-child(6) {
-  background-color: #007bff; /* Edit button */
-}
-
-.product-button:nth-child(7) {
-  background-color: #ffc107; /* Favorite button */
+  background-color: #dc3545;
 }
 
 .product-button:nth-child(5):hover {
   background-color: #c82333;
 }
 
+/* Edit button */
+.product-button:nth-child(6) {
+  background-color: #007bff;
+}
+
 .product-button:nth-child(6):hover {
   background-color: #0056b3;
+}
+
+/* Favorite button */
+.product-button:nth-child(7) {
+  background-color: #ffc107;
 }
 
 .product-button:nth-child(7):hover {
   background-color: #e0a800;
 }
 
+.apply-sort-button {
+  padding: 12px 16px;
+  background-color: #4caf50;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
 .pagination-controls {
   display: flex;
   justify-content: space-around;
   width: 40%;
+}
+
+.pagination-controls > button:enabled {
+  cursor: pointer;
 }
 
 /* Login and Register */
@@ -862,31 +858,33 @@ textarea + br + button {
   margin-top: 10px;
 }
 
+/* Offline View */
+.offline {
+  text-align: center;
+  font-size: 2.5rem;
+  color: red;
+  margin: auto;
+}
+
 /* Responsive design: adjusting to screen sizes */
 @media (max-width: 768px) {
-  .product-item {
-    width: calc(50% - 20px); /* Allows for 2 items per row */
-  }
-
   .block-container {
     padding-top: 0;
     padding-bottom: 0;
     display: flex;
     flex-direction: column;
-    /* justify-content: space-between; */
-    min-height: 100vh; /* Ensures the container spans the full viewport height */
+    min-height: 100vh;
   }
 
   .navbar,
   .footer-navbar {
-    position: static; /* Allows scrolling when screen width is small */
-    height: 50px; /* Allow the height to adjust automatically */
+    position: static;
+    height: 50px;
     padding: 0px 20px;
-    /* line-height: auto; */
   }
 
   .footer-navbar {
-    margin-top: auto; /* Ensures it stays at the bottom even with little content */
+    margin-top: auto;
   }
 
   .form-container {
@@ -902,7 +900,7 @@ textarea + br + button {
   }
 
   .add-product-container {
-    margin-top: 10%;
+    margin-top: 5%;
   }
 
   .container {
@@ -910,13 +908,12 @@ textarea + br + button {
   }
 
   .sort-dropdowns {
-    flex-direction: column; /* Stacks the sort dropdowns vertically */
+    flex-direction: column;
     gap: 10px;
     margin-top: -5px;
   }
 
   .product-list {
-    /*grid-template-columns: 1fr; /* Switches to single column */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -946,16 +943,16 @@ textarea + br + button {
 @media (max-width: 600px) {
   .product-link,
   .submitted-data {
-    max-width: 100%; /* Expands form and submitted data to full width on small screens */
+    max-width: 100%;
   }
 
   .data-btns {
-    flex-direction: column; /* Stacks buttons vertically on small screens */
+    flex-direction: column;
     gap: 10px;
   }
 
   .form-container {
-    margin: 20px auto;
+    margin: 50px auto auto;
     padding: 15px;
   }
 
@@ -971,6 +968,10 @@ textarea + br + button {
 
 @media (max-width: 480px) {
   .product-item {
-    width: 100%; /* Single column layout for small screens */
+    width: 95%;
+  }
+
+  .pagination-controls {
+    width: 60%;
   }
 }

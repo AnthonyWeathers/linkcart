@@ -1,13 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  Link,
-  Navigate,
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
+import { Route, Routes, Link, useLocation } from "react-router-dom";
 import AddProduct from "./components/AddProduct";
 import ProductList from "./components/ProductList";
 import Login from "./components/Login";
@@ -40,8 +32,6 @@ function App() {
   const { pendingRequest, setPendingRequest } =
     useContext(FriendRequestContext);
 
-  // Fetch the current user on component mount, think on this, this runs only once when app is opened, maybe this can be changed
-  // to a function to be called when needed
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -74,16 +64,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const handleStatusUpdate = (data) => {
-      if (data.username === currentUser) {
-        console.log(
-          "currentUser online status becomes: ",
-          currentUser,
-          isOnline
-        );
-      }
-    };
-
     socket.on("connect", () => console.log("Socket connected:", socket.id));
     socket.on("disconnect", (reason) =>
       console.log("Socket disconnected:", reason)
@@ -91,15 +71,17 @@ function App() {
     socket.on("manual-disconnect", (reason) => {
       console.log("Socket manual disconnected: ", reason);
     });
-    socket.on("status_update", handleStatusUpdate);
+    socket.on("status_update", (data) => {
+      console.log("Received status update:", data);
+    });
 
     return () => {
       socket.off("connect");
       socket.off("disconnect");
       socket.off("manual-disconnect");
-      socket.off("status_update", handleStatusUpdate);
+      socket.off("status_update");
     };
-  }, [currentUser]);
+  });
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -142,7 +124,7 @@ function App() {
     if (currentUser) {
       syncStatus();
     }
-  }, [currentUser]);
+  }, [currentUser, syncStatus]);
 
   const handleDeleteAccount = async () => {
     try {

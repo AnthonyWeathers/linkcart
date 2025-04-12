@@ -390,19 +390,7 @@ const ProductList = () => {
         )}
       </div>
 
-      <button
-        className="apply-sort-button"
-        onClick={applySorting}
-        style={{
-          marginTop: "10px",
-          padding: "8px 16px",
-          backgroundColor: "#4CAF50",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-        }}
-      >
+      <button className="apply-sort-button" onClick={applySorting}>
         Apply Sorting
       </button>
 
