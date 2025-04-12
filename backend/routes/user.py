@@ -5,7 +5,6 @@ import crud
 import logging
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
-# routes are /user/[]
 
 @user_bp.route("/current-user", methods=['GET'])
 @csrf.exempt

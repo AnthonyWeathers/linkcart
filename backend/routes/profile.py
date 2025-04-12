@@ -5,7 +5,6 @@ import crud
 import logging
 
 profile_bp = Blueprint('profile', __name__, url_prefix='/profile')
-# routes are /profile/[]
 
 """ Profile Endpoints """
 @profile_bp.route('/<username>')

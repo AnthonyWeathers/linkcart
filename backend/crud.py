@@ -120,14 +120,14 @@ def set_user_online_status(user_id, new_status):
     return user
 
 def delete_user_account(user_id):
-    # Get the user to be deleted
+
     user = User.query.get(user_id)
     
     if not user:
         return {"success": False, "message": "User not found"}
     
     try:
-        # Anonymize community messages
+
         updated_messages = CommunityMessage.query.filter_by(user_id=user_id).update({
             "user_id": None,
             "content": db.func.concat("Deleted User: ", db.func.coalesce(CommunityMessage.content, ""))
@@ -214,7 +214,6 @@ def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_
     else:
         query = query.order_by(desc(Products.id))
 
-    # Apply pagination
     query = query.limit(limit).offset(offset)
 
     print("Final query:", query)

@@ -6,7 +6,6 @@ import logging
 import re
 
 products_bp = Blueprint('products', __name__, url_prefix='/products')
-# routes are /products/[]
     
 @products_bp.route("/submit-product", methods=["POST"])
 @csrf.exempt
@@ -22,12 +21,6 @@ def save():
         price = request.json.get("price")
         productName = request.json.get("productName")
         category = request.json.get("category", [])
-
-        # For if want all 4 fields to be filled
-        # Validate required fields
-            # if not all([url, price, productName, category]):
-                # logger.warning("User %s submitted incomplete product data", user["id"])
-                # return jsonify({"error": "Missing required fields"}), 400
 
         if price is None:
             return jsonify({"error": "Invalid price format"}), 400
@@ -78,7 +71,6 @@ def delete():
 
         return jsonify({
             "message": "Product deleted",
-            #"products": user_products_data  # Only return remaining products for this user
         })
     except Exception as e:
         logging.exception("Error deleting product for user %s", currentUser_id)

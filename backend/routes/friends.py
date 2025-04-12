@@ -6,7 +6,7 @@ import logging
 
 friends_bp = Blueprint('friends', __name__, url_prefix='/friends')
 
-""" Friend Request Endpoints """
+""" Friend and Friend Request Endpoints """
 @friends_bp.route('/make-request', methods=['POST'])
 @csrf.exempt
 @token_required
@@ -124,27 +124,6 @@ def decline_friend():
         logging.exception(f"Error declining friend request by {currentUser_username}: {str(e)}")
         return jsonify({'error': 'An error occurred.'}), 500
 
-@friends_bp.route('/friend-requests', methods=['GET'])
-@limiter.limit("10/minute")
-@token_required
-def get_friend_requests():
-    try:
-        user = request.user_payload
-        currentUser_username = user['username']
-        if not user["isOnline"]:
-            logging.warning(f"Offline user {currentUser_username} attempted to view friend requests.")
-            return jsonify({'error': 'You are offline.'}), 403
-
-        user_requests = crud.get_friend_requests(receiver_id=user["user_id"], status="pending")
-        sender_usernames = [request.sender.username for request in user_requests]
-
-        logging.info(f"User {currentUser_username} retrieved their pending friend requests.")
-        return jsonify({'sender_usernames': sender_usernames})
-    except Exception as e:
-        logging.exception(f"Error retrieving friend requests for {currentUser_username}: {str(e)}")
-        return jsonify({'error': 'An error occurred.'}), 500
-
-""" Friends endpoints """
 @friends_bp.route('/remove-friend', methods=['POST'])
 @csrf.exempt
 @limiter.limit("5/minute")
@@ -168,7 +147,7 @@ def remove_friend():
         if deleted_friendship:
             
             socketio.emit('removed-friend', {
-                'remover': {"id": user['id'], "username": currentUser_username},
+                'remover': {"id": user['user_id'], "username": currentUser_username},
                 'removed': friend_username,
             })
             logging.info(f"Friendship removed: {currentUser_username} -> {friend_username}")
@@ -180,21 +159,22 @@ def remove_friend():
     except Exception as e:
         logging.exception(f"Error in removing friend: {str(e)}")
         return jsonify({'error': 'An error occurred while removing the friend.'}), 500
-
-@friends_bp.route('/', methods=['GET'])
-@csrf.exempt
-@limiter.limit("10/minute")
-@token_required
-def get_friends():
+    
+def get_friend_requests(user):
     try:
-        print("Entered fetching all friends")
-        user = request.user_payload
-        currentUser_id = user['user_id']
-        if not user["isOnline"]:
-            logging.warning(f"Offline user {user['username']} attempted to view friend requests.")
-            return jsonify({'error': 'You are offline. Community features are not available.'}), 403
+        user_requests = crud.get_friend_requests(receiver_id=user["user_id"], status="pending")
+        sender_usernames = [request.sender.username for request in user_requests]
 
-        friendships = crud.get_friends(currentUser_id)
+        print("Got requests: ", sender_usernames)
+
+        logging.info(f"User {user['username']} retrieved their pending friend requests.")
+        return sender_usernames
+    except Exception as e:
+        return False
+    
+def get_friends(user):
+    try:
+        friendships = crud.get_friends(user["user_id"])
 
         friend_list = [
             {
@@ -202,12 +182,33 @@ def get_friends():
                 'username': friend.username
             }
             for friendship in friendships
-            for friend in [crud.get_user(id=friendship.user1_id if friendship.user1_id != currentUser_id else friendship.user2_id)]
+            for friend in [crud.get_user(id=friendship.user1_id if friendship.user1_id != user["user_id"] else friendship.user2_id)]
         ]
 
-        logging.info(f"Friend list retrieved for user_id: {currentUser_id} ({len(friend_list)} friends)")
-        return jsonify({'friends': friend_list}), 200
+        logging.info(f"Friend list retrieved for user: ({len(friend_list)} friends)")
+        return friend_list
 
     except Exception as e:
-        logging.exception(f"Error in retrieving friends: {str(e)}")
-        return jsonify({'error': 'An error occurred while retrieving friends.'}), 500
+        return False
+    
+@friends_bp.route('/', methods=['GET'])
+@csrf.exempt
+@limiter.limit("10/minute")
+@token_required
+def getFriendsAndRequests():
+    user = request.user_payload
+    if not user["isOnline"]:
+        logging.warning(f"Offline user {user['username']} accessing endpoint.")
+        return jsonify({'error': 'You are offline. Community features are not available.'}), 403
+
+    friends = get_friends(user)
+    if(not friends and len(friends) != 0):
+        return jsonify({"error": "Failed to get friends"}), 500
+    
+    friend_requests = get_friend_requests(user)
+    if(not friend_requests and len(friend_requests) != 0):
+        return jsonify({"error": "Failed to get friend requests"}), 500
+
+    logging.info(f"Friend list retrieved for user_id: {user['user_id']} ({len(friends)} friends)")
+    logging.info(f"{user['user_id']} has({len(friends)} friend requests)")
+    return jsonify({'friends': friends, "friend_requests": friend_requests}), 200

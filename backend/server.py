@@ -11,7 +11,8 @@ from flask_cors import CORS
 from extensions import csrf, socketio, limiter, mail
 
 app = Flask(__name__)
-app.secret_key = 'dev'
+# app.secret_key = 'dev' 
+app.secret_key = os.getenv("APP_SECRET_KEY")
 
 logging.basicConfig(level=logging.DEBUG)
 

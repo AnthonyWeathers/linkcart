@@ -9,7 +9,6 @@ from flask_mailman.message import Message
 app = current_app
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
-# routes are /auth/[]
 
 """ User Login/Registration related endpoints """
 @auth_bp.route("/login", methods=["POST"])
@@ -32,10 +31,9 @@ def login():
             response.set_cookie(
                 "jwtToken",
                 token,
-                httponly=True,  # Prevent JavaScript access
-                # secure=True,  # Only allow over HTTPS
-                secure=False,  # False for local dev; True for production with HTTPS
-                samesite='Lax',  # CSRF protection
+                httponly=True,
+                secure=False,
+                samesite='Lax',
             )
             return response
         else:
@@ -69,9 +67,8 @@ def register():
             response.set_cookie(
                 "jwtToken",
                 token,
-                httponly=True,  # Prevent JavaScript access
-                # secure=True,  # Only allow over HTTPS
-                secure=False,  # False for local dev; True for production with HTTPS
+                httponly=True,
+                secure=False,
                 samesite='Lax',
             )
             return response
@@ -185,22 +182,15 @@ def handle_connect(*args, **kwargs):
             return
         
         user_id = user["user_id"]
-        toggled_user = crud.set_user_online_status(user_id, True)  # Update the database to online
+        toggled_user = crud.set_user_online_status(user_id, True)
         if toggled_user:
             logging.info(f"User {toggled_user.username} (ID: {user_id})  is now online")
-            # logging.info(f"User cookie online status is: {user["isOnline"]}")
-            join_room("community")  # Join the community room
-
-            # For future features involving updating ui based off
-            # a user's online stauts
-            # print(socketio.rooms())
+            join_room("community")
+            
             socketio.emit('status_update', {
-                # "user_id": user_id,
                 "username": toggled_user.username,
                 "isOnline": True
             })
-            # }, to='community')
-            # }, broadcast=True)  # Notify all clients
         else:
             logging.error(f"Failed to toggle online status for user ID {user_id}")
             disconnect()
@@ -219,7 +209,6 @@ def handle_disconnect(*args, **kwargs):
             logging.warning("No user provided to handle_disconnect")
             disconnect()
             return
-        # print(socketio.rooms())
 
     except Exception as e:
         logging.exception("Unexpected error in disconnecting socketio")
@@ -236,18 +225,13 @@ def handle_manual_disconnect(*args, **kwargs):
             return
         
         user_id = user["user_id"]
-        toggled_user = crud.set_user_online_status(user_id, False)  # Explicit toggle
+        toggled_user = crud.set_user_online_status(user_id, False)
         if toggled_user:
             logging.info(f"User {toggled_user.username} is now offline")
-            # For future features involving updating ui based off
-            # a user's online stauts
             socketio.emit('status_update', {
-                # "user_id": user_id,
                 "username": toggled_user.username,
                 "isOnline": False
             })
-            # }, to='community')
-            # }, broadcast=True)
 
     except Exception as e:
         logging.exception("Unexpected error in disconnecting socketio")

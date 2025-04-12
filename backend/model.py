@@ -19,7 +19,7 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key = True, autoincrement = True)
     username = db.Column(db.String(50) , nullable = False)
-    email = db.Column(db.String(120), unique=True, nullable=False) # added for feature of password resetting, but now also needed on registering
+    email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(250) , nullable = False)
     description = db.Column(db.Text, nullable=True, default="This user has not added a description yet.")
     products = db.relationship("Products", backref = "user", lazy = True)
@@ -28,16 +28,6 @@ class User(db.Model):
 
     reset_code_hash = db.Column(db.String(255), nullable=True)
     reset_code_expiry = db.Column(db.DateTime, nullable=True)
-
-    # Perhaps remove as is not used
-    def to_dict(self):
-        """Convert User object to dictionary."""
-        return {
-            "id": self.id,
-            "username": self.username,
-            "description": self.description,
-            "favorited_products": [product.id for product in self.favorited_products],
-        }
     
 class Products(db.Model):
 
@@ -59,7 +49,7 @@ class Products(db.Model):
             "url": self.url,
             "price": self.price,
             "productName": self.productName,
-            "category": self.category, # Will return a JSONB array
+            "category": self.category,
             "favorited": self.favorited
         }
     
@@ -73,15 +63,6 @@ class CommunityMessage(db.Model):
 
     user = db.relationship("User", backref="community_messages")
 
-    # Perhaps remove as unused
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "content": self.content,
-            "timestamp": self.timestamp
-        }
-
 class FriendRequest(db.Model):
     __tablename__ = "friend_requests"
 
@@ -93,29 +74,12 @@ class FriendRequest(db.Model):
 
     sender = db.relationship("User", foreign_keys=[sender_id], backref="sent_requests")
     receiver = db.relationship("User", foreign_keys=[receiver_id], backref="received_requests")
-
-    # Perhaps remove as unused
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "sender_id": self.sender_id,
-            "receiver_id": self.receiver_id,
-            "status": self.status,
-            "timestamp": self.timestamp
-        }
     
 class Friends(db.Model):
     __tablename__ = 'friendship'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user1_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     user2_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "user1_id": self.user1_id,
-            "user2_id": self.user2_id
-        }
     
 def connect_to_db(flask_app, echo=True):
     flask_app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["POSTGRES_URI"]
