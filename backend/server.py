@@ -1,4 +1,6 @@
 from flask import Flask
+# import eventlet
+# eventlet.monkey_patch()
 import jinja2
 
 import logging
@@ -14,7 +16,8 @@ app = Flask(__name__)
 # app.secret_key = 'dev' 
 app.secret_key = os.getenv("APP_SECRET_KEY")
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("werkzeug").setLevel(logging.DEBUG)
 
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -44,6 +47,7 @@ from routes.friends import friends_bp
 from routes.products import products_bp
 from routes.profile import profile_bp
 from routes.user import user_bp
+from sockets import *
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(community_bp)

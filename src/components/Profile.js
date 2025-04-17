@@ -72,7 +72,7 @@ const Profile = ({ handleDeleteAccount }) => {
       }
     });
     socket.on("removed-friend", (data) => {
-      if (data.removed === currentUser && data.remover === username) {
+      if (data.removed === currentUser && data.remover.username === username) {
         setIsFriend(false);
       }
     });
@@ -285,7 +285,7 @@ const Profile = ({ handleDeleteAccount }) => {
   return (
     <div className="profile">
       <div>
-        <h1 className="username">{user.username}</h1>
+        <h1 className="profile-username">{user.username}</h1>
         {user.username !== currentUser &&
           (isFriend ? (
             <button

@@ -169,13 +169,13 @@ def request_username():
         logging.exception("Unexpected error in /request-username")
         return jsonify({"error": "An unexpected error occurred while attempting to send username"}), 500
 
-@socketio.on('connect')
+@socketio.on("go-online")
 @token_required
-def handle_connect(*args, **kwargs):
+def handle_go_online(*args, **kwargs):
     try:
         user = kwargs.get('user')
 
-        logging.debug(f"[Socket.IO] User in handle_connect: {user}")
+        print(f"[Socket.IO] User in handle_connect: {user}")
         if not user:
             logging.warning("No user provided to handle_connect")
             disconnect()
@@ -185,8 +185,8 @@ def handle_connect(*args, **kwargs):
         toggled_user = crud.set_user_online_status(user_id, True)
         if toggled_user:
             logging.info(f"User {toggled_user.username} (ID: {user_id})  is now online")
-            join_room("community")
             
+            user["isOnline"] = True
             socketio.emit('status_update', {
                 "username": toggled_user.username,
                 "isOnline": True
@@ -198,7 +198,6 @@ def handle_connect(*args, **kwargs):
     except Exception as e:
         logging.exception("Unexpected error in connecting socketio")
         disconnect()
-        return jsonify({"error": "An unexpected error occurred in connecting user to socketio"}), 500
 
 @socketio.on('disconnect')
 @token_required
@@ -209,7 +208,6 @@ def handle_disconnect(*args, **kwargs):
             logging.warning("No user provided to handle_disconnect")
             disconnect()
             return
-
     except Exception as e:
         logging.exception("Unexpected error in disconnecting socketio")
         return jsonify({"error": "An unexpected error occurred while disconnecting from socketio"}), 500
@@ -217,25 +215,38 @@ def handle_disconnect(*args, **kwargs):
 @socketio.on('manual-disconnect')
 @token_required
 def handle_manual_disconnect(*args, **kwargs):
+    print(f"Entered backend manual-disconnect with args: {args} and kwargs: {kwargs}")
+    print("Have entered the manual-disconnect backend endpoint")
+
+    cb = None
+    if args and callable(args[-1]):
+        cb = args[-1]
+
     try:
         user = kwargs.get('user')
         if not user:
             logging.debug(f"No user provided in handle_manual_disconnect")
             disconnect()
+            if(cb):
+                cb(False)
             return
         
         user_id = user["user_id"]
         toggled_user = crud.set_user_online_status(user_id, False)
         if toggled_user:
             logging.info(f"User {toggled_user.username} is now offline")
+            user["isOnline"] = False
             socketio.emit('status_update', {
                 "username": toggled_user.username,
                 "isOnline": False
             })
+            if cb:
+                cb(True)
 
     except Exception as e:
         logging.exception("Unexpected error in disconnecting socketio")
-        return jsonify({"error": "An unexpected error occurred while disconnecting from socketio"}), 500
+        if cb:
+            cb(False)
     
 @auth_bp.route('/sync-status', methods=['GET'])
 @token_required

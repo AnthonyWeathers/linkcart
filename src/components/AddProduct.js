@@ -104,7 +104,7 @@ const AddProduct = () => {
             <strong>URL:</strong> {submittedData.url}
           </p>
           <p>
-            <strong>Price:</strong> {submittedData.price}
+            <strong>Price:</strong> ${submittedData.price}
           </p>
           {submittedData.productName && (
             <p>
@@ -116,6 +116,7 @@ const AddProduct = () => {
               <strong>Category:</strong>{" "}
               {submittedData.category.map((cat, index) => (
                 <span key={index} className="category-tag">
+                  {/* {cat} {index < submittedData.category.length - 1 && ", "} */}
                   {cat}
                 </span>
               ))}

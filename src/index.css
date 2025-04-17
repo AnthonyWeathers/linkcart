@@ -146,18 +146,20 @@ ul {
 }
 
 .messages-container {
-  flex: 1;
   height: calc(100vh - 225px);
   overflow-y: auto;
   border: 1px solid #ccc;
   background-color: #a3caf3;
-  padding: 10px;
   box-sizing: border-box;
 }
 
 .message-item {
-  margin-bottom: 15px;
+  padding: 2px 5px;
   word-wrap: break-word;
+}
+
+.message-item:hover {
+  background-color: rgb(136, 143, 156);
 }
 
 .message-item:first-child,
@@ -167,7 +169,7 @@ ul {
 
 .timestamp {
   font-size: 0.85em;
-  color: #888;
+  color: black;
   margin-right: 10px;
 }
 
@@ -207,22 +209,34 @@ ul {
 .friends-page {
   padding: 0px;
   margin-top: 10px;
+  margin-left: 20px;
   display: flex;
   width: 100%;
   flex-direction: column;
   align-items: flex-start;
 }
 
+.username {
+  text-decoration: none;
+  color: #007bff;
+  display: block;
+  transition: color 0.3s;
+}
+
+.username:hover {
+  text-decoration: underline;
+}
+
 /* Pending Friend Requests Section */
 .friends-page h2 {
-  margin: 0 0 10px 10px;
+  margin: 0 0 10px 0px;
 }
 
 .friends-page ul {
   list-style-type: none;
   width: 100%;
   padding: 0;
-  margin: 0 0 20px 10px;
+  margin: 0 0 20px 0px;
 }
 
 .friends-page li {
@@ -236,7 +250,7 @@ ul {
   border: 1px solid black;
 }
 
-.friends-page li a {
+.friends-page li .username {
   color: #007bff;
   text-decoration: none;
   font-weight: bold;
@@ -267,12 +281,12 @@ ul {
   list-style: none;
 }
 
-.friends-page a {
+/* .friends-page a {
   text-decoration: none;
   color: #007bff;
   display: block;
   transition: color 0.3s;
-}
+} */
 
 .friends-page a:hover {
   color: #0056b3;
@@ -288,7 +302,7 @@ ul {
   max-width: 70%;
 }
 
-.username {
+.profile-username {
   display: flex;
   font-size: 2.5em;
   font-weight: bold;
@@ -452,7 +466,6 @@ textarea + br + button {
   justify-content: center;
   align-items: center;
   width: 75%;
-  max-width: 60%;
   padding-top: 20px;
 }
 
@@ -463,18 +476,6 @@ textarea + br + button {
   width: 100%;
   max-width: 70%;
   padding: 10px;
-}
-
-.submitted-data {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  width: 100%;
-  max-width: 600px;
-  background-color: #f9f9f9;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
 }
 
 /* Styling for ProductForm component */
@@ -519,8 +520,13 @@ textarea + br + button {
   width: 100%;
   height: 8.5rem;
   font-size: 1rem;
-  padding: 5px 100% 5px 5px;
+  padding: 5px;
   box-sizing: border-box;
+}
+
+.product-link select option:checked {
+  background-color: #cce4ff;
+  color: #000;
 }
 
 .product-link label {
@@ -535,6 +541,7 @@ textarea + br + button {
   width: 100%;
   max-width: 600px;
   background-color: #f9f9f9;
+  margin-top: 50px;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -556,7 +563,7 @@ textarea + br + button {
 /* Buttons container within submitted-data */
 .data-btns {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-evenly;
   width: 100%;
   margin-top: 20px;
 }
@@ -630,6 +637,7 @@ textarea + br + button {
 .product-list {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  justify-items: center;
   gap: 20px;
   width: 100%;
 }
@@ -733,6 +741,7 @@ textarea + br + button {
 
 .apply-sort-button {
   padding: 12px 16px;
+  margin: -10px;
   background-color: #4caf50;
   border: none;
   border-radius: 8px;
@@ -871,8 +880,6 @@ textarea + br + button {
   .block-container {
     padding-top: 0;
     padding-bottom: 0;
-    display: flex;
-    flex-direction: column;
     min-height: 100vh;
   }
 
@@ -880,7 +887,6 @@ textarea + br + button {
   .footer-navbar {
     position: static;
     height: 50px;
-    padding: 0px 20px;
   }
 
   .footer-navbar {
@@ -900,7 +906,7 @@ textarea + br + button {
   }
 
   .add-product-container {
-    margin-top: 5%;
+    margin-top: 14px;
   }
 
   .container {
@@ -908,7 +914,6 @@ textarea + br + button {
   }
 
   .sort-dropdowns {
-    flex-direction: column;
     gap: 10px;
     margin-top: -5px;
   }
@@ -941,14 +946,21 @@ textarea + br + button {
 }
 
 @media (max-width: 600px) {
+  .add-product-container {
+    max-width: 80%;
+  }
+
   .product-link,
   .submitted-data {
     max-width: 100%;
   }
 
   .data-btns {
-    flex-direction: column;
     gap: 10px;
+  }
+
+  .data-btns button {
+    width: 100%;
   }
 
   .form-container {
@@ -967,6 +979,10 @@ textarea + br + button {
 }
 
 @media (max-width: 480px) {
+  .container {
+    max-width: 100%;
+    width: 80%;
+  }
   .product-item {
     width: 95%;
   }

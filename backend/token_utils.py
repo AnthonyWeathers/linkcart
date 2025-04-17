@@ -29,12 +29,57 @@ def verify_token(token, app):
         logging.error("Invalid token")
         return None
 
+# def token_required(f):
+#     """Unified token decorator for Flask routes and Socket.IO events."""
+#     @wraps(f)
+#     def decorated_function(*args, **kwargs):
+#         from flask import current_app
+        
+#         app = current_app
+
+#         if request.path.startswith('/socket.io') and request.method == 'GET':
+#             token = request.cookies.get('jwtToken')
+#             logging.debug(f"Token from initial Socket.IO connection: {token}")
+
+#             if not token:
+#                 logging.warning("No token provided for Socket.IO connection")
+#                 disconnect()
+#                 return jsonify({"error": "Token is required for Socket.IO"}), 401
+            
+#         elif request and request.cookies.get('jwtToken') and request.method in ['GET', 'POST', 'PUT', 'DELETE']:
+#             token = request.cookies.get('jwtToken')
+#             logging.debug(f"Token from API cookies: {token}")
+
+#         else:
+#             token = request.cookies.get('jwtToken')
+#             logging.debug(f"Token from socketio event handler: {token}")
+
+#         if not token:
+#             logging.warning("No token provided")
+#             return jsonify({"error": "Token is required"}), 401
+        
+#         user_payload = verify_token(token, app)
+#         logging.debug(f"User payload after verification: {user_payload}")
+
+#         if not user_payload:
+#             logging.warning("Invalid or expired token")
+#             return jsonify({"error": "Invalid or expired token"}), 401
+
+#         if request.path.startswith('/socket.io'):
+#             kwargs['user'] = user_payload
+#         else:
+#             request.user_payload = user_payload
+
+#         return f(*args, **kwargs)
+
+#     return decorated_function
+
 def token_required(f):
     """Unified token decorator for Flask routes and Socket.IO events."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         from flask import current_app
-        
+
         app = current_app
 
         if request.path.startswith('/socket.io') and request.method == 'GET':

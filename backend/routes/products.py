@@ -95,14 +95,11 @@ def getProducts():
         
         offset = (page - 1) * limit
 
-        favorited = True if sort_by == 'favorited' else None
-
         total_products = crud.count_products(
             user_id=currentUser_id,
             min_price=min_price,
             max_price=max_price,
             category_filter=category_filter,
-            favorited=favorited,
         )
 
         total_pages = (total_products + limit - 1) // limit
@@ -114,7 +111,6 @@ def getProducts():
             min_price=min_price,
             max_price=max_price,
             category_filter=category_filter,
-            favorited=favorited,
             limit=limit,
             offset=offset
         )

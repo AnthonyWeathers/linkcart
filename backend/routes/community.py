@@ -41,6 +41,7 @@ def get_public_messages():
 @socketio.on('message')
 @token_required
 def handle_message(*args, **kwargs):
+    print("📡 Registered socket event: 'message'")
     try:
         user = kwargs.get('user')
         if not user:
@@ -60,7 +61,7 @@ def handle_message(*args, **kwargs):
             'username': user['username'],
             'content': message.content,
             'timestamp': message.timestamp.isoformat()
-        }, to='community')
+            })
 
     except Exception as e:
         logging.exception("Unexpected error in adding new message")

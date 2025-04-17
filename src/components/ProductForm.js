@@ -26,7 +26,7 @@ const ProductForm = ({
     e.preventDefault();
     const productPrice = parseFloat(price);
     const isTwoDecimalsOrLess =
-      Math.floor(productPrice * 100) === productPrice * 100;
+      Math.round(productPrice * 100) / 100 === productPrice;
     if (!isTwoDecimalsOrLess) {
       toast.error("Price can only up to two decimal places (eg. 1.04)");
     } else {

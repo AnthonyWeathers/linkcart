@@ -175,7 +175,7 @@ def create_product(user_id, url, price, productName, categories, favorited=False
     db.session.commit()
     return product
 
-def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_price=None, category_filter=None, favorited=None, limit=10,
+def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_price=None, category_filter=None, limit=10,
     offset=0):
     """
     Fetch products based on dynamic filters, sorting, and ranges.
@@ -220,7 +220,11 @@ def get_products(user_id, sort_by=None, extra_sort_by=None, min_price=None, max_
 
     return query.all()
 
-def count_products(user_id, min_price=None, max_price=None, category_filter=None, favorited=None):
+def get_favorited_products(user_id):
+    """ Returns the favorited products of user"""
+    return Products.query.filter_by(user_id=user_id, favorited=True)
+
+def count_products(user_id, min_price=None, max_price=None, category_filter=None):
     query = Products.query.filter_by(user_id=user_id)
 
     if min_price is not None:

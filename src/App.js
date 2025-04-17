@@ -63,25 +63,25 @@ function App() {
     fetchCurrentUser();
   }, []);
 
-  useEffect(() => {
-    socket.on("connect", () => console.log("Socket connected:", socket.id));
-    socket.on("disconnect", (reason) =>
-      console.log("Socket disconnected:", reason)
-    );
-    socket.on("manual-disconnect", (reason) => {
-      console.log("Socket manual disconnected: ", reason);
-    });
-    socket.on("status_update", (data) => {
-      console.log("Received status update:", data);
-    });
+  // useEffect(() => {
+  //   socket.on("connect", () => console.log("Socket connected:", socket.id));
+  //   socket.on("disconnect", (reason) =>
+  //     console.log("Socket disconnected:", reason)
+  //   );
+  //   socket.on("manual-disconnect", (reason) => {
+  //     console.log("Socket manual disconnected: ", reason);
+  //   });
+  //   socket.on("status_update", (data) => {
+  //     console.log("Received status update:", data);
+  //   });
 
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-      socket.off("manual-disconnect");
-      socket.off("status_update");
-    };
-  });
+  //   return () => {
+  //     socket.off("connect");
+  //     socket.off("disconnect");
+  //     socket.off("manual-disconnect");
+  //     socket.off("status_update");
+  //   };
+  // });
 
   useEffect(() => {
     const interval = setInterval(async () => {

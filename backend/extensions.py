@@ -6,5 +6,6 @@ from flask_mailman import Mail
 
 csrf = CSRFProtect()
 socketio = SocketIO(cors_allowed_origins="http://localhost:3000", ping_timeout=30000, ping_interval=25000)
-limiter = Limiter(get_remote_address, default_limits=["200 per day", "50 per hour"])
+# socketio = SocketIO(cors_allowed_origins="*", ping_timeout=30000, ping_interval=25000)
+limiter = Limiter(get_remote_address, default_limits=["2000 per day", "500 per hour"])
 mail = Mail()

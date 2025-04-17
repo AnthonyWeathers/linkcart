@@ -24,24 +24,26 @@ const Community = () => {
     }
   };
 
+  const handleNewMessage = (data) => {
+    if (data.success) {
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          id: data.id,
+          username: data.username,
+          content: data.content,
+          timestamp: data.timestamp,
+        },
+      ]);
+    } else {
+      alert(data.error);
+    }
+  };
+
   useEffect(() => {
     fetchMessages();
 
-    socket.on("message_response", (data) => {
-      if (data.success) {
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          {
-            id: data.id,
-            username: data.username,
-            content: data.content,
-            timestamp: data.timestamp,
-          },
-        ]);
-      } else {
-        alert(data.error);
-      }
-    });
+    socket.on("message_response", handleNewMessage);
 
     return () => {
       socket.off("message_response");
@@ -71,6 +73,7 @@ const Community = () => {
             <div key={msg.id} className="message-item">
               {showUsername && (
                 <Link
+                  className="username"
                   to={
                     msg.username === "Deleted User"
                       ? "/user-deleted"

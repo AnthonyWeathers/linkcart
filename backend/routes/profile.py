@@ -13,8 +13,6 @@ profile_bp = Blueprint('profile', __name__, url_prefix='/profile')
 @token_required
 def profile(username):
     """Fetch profile details of the given username."""
-    # `user` is the authenticated user, injected by @token_required
-    # `username` is the user profile being accessed
     try:
         user = request.user_payload
         currentUser_id = user["user_id"]
@@ -42,7 +40,7 @@ def profile(username):
             elif crud.get_friend_requests(receiver_id=currentUser_id, sender_id=target_user.id, status='pending'):
                 received_request = True
 
-        favorited_products = crud.get_products(user_id=target_user.id, favorited=True)
+        favorited_products = crud.get_favorited_products(user_id=target_user.id)
 
         logging.info(f"User {currentUser_username} successfully fetched profile data for {username}")
         return jsonify({

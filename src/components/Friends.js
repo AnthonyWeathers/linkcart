@@ -12,53 +12,6 @@ const Friends = () => {
   const { setPendingRequest } = useContext(FriendRequestContext);
 
   useEffect(() => {
-    // const fetchFriends = async () => {
-    //   try {
-    //     const response = await fetch("http://localhost:8000/friends/", {
-    //       method: "GET",
-    //       headers: { "Content-Type": "application/json" },
-    //       credentials: "include",
-    //     });
-
-    //     if (response.ok) {
-    //       const result = await response.json();
-    //       setFriends(result.friends);
-    //     } else {
-    //       const errorData = await response.json();
-    //       throw new Error(errorData.error || "Failed to retrieve friends.");
-    //     }
-    //   } catch (error) {
-    //     console.error("Error fetching friends:", error);
-    //     alert(error.message);
-    //   }
-    // };
-
-    // const fetchFriendRequests = async () => {
-    //   try {
-    //     const response = await fetch(
-    //       "http://localhost:8000/friends/friend-requests",
-    //       {
-    //         method: "GET",
-    //         headers: { "Content-Type": "application/json" },
-    //         credentials: "include",
-    //       }
-    //     );
-
-    //     if (response.ok) {
-    //       const result = await response.json();
-    //       setFriendRequests(result.sender_usernames);
-    //     } else {
-    //       const errorData = await response.json();
-    //       throw new Error(
-    //         errorData.error || "Failed to retrieve friend requests."
-    //       );
-    //     }
-    //   } catch (error) {
-    //     console.error("Error fetching pending friend requests", error);
-    //     alert(error.message);
-    //   }
-    // };
-
     const fetchFriendsAndFriendRequests = async () => {
       try {
         const response = await fetch("http://localhost:8000/friends/", {
@@ -86,8 +39,6 @@ const Friends = () => {
       }
     };
 
-    // fetchFriends();
-    // fetchFriendRequests();
     fetchFriendsAndFriendRequests();
   }, []);
 
@@ -193,7 +144,9 @@ const Friends = () => {
           <ul>
             {friendRequests.map((requester) => (
               <li key={requester}>
-                <Link to={`/profile/${requester}`}>{requester}</Link>
+                <Link className="username" to={`/profile/${requester}`}>
+                  {requester}
+                </Link>
                 <div>
                   <button
                     className="request-btns"
@@ -218,7 +171,11 @@ const Friends = () => {
       <ul>
         {friends && friends.length > 0 ? (
           friends.map((friend) => (
-            <Link to={`/profile/${friend.username}`} key={friend.id}>
+            <Link
+              className="username"
+              to={`/profile/${friend.username}`}
+              key={friend.id}
+            >
               <li className="friend-item">{friend.username}</li>
             </Link>
           ))

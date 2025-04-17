@@ -272,15 +272,15 @@ const ProductList = () => {
                   </p>
                   <button
                     className="product-button"
-                    onClick={() => deleteProduct(product)}
-                  >
-                    Delete
-                  </button>
-                  <button
-                    className="product-button"
                     onClick={() => editProduct(product)}
                   >
                     Edit
+                  </button>
+                  <button
+                    className="product-button"
+                    onClick={() => deleteProduct(product)}
+                  >
+                    Delete
                   </button>
                 </div>
               ) : (
